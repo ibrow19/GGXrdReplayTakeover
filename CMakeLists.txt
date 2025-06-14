@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
 set(PROJECT_NAME GGXrdReplayTakeover)
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_GENERATOR_PLATFORM Win32)
 
 project(${PROJECT_NAME} C CXX)
 
@@ -12,10 +14,14 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 # TODO: check which of these we actually need.
 set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp)
-set(IMGUI_DIRS imgui imgui/backends)
+set(IMGUI_BACKEND_SOURCES imgui/backends/imgui_impl_dx9.cpp imgui/backends/imgui_impl_win32.cpp)
+set(IMGUI_DIRS imgui imgui/backends/)
 
 set(INJECTOR_DIR injector)
 file(GLOB_RECURSE INJECTOR_SOURCES ${INJECTOR_DIR}/*.cpp)
+
+set(TEST_DIR load-test)
+file(GLOB_RECURSE TEST_SOURCES ${TEST_DIR}/*.cpp)
 
 set(REPLAY_CONTROLLER_LIB_NAME GGXrdReplayController)
 set(REPLAY_CONTROLLER_DIR replay-controller)
@@ -23,5 +29,7 @@ file(GLOB_RECURSE REPLAY_CONTROLLER_SOURCES ${REPLAY_CONTROLLER_DIR}/*.cpp)
 
 add_executable(${PROJECT_NAME} ${INJECTOR_SOURCES})
 
-add_library(${REPLAY_CONTROLLER_LIB_NAME} SHARED ${REPLAY_CONTROLLER_SOURCES} ${IMGUI_SOURCES})
+add_executable(TestLoad ${TEST_SOURCES})
+
+add_library(${REPLAY_CONTROLLER_LIB_NAME} SHARED ${REPLAY_CONTROLLER_SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
 include_directories(${REPLAY_CONTROLLER_LIB_NAME} PRIVATE ${IMGUI_DIRS})
