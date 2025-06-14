@@ -1,0 +1,126 @@
+#include <iostream>
+#include <windows.h>
+#include <tlhelp32.h>
+
+int findProcess(const char* processName)
+{
+    HANDLE snapshot;
+
+    // snapshot all processes in the system.
+    snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, /*pid = */ 0);
+    if (snapshot == INVALID_HANDLE_VALUE)
+    {
+        std::cout << "Invalid snapshot handle" << std::endl;
+        return EXIT_FAILURE;
+    }
+    std::cout << "valid snapshot" << std::endl;
+
+    int pid = 0;
+
+    PROCESSENTRY32 processEntry;
+    processEntry.dwSize = sizeof(PROCESSENTRY32);
+
+    // Info about first process in the snapshotted list
+    BOOL result = Process32First(snapshot, &processEntry);
+
+    while (result)
+    {
+        if (strcmp(processEntry.szExeFile, processName) == 0)
+        {
+            pid = processEntry.th32ProcessID;
+            break;
+        }
+        result = Process32Next(snapshot, &processEntry);
+    }
+
+    return pid;
+}
+
+void injectDll(int pid)
+{
+    // TODO: update path once project structure more developed.
+    const char dllPath[] = "build\\Debug\\GGXrdReplayController.dll";
+
+    const unsigned int dllLen = sizeof(dllPath);
+
+    // TODO: error handling. with GetLastError.
+    HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, /*bInheritHandle =*/ FALSE, DWORD(pid));
+
+    // TODO: why do all the windows docs still use NULL in the year 2025
+    if (process == NULL)
+    {
+        std::cout << "Failed to open process" << std::endl;
+        CloseHandle(process);
+        return;
+    }
+
+    // Allocate memory in process for dll.
+    LPVOID remoteBuffer = VirtualAllocEx(process, NULL, dllLen, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
+     
+    if (remoteBuffer == NULL)
+    {
+        std::cout << "Failed to allocate space for dll in process" << std::endl;
+        CloseHandle(process);
+        return;
+    }
+
+    // Copy dll to the allocated buffer
+    BOOL result = WriteProcessMemory(process, remoteBuffer, dllPath, dllLen, NULL);
+    std::cout << "dllLen: " << dllLen << std::endl;
+
+    if (!result)
+    {
+        std::cout << "Failed to copy dll path into process" << std::endl;
+        CloseHandle(process);
+        return;
+    }
+
+    // TODO: error handling for this.
+    HMODULE kernel = GetModuleHandle("Kernel32");
+    VOID* loadFunction = GetProcAddress(kernel, "LoadLibraryA");
+
+    if (loadFunction == NULL)
+    {
+        std::cout << "Failed to get load function address" << std::endl;
+        CloseHandle(process);
+        return;
+    }
+
+    HANDLE thread = CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)loadFunction, remoteBuffer, 0, NULL);
+
+    if (thread == NULL)
+    {
+        std::cout << "Failed to create thread" << std::endl;
+    }
+    else
+    {
+        std::cout << "dll successfully injected, waiting for thread" << GetLastError() << std::endl;
+        WaitForSingleObject(CreateRemoteThread, INFINITE);
+        std::cout << "Finished waiting for thread" << GetLastError() << std::endl;
+    }
+
+    CloseHandle(process);
+}
+
+int main(int argc, char** argv)
+{
+    std::cout << "Running" << std::endl;
+
+    const char* processName = "GuiltyGearXrd.exe";
+    //const char* processName = "TestLoad.exe";
+    int pid = findProcess(processName);
+
+    if (pid)
+    {
+        std::cout << "found pid: " << pid << std::endl;
+    }
+    else
+    {
+        std::cout << "failed to find pid" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    injectDll(pid);
+
+    return EXIT_SUCCESS;
+}
