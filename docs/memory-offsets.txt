@@ -1,0 +1,1 @@
+global D3D9Device pointer in D3D9DynamicRHI.cpp: 01fb4bcc
