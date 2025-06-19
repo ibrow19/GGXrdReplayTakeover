@@ -39,7 +39,7 @@ int findProcess(const char* processName)
 void injectDll(int pid)
 {
     // TODO: update path once project structure more developed.
-    const char dllPath[] = "build\\Debug\\GGXrdReplayController.dll";
+    const char dllPath[] = "GGXrdReplayController.dll";
 
     const unsigned int dllLen = sizeof(dllPath);
 
@@ -56,7 +56,7 @@ void injectDll(int pid)
 
     // Allocate memory in process for dll.
     LPVOID remoteBuffer = VirtualAllocEx(process, NULL, dllLen, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
-     
+
     if (remoteBuffer == NULL)
     {
         std::cout << "Failed to allocate space for dll in process" << std::endl;
@@ -86,17 +86,46 @@ void injectDll(int pid)
         return;
     }
 
-    HANDLE thread = CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)loadFunction, remoteBuffer, 0, NULL);
-
-    if (thread == NULL)
+    HANDLE injecterThread = CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)loadFunction, remoteBuffer, 0, NULL);
+    if (injecterThread == NULL)
     {
         std::cout << "Failed to create thread" << std::endl;
+        return;
+    }
+
+    WaitForSingleObject(injecterThread, INFINITE);
+    DWORD injectedBase;
+    GetExitCodeThread(injecterThread, &injectedBase);
+
+    // TODO: better way of getting function offset.
+    HMODULE localModule = LoadLibrary("GGXrdReplayController.dll");
+    if (localModule == NULL)
+    {
+        std::cout << "Failed to get local version of injected module" << std::endl;
+        return;
+    }
+
+    VOID* localInitFunction = GetProcAddress(localModule, "RunInitThread");
+    if (localInitFunction == NULL)
+    {
+        std::cout << "Failed to find init thread function: " << GetLastError() << std::endl;
+        return;
+    }
+
+    DWORD initOffset = (DWORD)localInitFunction - (DWORD)localModule;
+    DWORD remoteAddress = injectedBase + initOffset;
+
+    HANDLE initThread = CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)remoteAddress, NULL, 0, NULL);
+
+    if (initThread == NULL)
+    {
+        std::cout << "Failed to create init thread" << std::endl;
     }
     else
     {
-        std::cout << "dll successfully injected, waiting for thread" << GetLastError() << std::endl;
-        WaitForSingleObject(CreateRemoteThread, INFINITE);
-        std::cout << "Finished waiting for thread" << GetLastError() << std::endl;
+        std::cout << "waiting for init thread" << GetLastError() << std::endl;
+        WaitForSingleObject(initThread, INFINITE);
+        std::cout << "Finished waiting for init thread" << GetLastError() << std::endl;
     }
 
     CloseHandle(process);

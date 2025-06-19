@@ -17,6 +17,10 @@ set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgu
 set(IMGUI_BACKEND_SOURCES imgui/backends/imgui_impl_dx9.cpp imgui/backends/imgui_impl_win32.cpp)
 set(IMGUI_DIRS imgui imgui/backends/)
 
+# Detours
+set(DETOURS_LIB ${PROJECT_SOURCE_DIR}/Detours/lib.X86/detours.lib)
+set(DETOURS_INCLUDES Detours/include/)
+
 set(INJECTOR_DIR injector)
 file(GLOB_RECURSE INJECTOR_SOURCES ${INJECTOR_DIR}/*.cpp)
 
@@ -32,4 +36,12 @@ add_executable(${PROJECT_NAME} ${INJECTOR_SOURCES})
 add_executable(TestLoad ${TEST_SOURCES})
 
 add_library(${REPLAY_CONTROLLER_LIB_NAME} SHARED ${REPLAY_CONTROLLER_SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
-include_directories(${REPLAY_CONTROLLER_LIB_NAME} PRIVATE ${IMGUI_DIRS})
+target_link_libraries(${REPLAY_CONTROLLER_LIB_NAME} d3d9.lib ${DETOURS_LIB})
+include_directories(${REPLAY_CONTROLLER_LIB_NAME} PRIVATE ${IMGUI_DIRS} ${DETOURS_INCLUDES})
+
+set(D3D9_TEST_DIR d3d9-test)
+file(GLOB_RECURSE D3D9_TEST_SOURCES ${D3D9_TEST_DIR}/*.cpp)
+add_executable(D3D9Test_DebugInfo WIN32 ${D3D9_TEST_SOURCES} ${IMGUI_SOURCES} ${IMGUI_BACKEND_SOURCES})
+
+target_link_libraries(D3D9Test_DebugInfo d3d9.lib ${DETOURS_LIB})
+include_directories(D3D9Test_DebugInfo PRIVATE ${IMGUI_DIRS} ${DETOURS_INCLUDES})
