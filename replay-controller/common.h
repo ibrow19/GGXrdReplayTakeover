@@ -3,7 +3,7 @@
 #include <windows.h>
 #include <Psapi.h>
 
-inline const char* GAppName = "Replay Controller";
-inline const char* GGameName = "GuiltyGearXrd.exe";
+inline const char* AppName = "Replay Controller";
+inline const char* GameName = "GuiltyGearXrd.exe";
 
 char* GetModuleOffset(const char* name);

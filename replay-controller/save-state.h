@@ -1,14 +1,23 @@
 #pragma once
 
-struct SaveStateTransactionTracker
+struct SaveStateTracker
 {
-    // Number of memcpys that have been executed while saving or loading a state.
-    DWORD MemCpyCount = 0;
+    DWORD padding[2];
 
-    // Current address for saving/loading data. Set to save state location
-    // initially then is incremented by size of each memcpy to keep track of
-    // location for the next memcpy.
-    DWORD Address = 0;  
+    // +0x8
+    DWORD saveAddress1 = 0;
+
+    // +0xc
+    DWORD saveMemCpyCount = 0;
+
+    // +0x10
+    DWORD loadMemCpyCount = 0;
+
+    // +0x14
+    DWORD loadAddress = 0;
+
+    // +0x18
+    DWORD saveAddress2 = 0;
 };
 
 enum SaveStateSectionBase 
@@ -20,13 +29,13 @@ enum SaveStateSectionBase
 // Part of the save state data. Each section has a function for loading and saving, 
 // each function's address is relative to the Xrd module. 
 //
-// Each section has the specified Size in memory and resides at the specific
-// offset, either from the xrd module or the currently used AswEngine object.
+// Each section resides at the specific offset, either from the xrd module or the 
+// currently used AswEngine object.
 struct SaveStateSection
 {
-    DWORD SaveFunctionAddress;
-    DWORD LoadFunctionAddress;
+    DWORD saveFunctionOffset;
+    DWORD loadFunctionOffset;
 
-    SaveStateSectionBase Base;
-    DWORD Offset;
+    SaveStateSectionBase base;
+    DWORD offset;
 };

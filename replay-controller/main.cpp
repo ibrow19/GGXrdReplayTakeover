@@ -1,9 +1,9 @@
+#include <common.h>
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
 #include <d3d9.h>
 #include <detours.h>
-#include <common.h>
 
 typedef HRESULT(STDMETHODCALLTYPE* D3D9Present_t)(IDirect3DDevice9* pThis, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
 
@@ -33,7 +33,7 @@ void PrepareRenderImgui()
         GSavedState = new char[memSize];
     }
 
-    char* xrdOffset = GetModuleOffset(GGameName);
+    char* xrdOffset = GetModuleOffset(GameName);
     char** enginePointerOffset = (char**)(xrdOffset + 0x198b6e4);
     char* enginePointer = *enginePointerOffset;
     char* listPointer = *((char**)(enginePointer + 0x1fc));
@@ -47,15 +47,15 @@ void PrepareRenderImgui()
 
     if (ImGui::Button("Save"))
     {
-        //MessageBox(NULL, "Saving", GAppName, MB_OK);
-        memcpy(GSavedState, listPointer, memSize);
-        GSavedCount = *countPointer;
+        //MessageBox(NULL, "Saving", AppName, MB_OK);
+        //memcpy(GSavedState, listPointer, memSize);
+        //GSavedCount = *countPointer;
     }
     if (ImGui::Button("Load"))
     {
-        memcpy(listPointer, GSavedState, memSize);
-        *countPointer = GSavedCount;
-        //MessageBox(NULL, "Loading", GAppName, MB_OK);
+        //memcpy(listPointer, GSavedState, memSize);
+        //*countPointer = GSavedCount;
+        //MessageBox(NULL, "Loading", AppName, MB_OK);
     }
 
     //ImGui::("P2 Health", &GP2Health, 0, 420);
@@ -130,7 +130,7 @@ void InitPresentDetour()
     IDirect3D9* dummyD3D = Direct3DCreate9(D3D_SDK_VERSION);
     if (!dummyD3D)
     {
-        MessageBox(NULL, "Failed to create dummy D3D object", GAppName, MB_OK);
+        MessageBox(NULL, "Failed to create dummy D3D object", AppName, MB_OK);
         return;
     }
 
@@ -150,8 +150,8 @@ void InitPresentDetour()
     {
         char buffer[33];
         itoa(GetLastError(), buffer, 10);
-        MessageBox(NULL, "Failed to create dummy window", GAppName, MB_OK);
-        MessageBox(NULL, buffer, GAppName, MB_OK);
+        MessageBox(NULL, "Failed to create dummy window", AppName, MB_OK);
+        MessageBox(NULL, buffer, AppName, MB_OK);
         return;
     }
 
@@ -180,8 +180,8 @@ void InitPresentDetour()
     {
         char buffer[33];
         itoa(GetLastError(), buffer, 10);
-        MessageBox(NULL, "Failed to create dummy device", GAppName, MB_OK);
-        MessageBox(NULL, buffer, GAppName, MB_OK);
+        MessageBox(NULL, "Failed to create dummy device", AppName, MB_OK);
+        MessageBox(NULL, buffer, AppName, MB_OK);
         return;
     }
 
@@ -230,7 +230,7 @@ void HealthDetourer::SetHealthDetour(int health)
 
 void InitHealthDetour()
 {
-    char* xrdOffset = GetModuleOffset(GGameName);
+    char* xrdOffset = GetModuleOffset(GameName);
     LPVOID setHealthOffset = (LPVOID)(xrdOffset + 0xA05060);
     HealthDetourer::setHealthReal = (SetHealth_t)setHealthOffset;
 
