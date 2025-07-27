@@ -1,10 +1,9 @@
-#include <windows.h>
-#include <Psapi.h>
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
 #include <d3d9.h>
 #include <detours.h>
+#include <common.h>
 
 typedef HRESULT(STDMETHODCALLTYPE* D3D9Present_t)(IDirect3DDevice9* pThis, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
 
@@ -13,23 +12,60 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 WNDPROC GRealWndProc = nullptr;
 D3D9Present_t GRealPresent = nullptr;
 
-const char* GAppName = "Replay Controller";
-bool GbShowDemoWindow = true;
 bool GbImguiInitialised = false;
+
+// Imgui UI params
+bool GbShowDemoWindow = true;
+float GP1Health = 420;
+float GP2Health = 420;
+
+char* GSavedState = nullptr;
+int GSavedCount = 0;
+
+//size_t memSize = 422392;
+size_t memSize = 600000;
+//size_t memSize = 0000;
 
 void PrepareRenderImgui()
 {
+    if (GSavedState == nullptr)
+    {
+        GSavedState = new char[memSize];
+    }
+
+    char* xrdOffset = GetModuleOffset(GGameName);
+    char** enginePointerOffset = (char**)(xrdOffset + 0x198b6e4);
+    char* enginePointer = *enginePointerOffset;
+    char* listPointer = *((char**)(enginePointer + 0x1fc));
+    int* countPointer =  (int*)(enginePointer + 0xb4);
+
     ImGui_ImplDX9_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
     ImGui::Begin("Test window");
-    ImGui::Checkbox("Demo Window", &GbShowDemoWindow);
-    ImGui::End();
-    if (GbShowDemoWindow)
+
+    if (ImGui::Button("Save"))
     {
-        ImGui::ShowDemoWindow(&GbShowDemoWindow);
+        //MessageBox(NULL, "Saving", GAppName, MB_OK);
+        memcpy(GSavedState, listPointer, memSize);
+        GSavedCount = *countPointer;
     }
+    if (ImGui::Button("Load"))
+    {
+        memcpy(listPointer, GSavedState, memSize);
+        *countPointer = GSavedCount;
+        //MessageBox(NULL, "Loading", GAppName, MB_OK);
+    }
+
+    //ImGui::("P2 Health", &GP2Health, 0, 420);
+
+    //ImGui::Checkbox("Demo Window", &GbShowDemoWindow);
+    ImGui::End();
+    //if (GbShowDemoWindow)
+    //{
+    //    ImGui::ShowDemoWindow(&GbShowDemoWindow);
+    //}
 
     ImGui::EndFrame();
 }
@@ -88,38 +124,7 @@ HRESULT STDMETHODCALLTYPE DetourPresent(IDirect3DDevice9* pThis, const RECT* pSo
     return GRealPresent(pThis, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 }
 
-char* GetModuleOffset(const char* name)
-{
-    if (name == nullptr)
-    {
-        MessageBox(NULL, "GetModuleOffset: no name provided", GAppName, MB_OK);
-    }
-
-    HMODULE module = GetModuleHandleA(name);
-    if(module == nullptr)
-    {
-        MessageBox(NULL, "GetModuleOffset: failed to get module handle", GAppName, MB_OK);
-        return nullptr;
-    }
-
-    HANDLE process = GetCurrentProcess();
-    if (process == nullptr)
-    {
-        MessageBox(NULL, "GetModuleOffset: failed to get process handle", GAppName, MB_OK);
-        return nullptr;
-    }
-
-    MODULEINFO info;
-    if (!GetModuleInformation(process, module, &info, sizeof(MODULEINFO)))
-    {
-        MessageBox(NULL, "GetModuleOffset: failed to get module info", GAppName, MB_OK);
-        return nullptr;
-    }
-
-    return (char*)(info.lpBaseOfDll);
-}
-
-void InitDetour()
+void InitPresentDetour()
 {
     // Create Dummy D3D to find present address.
     IDirect3D9* dummyD3D = Direct3DCreate9(D3D_SDK_VERSION);
@@ -205,9 +210,69 @@ void InitDetour()
     DestroyWindow(dummyWindow);
 }
 
+typedef void(__thiscall* SetHealth_t)(LPVOID thisArg, int health);
+
+class HealthDetourer
+{
+public:
+    void SetHealthDetour(int health);
+
+    static SetHealth_t setHealthReal;
+};
+
+SetHealth_t HealthDetourer::setHealthReal = nullptr;
+
+void HealthDetourer::SetHealthDetour(int health)
+{
+    setHealthReal((LPVOID)this, 200);
+}
+
+
+void InitHealthDetour()
+{
+    char* xrdOffset = GetModuleOffset(GGameName);
+    LPVOID setHealthOffset = (LPVOID)(xrdOffset + 0xA05060);
+    HealthDetourer::setHealthReal = (SetHealth_t)setHealthOffset;
+
+    void (HealthDetourer::* setHealthDetour)(int) = &HealthDetourer::SetHealthDetour;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+    LONG result = DetourAttach(&(PVOID&)HealthDetourer::setHealthReal, *(PBYTE*)&setHealthDetour);
+
+    LONG commitResult = DetourTransactionCommit();
+
+    if (commitResult)
+    {
+        return;
+    }
+}
+
+//void InitSaveStateDetour()
+//{
+//    char* xrdOffset = GetModuleOffset("GuiltyGearXrd.exe");
+//    LPVOID saveStateOffset = (LPVOID)(xrdOffset + 0xc0f8a0);
+//
+//    void (HealthDetourer::* setHealthDetour)(int) = &HealthDetourer::SetHealthDetour;
+//
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//
+//    LONG result = DetourAttach(&(PVOID&)HealthDetourer::setHealthReal, *(PBYTE*)&setHealthDetour);
+//
+//    LONG commitResult = DetourTransactionCommit();
+//
+//    if (commitResult)
+//    {
+//        return;
+//    }
+//}
+
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
-    InitDetour();
+    InitPresentDetour();
+    //InitHealthDetour();
     return 1;
 }
 
