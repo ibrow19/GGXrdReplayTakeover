@@ -4,8 +4,9 @@
 #include <cassert>
 
 typedef void(__fastcall* StateTransactionFunction_t)(DWORD address);
+typedef DWORD(__fastcall* RealGetSaveStateTracker1_t)(DWORD manager);
 
-static DWORD (__fastcall * RealGetSaveStateTracker1)(DWORD manager) = NULL;
+static RealGetSaveStateTracker1_t RealGetSaveStateTracker1 = NULL;
 static DWORD (__stdcall * RealGetSaveStateTracker2)(void) = NULL;
 
 static bool GbStateDetourActive = false;
@@ -14,6 +15,9 @@ static SaveStateTracker GActiveSaveStateTracker;
 static const DWORD SaveStateSize = 0x23C732;
 static char CustomSaveState[SaveStateSize];
 static SaveStateTracker Tracker;
+static SaveStateTrackerIndirection TrackerIndirection;
+static SaveStateTrackerPointer TrackerPtr;
+
 
 // TODO: naming scheme for constants like this.
 // Save state is comprised 
@@ -176,10 +180,12 @@ void DetourSaveStateTrackerFunctions()
 {
     char* xrdOffset = GetModuleOffset(GameName);
 
-    DWORD getAddress1Offset = 0xc09c60;
-    DWORD getAddress2Offset = 0x4bff30;
-    char* trueGetAddress1 = xrdOffset + getAddress1Offset;
-    char* trueGetAddress2 = xrdOffset + getAddress2Offset;
+    DWORD getTracker1Offset = 0xc09c60;
+    DWORD getTracker2Offset = 0x4bff30;
+    char* trueGetTracker1 = xrdOffset + getTracker1Offset;
+    char* trueGetTracker2 = xrdOffset + getTracker2Offset;
+
+    RealGetSaveStateTracker1 = (RealGetSaveStateTracker1_t)trueGetTracker1;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
@@ -217,14 +223,25 @@ void SaveState()
     Tracker.saveAddress1 = (DWORD)CustomSaveState;
     Tracker.saveAddress2 = (DWORD)CustomSaveState;
 
+    TrackerIndirection.TrackerPtrPtr = (DWORD)&TrackerPtr;
+    TrackerPtr.saveStateIndex = 0;
+    TrackerPtr.trackerPtr = (DWORD)&Tracker;
+
     char* xrdOffset = GetModuleOffset(GameName);
     GbStateDetourActive = true;
-    CallSaveStateFunction(xrdOffset, SaveStateSections[0].saveFunctionOffset, SaveStateSections[0].base, SaveStateSections[0].offset);
 
-//    for (int i = 0; i < SaveStateFunctionCount; ++i)
-//    {
-//        CallSaveStateFunction(xrdOffset, SaveStateSections[i]);
-//    }
+    for (int i = 0; i < SaveStateFunctionCount; ++i)
+    {
+        if (i == 4 || i == 5 || i == 7 || i == 8 || i == 15)
+        {
+            continue;
+        }
+        CallSaveStateFunction(
+            xrdOffset, 
+            SaveStateSections[i].saveFunctionOffset, 
+            SaveStateSections[i].base, 
+            SaveStateSections[i].offset);
+    }
 
     GbStateDetourActive = false;
 }
@@ -236,6 +253,18 @@ void LoadState()
 
     char* xrdOffset = GetModuleOffset(GameName);
     GbStateDetourActive = true;
-    CallSaveStateFunction(xrdOffset, SaveStateSections[0].loadFunctionOffset, SaveStateSections[0].base, SaveStateSections[0].offset);
+
+    for (int i = 0; i < SaveStateFunctionCount; ++i)
+    {
+        if (i == 4 || i == 5 || i == 7 || i == 8 || i == 15)
+        {
+            continue;
+        }
+        CallSaveStateFunction(
+            xrdOffset, 
+            SaveStateSections[i].loadFunctionOffset, 
+            SaveStateSections[i].base, 
+            SaveStateSections[i].offset);
+    }
     GbStateDetourActive = false;
 }

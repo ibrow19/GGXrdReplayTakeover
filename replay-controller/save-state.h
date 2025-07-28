@@ -1,5 +1,19 @@
 #pragma once
 
+
+struct SaveStateTrackerIndirection
+{
+    // TODO: give pointer to the other object with an offset instead of using this padding.
+    char padding[0x108];
+    DWORD TrackerPtrPtr = 0;
+};
+
+struct SaveStateTrackerPointer
+{
+    DWORD trackerPtr = 0;
+    DWORD saveStateIndex = 0;
+};
+
 struct SaveStateTracker
 {
     DWORD padding[2];
@@ -39,3 +53,7 @@ struct SaveStateSection
     SaveStateSectionBase base;
     DWORD offset;
 };
+
+void DetourSaveStateTrackerFunctions();
+void SaveState();
+void LoadState();

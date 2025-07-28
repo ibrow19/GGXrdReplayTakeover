@@ -1,4 +1,5 @@
 #include <common.h>
+#include <save-state.h>
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
@@ -14,59 +15,24 @@ D3D9Present_t GRealPresent = nullptr;
 
 bool GbImguiInitialised = false;
 
-// Imgui UI params
-bool GbShowDemoWindow = true;
-float GP1Health = 420;
-float GP2Health = 420;
-
-char* GSavedState = nullptr;
-int GSavedCount = 0;
-
-//size_t memSize = 422392;
-size_t memSize = 600000;
-//size_t memSize = 0000;
-
 void PrepareRenderImgui()
 {
-    if (GSavedState == nullptr)
-    {
-        GSavedState = new char[memSize];
-    }
-
-    char* xrdOffset = GetModuleOffset(GameName);
-    char** enginePointerOffset = (char**)(xrdOffset + 0x198b6e4);
-    char* enginePointer = *enginePointerOffset;
-    char* listPointer = *((char**)(enginePointer + 0x1fc));
-    int* countPointer =  (int*)(enginePointer + 0xb4);
-
     ImGui_ImplDX9_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
     ImGui::Begin("Test window");
 
-    if (ImGui::Button("Save"))
+    if (ImGui::Button("Save") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F1))
     {
-        //MessageBox(NULL, "Saving", AppName, MB_OK);
-        //memcpy(GSavedState, listPointer, memSize);
-        //GSavedCount = *countPointer;
+        SaveState();
     }
-    if (ImGui::Button("Load"))
+    if (ImGui::Button("Load") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F2))
     {
-        //memcpy(listPointer, GSavedState, memSize);
-        //*countPointer = GSavedCount;
-        //MessageBox(NULL, "Loading", AppName, MB_OK);
+        LoadState();
     }
 
-    //ImGui::("P2 Health", &GP2Health, 0, 420);
-
-    //ImGui::Checkbox("Demo Window", &GbShowDemoWindow);
     ImGui::End();
-    //if (GbShowDemoWindow)
-    //{
-    //    ImGui::ShowDemoWindow(&GbShowDemoWindow);
-    //}
-
     ImGui::EndFrame();
 }
 
@@ -249,30 +215,10 @@ void InitHealthDetour()
     }
 }
 
-//void InitSaveStateDetour()
-//{
-//    char* xrdOffset = GetModuleOffset("GuiltyGearXrd.exe");
-//    LPVOID saveStateOffset = (LPVOID)(xrdOffset + 0xc0f8a0);
-//
-//    void (HealthDetourer::* setHealthDetour)(int) = &HealthDetourer::SetHealthDetour;
-//
-//    DetourTransactionBegin();
-//    DetourUpdateThread(GetCurrentThread());
-//
-//    LONG result = DetourAttach(&(PVOID&)HealthDetourer::setHealthReal, *(PBYTE*)&setHealthDetour);
-//
-//    LONG commitResult = DetourTransactionCommit();
-//
-//    if (commitResult)
-//    {
-//        return;
-//    }
-//}
-
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
     InitPresentDetour();
-    //InitHealthDetour();
+    DetourSaveStateTrackerFunctions();
     return 1;
 }
 
