@@ -12,11 +12,18 @@ struct SaveStateTrackerPointer
 {
     DWORD trackerPtr = 0;
     DWORD saveStateIndex = 0;
+    char padding[1000];
 };
 
 struct SaveStateTracker
 {
-    DWORD padding[2];
+    DWORD padding0;
+    DWORD saveStateIndex = 0;;
+    DWORD padding1;
+    DWORD padding2;
+
+    DWORD getTrackerAnchor;
+    DWORD padding3;
 
     // +0x8
     DWORD saveAddress1 = 0;

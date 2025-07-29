@@ -157,7 +157,7 @@ DWORD __fastcall DetourGetSaveStateTracker1(DWORD manager)
 {
     if (GbStateDetourActive)
     {
-        return (DWORD)&Tracker;
+        return (DWORD)&Tracker.getTrackerAnchor;
     }
 
     assert(RealGetSaveStateTracker1);
@@ -223,19 +223,16 @@ void SaveState()
     Tracker.saveAddress1 = (DWORD)CustomSaveState;
     Tracker.saveAddress2 = (DWORD)CustomSaveState;
 
-    TrackerIndirection.TrackerPtrPtr = (DWORD)&TrackerPtr;
-    TrackerPtr.saveStateIndex = 0;
-    TrackerPtr.trackerPtr = (DWORD)&Tracker;
-
     char* xrdOffset = GetModuleOffset(GameName);
+
+    // point to rollback manager to tracker
+    DWORD* saveSlotPtr = (DWORD*)(xrdOffset + 0x16da4f0);
+    *saveSlotPtr = (DWORD)&Tracker;
+
     GbStateDetourActive = true;
 
     for (int i = 0; i < SaveStateFunctionCount; ++i)
     {
-        if (i == 4 || i == 5 || i == 7 || i == 8 || i == 15)
-        {
-            continue;
-        }
         CallSaveStateFunction(
             xrdOffset, 
             SaveStateSections[i].saveFunctionOffset, 
@@ -256,10 +253,6 @@ void LoadState()
 
     for (int i = 0; i < SaveStateFunctionCount; ++i)
     {
-        if (i == 4 || i == 5 || i == 7 || i == 8 || i == 15)
-        {
-            continue;
-        }
         CallSaveStateFunction(
             xrdOffset, 
             SaveStateSections[i].loadFunctionOffset, 
