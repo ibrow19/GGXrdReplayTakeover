@@ -7,13 +7,17 @@
 #include <detours.h>
 
 typedef HRESULT(STDMETHODCALLTYPE* D3D9Present_t)(IDirect3DDevice9* pThis, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
+//typedef void(__fastcall* MainLoop_t)(DWORD param);
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-WNDPROC GRealWndProc = nullptr;
-D3D9Present_t GRealPresent = nullptr;
+WNDPROC GRealWndProc = NULL;
+D3D9Present_t GRealPresent = NULL;
+//MainLoop_t GRealMainLoop = NULL;
 
 bool GbImguiInitialised = false;
+bool GbPendingSave = false;
+bool GbPendingLoad = false;
 
 void PrepareRenderImgui()
 {
@@ -25,11 +29,11 @@ void PrepareRenderImgui()
 
     if (ImGui::Button("Save") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F1))
     {
-        SaveState();
+        GbPendingSave = true;
     }
     if (ImGui::Button("Load") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F2))
     {
-        LoadState();
+        GbPendingLoad = true;
     }
 
     ImGui::End();
@@ -176,48 +180,142 @@ void InitPresentDetour()
     DestroyWindow(dummyWindow);
 }
 
-typedef void(__thiscall* SetHealth_t)(LPVOID thisArg, int health);
+//typedef void(__thiscall* SetHealth_t)(LPVOID thisArg, int health);
+//
+//class HealthDetourer
+//{
+//public:
+//    void SetHealthDetour(int health);
+//
+//    static SetHealth_t setHealthReal;
+//};
+//
+//SetHealth_t HealthDetourer::setHealthReal = nullptr;
+//
+//void HealthDetourer::SetHealthDetour(int health)
+//{
+//    setHealthReal((LPVOID)this, 200);
+//}
+//
+//
+//void InitHealthDetour()
+//{
+//    char* xrdOffset = GetModuleOffset(GameName);
+//    LPVOID setHealthOffset = (LPVOID)(xrdOffset + 0xA05060);
+//    HealthDetourer::setHealthReal = (SetHealth_t)setHealthOffset;
+//
+//    void (HealthDetourer::* setHealthDetour)(int) = &HealthDetourer::SetHealthDetour;
+//
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//
+//    LONG result = DetourAttach(&(PVOID&)HealthDetourer::setHealthReal, *(PBYTE*)&setHealthDetour);
+//
+//    LONG commitResult = DetourTransactionCommit();
+//
+//    if (commitResult)
+//    {
+//        return;
+//    }
+//}
 
-class HealthDetourer
+typedef void(__thiscall* MainLoop_t)(LPVOID thisArg, DWORD param);
+
+class MainLoopDetourer
 {
 public:
-    void SetHealthDetour(int health);
+    void DetourMainLoop(DWORD param);
 
-    static SetHealth_t setHealthReal;
+    static MainLoop_t realMainLoop;
 };
 
-SetHealth_t HealthDetourer::setHealthReal = nullptr;
+MainLoop_t MainLoopDetourer::realMainLoop = nullptr;
 
-void HealthDetourer::SetHealthDetour(int health)
+void MainLoopDetourer::DetourMainLoop(DWORD param)
 {
-    setHealthReal((LPVOID)this, 200);
+    if (GbPendingSave)
+    {
+        SaveState();
+        GbPendingSave = false;
+    }
+    if (GbPendingLoad)
+    {
+        LoadState();
+        GbPendingLoad = false;
+    }
+
+    realMainLoop((LPVOID)this, param);
 }
 
+//void __fastcall DetourMainLoop(DWORD param)
+//{
+//    if (GbPendingSave)
+//    {
+//        SaveState();
+//        GbPendingSave = false;
+//    }
+//    if (GbPendingLoad)
+//    {
+//        LoadState();
+//        GbPendingLoad = false;
+//    }
+//
+//    GRealMainLoop(param);
+//}
 
-void InitHealthDetour()
+// TODO: naming of detour and init functions to be consistent suffix/prefix
+void InitMainLoopDetour()
 {
+    //DWORD mainLoopOffset = 0xa5df00;
+    DWORD mainLoopOffset = 0xa61240;
     char* xrdOffset = GetModuleOffset(GameName);
-    LPVOID setHealthOffset = (LPVOID)(xrdOffset + 0xA05060);
-    HealthDetourer::setHealthReal = (SetHealth_t)setHealthOffset;
+    char* mainLoopAddress = xrdOffset + mainLoopOffset;
 
-    void (HealthDetourer::* setHealthDetour)(int) = &HealthDetourer::SetHealthDetour;
+    //GRealMainLoop = (MainLoop_t)mainLoopAddress;
+    MainLoopDetourer::realMainLoop = (MainLoop_t)mainLoopAddress;
+    //MainLoop_t detourMainLoop = &MainLoopDetourer::DetourMainLoop;
+    void (MainLoopDetourer::* detourMainLoop)(DWORD) = &MainLoopDetourer::DetourMainLoop;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
+    //DetourAttach(&(PVOID&)GRealMainLoop, DetourMainLoop);
+    DetourAttach(&(PVOID&)MainLoopDetourer::realMainLoop, *(PBYTE*)&detourMainLoop);
+    DetourTransactionCommit();
+}
 
-    LONG result = DetourAttach(&(PVOID&)HealthDetourer::setHealthReal, *(PBYTE*)&setHealthDetour);
+typedef void(__fastcall* EntityUpdate_t)(DWORD entity);
+EntityUpdate_t GRealEntityUpdate = NULL;
 
-    LONG commitResult = DetourTransactionCommit();
+void __fastcall DetourEntityUpdate(DWORD entity)
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD onlineEntityUpdateOffset = 0xb6efd0;
+    EntityUpdate_t onlineEntityUpdate = (EntityUpdate_t)(xrdOffset + onlineEntityUpdateOffset);
+    onlineEntityUpdate(entity);
 
-    if (commitResult)
-    {
-        return;
-    }
+    GRealEntityUpdate(entity);
+}
+
+void InitEntityUpdateDetour()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+
+    DWORD entityUpdateOffset = 0x9f7950;
+    char* entityUpdateAddress = xrdOffset + entityUpdateOffset;
+
+    GRealEntityUpdate = (EntityUpdate_t)entityUpdateAddress;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)GRealEntityUpdate, DetourEntityUpdate);
+    DetourTransactionCommit();
 }
 
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
     InitPresentDetour();
+    InitMainLoopDetour();
+    InitEntityUpdateDetour();
     DetourSaveStateTrackerFunctions();
     return 1;
 }

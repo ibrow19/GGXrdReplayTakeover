@@ -6,8 +6,14 @@
 typedef void(__fastcall* StateTransactionFunction_t)(DWORD address);
 typedef DWORD(__fastcall* RealGetSaveStateTracker1_t)(DWORD manager);
 
-static RealGetSaveStateTracker1_t RealGetSaveStateTracker1 = NULL;
-static DWORD (__stdcall * RealGetSaveStateTracker2)(void) = NULL;
+typedef BYTE(__fastcall* GetRenderStateUpToDate_t)(void);
+
+typedef void(__fastcall* EntityActorManagementFunction_t)(DWORD aswEngine);
+typedef BYTE(__stdcall* ExtraPostLoadFunction1_t)(void);
+typedef void(__stdcall* ExtraPostLoadFunction2_t)(void);
+
+static RealGetSaveStateTracker1_t GRealGetSaveStateTracker1 = NULL;
+static DWORD (__stdcall* GRealGetSaveStateTracker2)(void) = NULL;
 
 static bool GbStateDetourActive = false;
 static SaveStateTracker GActiveSaveStateTracker;
@@ -160,8 +166,8 @@ DWORD __fastcall DetourGetSaveStateTracker1(DWORD manager)
         return (DWORD)&Tracker.getTrackerAnchor;
     }
 
-    assert(RealGetSaveStateTracker1);
-    return RealGetSaveStateTracker1(manager);
+    assert(GRealGetSaveStateTracker1);
+    return GRealGetSaveStateTracker1(manager);
 }
 
 DWORD __fastcall DetourGetSaveStateTracker2()
@@ -172,9 +178,30 @@ DWORD __fastcall DetourGetSaveStateTracker2()
 //        return (DWORD)((char*)&Tracker;
 //    }
 //
-    assert(RealGetSaveStateTracker2);
-    return RealGetSaveStateTracker2();
+    assert(GRealGetSaveStateTracker2);
+    return GRealGetSaveStateTracker2();
 }
+
+BYTE __fastcall DetourGetRenderStateUpToDate()
+{
+    return 0;
+}
+
+//void DetourRenderStateFunction()
+//{
+//    char* xrdOffset = GetModuleOffset(GameName);
+//
+//    DWORD funcOffset = 0xbfb840;
+//    char* trueGetTracker1 = xrdOffset + funcOffset;
+//
+//    RealGetSaveStateTracker1 = (RealGetSaveStateTracker1_t)trueGetTracker1;
+//
+//    DetourTransactionBegin();
+//    DetourUpdateThread(GetCurrentThread());
+//    DetourAttach(&(PVOID&)RealGetSaveStateTracker1, DetourGetSaveStateTracker1);
+//    DetourTransactionCommit();
+//
+//}
 
 void DetourSaveStateTrackerFunctions()
 {
@@ -185,11 +212,11 @@ void DetourSaveStateTrackerFunctions()
     char* trueGetTracker1 = xrdOffset + getTracker1Offset;
     char* trueGetTracker2 = xrdOffset + getTracker2Offset;
 
-    RealGetSaveStateTracker1 = (RealGetSaveStateTracker1_t)trueGetTracker1;
+    GRealGetSaveStateTracker1 = (RealGetSaveStateTracker1_t)trueGetTracker1;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)RealGetSaveStateTracker1, DetourGetSaveStateTracker1);
+    DetourAttach(&(PVOID&)GRealGetSaveStateTracker1, DetourGetSaveStateTracker1);
     DetourTransactionCommit();
 }
 
@@ -243,8 +270,40 @@ void SaveState()
     GbStateDetourActive = false;
 }
 
+void CallPreLoad()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD engineOffset = GetEngineOffset(xrdOffset) + 4;
+    EntityActorManagementFunction_t actorsFunc = (EntityActorManagementFunction_t)(xrdOffset + 0x9ec230);
+    actorsFunc(engineOffset);
+}
+
+void CallPostLoad()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD engineOffset = GetEngineOffset(xrdOffset) + 4;
+    EntityActorManagementFunction_t actorsFunc = (EntityActorManagementFunction_t)(xrdOffset + 0x9e2030);
+    actorsFunc(engineOffset);
+}
+
+void CallExtraPostLoad1()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    ExtraPostLoadFunction1_t func = (ExtraPostLoadFunction1_t)(xrdOffset + 0xbfcc60);
+    func();
+}
+
+void CallExtraPostLoad2()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    ExtraPostLoadFunction2_t func = (ExtraPostLoadFunction2_t)(xrdOffset + 0xbfbbb0);
+    func();
+}
+
 void LoadState()
 {
+    CallPreLoad();
+
     Tracker.loadMemCpyCount = 0;
     Tracker.loadAddress = (DWORD)CustomSaveState;
 
@@ -260,4 +319,8 @@ void LoadState()
             SaveStateSections[i].offset);
     }
     GbStateDetourActive = false;
+
+    CallPostLoad();
+    //CallExtraPostLoad1();
+    //CallExtraPostLoad2();
 }
