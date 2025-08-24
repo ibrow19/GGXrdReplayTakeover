@@ -2,6 +2,8 @@
 #include <windows.h>
 #include <tlhelp32.h>
 
+#define TEST_DEFINE 262144.0
+
 int findProcess(const char* processName)
 {
     HANDLE snapshot;
@@ -134,6 +136,22 @@ void injectDll(int pid)
 int main(int argc, char** argv)
 {
     std::cout << "Running" << std::endl;
+    float test2 = TEST_DEFINE * TEST_DEFINE;
+    float test3 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE;
+    float test4 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
+    float test5 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
+    float test6 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
+    float test7 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
+    float test8 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
+    float test9 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
+    if (test2 < test3)
+    {
+        std::cout << test2 << std::endl;
+    }
+    else
+    {
+        std::cout << test3 << std::endl;
+    }
 
     const char* processName = "GuiltyGearXrd.exe";
     //const char* processName = "TestLoad.exe";

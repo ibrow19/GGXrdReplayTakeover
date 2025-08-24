@@ -30,3 +30,29 @@ char* GetModuleOffset(const char* name)
 
     return (char*)(info.lpBaseOfDll);
 }
+
+// TODO: naming, we're not really getting the offset from this but rather the address
+DWORD GetEngineOffset(const char* moduleOffset)
+{
+    DWORD* enginePtr = (DWORD*)(moduleOffset + 0x198b6e4);
+    return *enginePtr;
+}
+
+void ForEachEntity(const std::function<void (DWORD)>& func)
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD enginePtr = GetEngineOffset(xrdOffset);
+
+    if (enginePtr == NULL)
+    {
+        return;
+    }
+
+    DWORD entityCount = *(DWORD*)(enginePtr + 0xb4);
+    DWORD* entityList =  (DWORD*)(enginePtr + 0x1fc);
+
+    for (DWORD i = 0; i < entityCount; ++i)
+    {
+        func(entityList[i]);
+    }
+}

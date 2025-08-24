@@ -231,8 +231,24 @@ public:
 
 MainLoop_t MainLoopDetourer::realMainLoop = nullptr;
 
+typedef void(__fastcall* EntityUpdate_t)(DWORD entity);
+void OnlineEntityUpdates()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD onlineEntityUpdateOffset = 0xb6efd0;
+    EntityUpdate_t onlineEntityUpdate = (EntityUpdate_t)(xrdOffset + onlineEntityUpdateOffset);
+
+    // TODO: make sure this isn't doing some unecessary allocation or something.
+    ForEachEntity([&onlineEntityUpdate](DWORD entity)
+        {
+            onlineEntityUpdate(entity);
+        });
+}
+
 void MainLoopDetourer::DetourMainLoop(DWORD param)
 {
+    OnlineEntityUpdates();
+
     if (GbPendingSave)
     {
         SaveState();
@@ -247,43 +263,22 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
     realMainLoop((LPVOID)this, param);
 }
 
-//void __fastcall DetourMainLoop(DWORD param)
-//{
-//    if (GbPendingSave)
-//    {
-//        SaveState();
-//        GbPendingSave = false;
-//    }
-//    if (GbPendingLoad)
-//    {
-//        LoadState();
-//        GbPendingLoad = false;
-//    }
-//
-//    GRealMainLoop(param);
-//}
-
 // TODO: naming of detour and init functions to be consistent suffix/prefix
 void InitMainLoopDetour()
 {
-    //DWORD mainLoopOffset = 0xa5df00;
     DWORD mainLoopOffset = 0xa61240;
     char* xrdOffset = GetModuleOffset(GameName);
     char* mainLoopAddress = xrdOffset + mainLoopOffset;
 
-    //GRealMainLoop = (MainLoop_t)mainLoopAddress;
     MainLoopDetourer::realMainLoop = (MainLoop_t)mainLoopAddress;
-    //MainLoop_t detourMainLoop = &MainLoopDetourer::DetourMainLoop;
     void (MainLoopDetourer::* detourMainLoop)(DWORD) = &MainLoopDetourer::DetourMainLoop;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    //DetourAttach(&(PVOID&)GRealMainLoop, DetourMainLoop);
     DetourAttach(&(PVOID&)MainLoopDetourer::realMainLoop, *(PBYTE*)&detourMainLoop);
     DetourTransactionCommit();
 }
 
-typedef void(__fastcall* EntityUpdate_t)(DWORD entity);
 EntityUpdate_t GRealEntityUpdate = NULL;
 
 void __fastcall DetourEntityUpdate(DWORD entity)
@@ -311,12 +306,66 @@ void InitEntityUpdateDetour()
     DetourTransactionCommit();
 }
 
+////////// Entity Init Detouring
+
+typedef void(__thiscall* EntityInit_t)(LPVOID thisArg, DWORD name, DWORD type);
+
+class EntityInitDetourer
+{
+public:
+    void DetourEntityInit(DWORD name, DWORD type);
+
+    static EntityInit_t realEntityInit;
+};
+
+EntityInit_t EntityInitDetourer::realEntityInit = nullptr;
+
+
+ // This update function is only used with simple entities. We can use
+ // entity fields reserved for more complicated, stateful entities to hold
+ // initalisation data to recreate these entities later. 
+void EntityInitDetourer::DetourEntityInit(DWORD name, DWORD type)
+{
+    realEntityInit((LPVOID)this, name, type);
+
+    // TODO: refactor all of this so setting/getting these particular flags
+    // doesn't involve any redefinition of addresses etc.
+    typedef void(__thiscall* SetString_t)(DWORD dest, DWORD src);
+
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD setStringOffset = 0x973390;
+    SetString_t setStringFunc = (SetString_t)(xrdOffset + setStringOffset);
+
+    DWORD stateNamePtr = (DWORD)this + 0x2858;
+    setStringFunc(stateNamePtr, name);
+
+    *(DWORD*)((DWORD)this + 0x287c) = type;
+}
+
+void InitEntityInitDetour()
+{
+    DWORD entityInitOffset = 0xa0e020;
+    char* xrdOffset = GetModuleOffset(GameName);
+    char* entityInitAddress = xrdOffset + entityInitOffset;
+
+    EntityInitDetourer::realEntityInit = (EntityInit_t)entityInitAddress;
+    void (EntityInitDetourer::* detourEntityInit)(DWORD, DWORD) = &EntityInitDetourer::DetourEntityInit;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)EntityInitDetourer::realEntityInit, *(PBYTE*)&detourEntityInit);
+    DetourTransactionCommit();
+}
+
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
+    // TODO: Divide these into other files where appropriate
     InitPresentDetour();
     InitMainLoopDetour();
-    InitEntityUpdateDetour();
+    //InitEntityUpdateDetour();
+    InitEntityInitDetour();
     DetourSaveStateTrackerFunctions();
+
     return 1;
 }
 

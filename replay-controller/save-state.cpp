@@ -9,7 +9,7 @@ typedef DWORD(__fastcall* RealGetSaveStateTracker1_t)(DWORD manager);
 typedef BYTE(__fastcall* GetRenderStateUpToDate_t)(void);
 
 typedef void(__fastcall* EntityActorManagementFunction_t)(DWORD aswEngine);
-typedef BYTE(__stdcall* ExtraPostLoadFunction1_t)(void);
+//typedef BYTE(__stdcall* ExtraPostLoadFunction1_t)(void);
 typedef void(__stdcall* ExtraPostLoadFunction2_t)(void);
 
 static RealGetSaveStateTracker1_t GRealGetSaveStateTracker1 = NULL;
@@ -220,12 +220,6 @@ void DetourSaveStateTrackerFunctions()
     DetourTransactionCommit();
 }
 
-DWORD GetEngineOffset(const char* moduleOffset)
-{
-    DWORD* enginePtr = (DWORD*)(moduleOffset + 0x198b6e4);
-    return *enginePtr;
-}
-
 void CallSaveStateFunction(const char* moduleOffset, DWORD functionOffset, SaveStateSectionBase base, DWORD stateOffset)
 {
     StateTransactionFunction_t stateFunc = (StateTransactionFunction_t)(moduleOffset + functionOffset);
@@ -242,6 +236,37 @@ void CallSaveStateFunction(const char* moduleOffset, DWORD functionOffset, SaveS
 
     DWORD statePtr = stateBase + stateOffset;
     stateFunc(statePtr);
+}
+
+void CallPreLoad()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD engineOffset = GetEngineOffset(xrdOffset) + 4;
+    EntityActorManagementFunction_t actorsFunc = (EntityActorManagementFunction_t)(xrdOffset + 0x9ec230);
+    actorsFunc(engineOffset);
+}
+
+void CallPostLoad()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    DWORD engineOffset = GetEngineOffset(xrdOffset) + 4;
+    EntityActorManagementFunction_t actorsFunc = (EntityActorManagementFunction_t)(xrdOffset + 0x9e2030);
+    actorsFunc(engineOffset);
+}
+
+typedef BYTE(__thiscall* ExtraPostLoadFunction1_t)(DWORD rollbackManager);
+void CallExtraPostLoad1()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    ExtraPostLoadFunction1_t func = (ExtraPostLoadFunction1_t)(xrdOffset + 0xbfcc60);
+    func(0);
+}
+
+void CallExtraPostLoad2()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    ExtraPostLoadFunction2_t func = (ExtraPostLoadFunction2_t)(xrdOffset + 0xbfbbb0);
+    func();
 }
 
 void SaveState()
@@ -267,47 +292,68 @@ void SaveState()
             SaveStateSections[i].offset);
     }
 
+    // If we don't reset the save slot ptr then the game will immediately crash
+    // trying to check it when exiting the current game.
+    *saveSlotPtr = NULL;
+
     GbStateDetourActive = false;
 }
 
-void CallPreLoad()
+typedef void(__thiscall* RecreateActor_t)(DWORD thisArg, DWORD stateName, DWORD unknown);
+void RecreateNonPlayerActors()
 {
     char* xrdOffset = GetModuleOffset(GameName);
-    DWORD engineOffset = GetEngineOffset(xrdOffset) + 4;
-    EntityActorManagementFunction_t actorsFunc = (EntityActorManagementFunction_t)(xrdOffset + 0x9ec230);
-    actorsFunc(engineOffset);
+    DWORD recreateActorOffset = 0xa0e020;
+    RecreateActor_t recreateActor = (RecreateActor_t)(xrdOffset + recreateActorOffset);
+    
+    ForEachEntity([&recreateActor](DWORD entity)
+        {
+            DWORD actorPtr = *(DWORD*)(entity + 0x27cc);
+            DWORD isPlayer = *(DWORD*)(entity + 0x10);
+
+            if (isPlayer == 0 && actorPtr != NULL)
+            {
+                DWORD name = entity + 0x2858;
+                DWORD type = *(DWORD*)(entity + 0x287c);
+                recreateActor(entity, name, type);
+            }
+        });
 }
 
-void CallPostLoad()
+typedef void(__fastcall* DestroyActor_t)(DWORD Entity);
+void DestroyNonPlayerActors()
 {
     char* xrdOffset = GetModuleOffset(GameName);
-    DWORD engineOffset = GetEngineOffset(xrdOffset) + 4;
-    EntityActorManagementFunction_t actorsFunc = (EntityActorManagementFunction_t)(xrdOffset + 0x9e2030);
-    actorsFunc(engineOffset);
-}
-
-void CallExtraPostLoad1()
-{
-    char* xrdOffset = GetModuleOffset(GameName);
-    ExtraPostLoadFunction1_t func = (ExtraPostLoadFunction1_t)(xrdOffset + 0xbfcc60);
-    func();
-}
-
-void CallExtraPostLoad2()
-{
-    char* xrdOffset = GetModuleOffset(GameName);
-    ExtraPostLoadFunction2_t func = (ExtraPostLoadFunction2_t)(xrdOffset + 0xbfbbb0);
-    func();
+    DWORD destroyActorOffset = 0xa08c20;
+    DestroyActor_t destroyActor = (DestroyActor_t)(xrdOffset + destroyActorOffset);
+    
+    ForEachEntity([&destroyActor](DWORD entity)
+        {
+            // TODO: refactor to avoid rewriting 27cc everythere etc.
+            DWORD actorPtr = *(DWORD*)(entity + 0x27cc);
+            DWORD isPlayer = *(DWORD*)(entity + 0x10);
+            if (isPlayer == 0 && actorPtr != NULL)
+            {
+                destroyActor(entity);
+            }
+        });
 }
 
 void LoadState()
 {
+    DestroyNonPlayerActors();
     CallPreLoad();
 
     Tracker.loadMemCpyCount = 0;
     Tracker.loadAddress = (DWORD)CustomSaveState;
 
     char* xrdOffset = GetModuleOffset(GameName);
+
+    // TODO: move to function.
+    // point to rollback manager to tracker
+    DWORD* saveSlotPtr = (DWORD*)(xrdOffset + 0x16da4f0);
+    *saveSlotPtr = (DWORD)&Tracker;
+
     GbStateDetourActive = true;
 
     for (int i = 0; i < SaveStateFunctionCount; ++i)
@@ -319,8 +365,8 @@ void LoadState()
             SaveStateSections[i].offset);
     }
     GbStateDetourActive = false;
+    *saveSlotPtr = NULL;
 
     CallPostLoad();
-    //CallExtraPostLoad1();
-    //CallExtraPostLoad2();
+    RecreateNonPlayerActors();
 }
