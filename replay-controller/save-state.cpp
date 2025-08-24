@@ -308,10 +308,12 @@ void RecreateNonPlayerActors()
     
     ForEachEntity([&recreateActor](DWORD entity)
         {
+            // TODO: move to class managing these queries.
             DWORD actorPtr = *(DWORD*)(entity + 0x27cc);
             DWORD isPlayer = *(DWORD*)(entity + 0x10);
+            DWORD isStateful = *(DWORD*)(entity + 0x2878);
 
-            if (isPlayer == 0 && actorPtr != NULL)
+            if (isPlayer == 0 && actorPtr != NULL && isStateful == 0)
             {
                 DWORD name = entity + 0x2858;
                 DWORD type = *(DWORD*)(entity + 0x287c);

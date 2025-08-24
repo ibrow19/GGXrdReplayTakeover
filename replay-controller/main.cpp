@@ -328,6 +328,14 @@ void EntityInitDetourer::DetourEntityInit(DWORD name, DWORD type)
 {
     realEntityInit((LPVOID)this, name, type);
 
+    // Don't overwrite these values if the entity needs them.
+    if (*(DWORD*)((DWORD)this + 0x2878) != 0 ||
+        *(DWORD*)((DWORD)this + 0x2858) != 0 ||
+        *(DWORD*)((DWORD)this + 0x287c) != 0)
+    {
+        return;
+    }
+
     // TODO: refactor all of this so setting/getting these particular flags
     // doesn't involve any redefinition of addresses etc.
     typedef void(__thiscall* SetString_t)(DWORD dest, DWORD src);
