@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 constexpr size_t SaveStateSize = 0x23C732;
 
 struct SaveStateTracker

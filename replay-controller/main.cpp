@@ -1,5 +1,6 @@
 #include <common.h>
 #include <save-state.h>
+#include <replay-manager.h>
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
@@ -7,19 +8,20 @@
 #include <detours.h>
 
 typedef HRESULT(STDMETHODCALLTYPE* D3D9Present_t)(IDirect3DDevice9* pThis, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
-//typedef void(__fastcall* MainLoop_t)(DWORD param);
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-WNDPROC GRealWndProc = NULL;
-D3D9Present_t GRealPresent = NULL;
-//MainLoop_t GRealMainLoop = NULL;
+static WNDPROC GRealWndProc = NULL;
+static D3D9Present_t GRealPresent = NULL;
 
 static bool GbImguiInitialised = false;
 static bool GbPendingSave = false;
 static bool GbPendingLoad = false;
 static bool GbStateSaved = false;
 static char GSaveStateBuffer[SaveStateSize];
+
+static int GSelectedFrame = 0;
+static ReplayManager GReplayManager;
 
 void PrepareRenderImgui()
 {
@@ -36,6 +38,28 @@ void PrepareRenderImgui()
     if (ImGui::Button("Load") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F2))
     {
         GbPendingLoad = true;
+    }
+
+    if (ImGui::Button("Start"))
+    {
+        GReplayManager.BeginRecording();
+    }
+
+    // TODO: move frame set to game loop.
+    if (GReplayManager.IsRecordingComplete())
+    {
+        if (ImGui::SliderInt("Frame", &GSelectedFrame, 0, ReplayManager::FrameCount - 1))
+        {
+            GSelectedFrame = GReplayManager.SetFrame(GSelectedFrame);
+        }
+        else if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_LeftArrow))
+        {
+            GSelectedFrame = GReplayManager.DecrementFrame();
+        }
+        else if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_RightArrow))
+        {
+            GSelectedFrame = GReplayManager.IncrementFrame();
+        }
     }
 
     ImGui::End();
@@ -182,44 +206,7 @@ void InitPresentDetour()
     DestroyWindow(dummyWindow);
 }
 
-//typedef void(__thiscall* SetHealth_t)(LPVOID thisArg, int health);
-//
-//class HealthDetourer
-//{
-//public:
-//    void SetHealthDetour(int health);
-//
-//    static SetHealth_t setHealthReal;
-//};
-//
-//SetHealth_t HealthDetourer::setHealthReal = nullptr;
-//
-//void HealthDetourer::SetHealthDetour(int health)
-//{
-//    setHealthReal((LPVOID)this, 200);
-//}
-//
-//
-//void InitHealthDetour()
-//{
-//    char* xrdOffset = GetModuleOffset(GameName);
-//    LPVOID setHealthOffset = (LPVOID)(xrdOffset + 0xA05060);
-//    HealthDetourer::setHealthReal = (SetHealth_t)setHealthOffset;
-//
-//    void (HealthDetourer::* setHealthDetour)(int) = &HealthDetourer::SetHealthDetour;
-//
-//    DetourTransactionBegin();
-//    DetourUpdateThread(GetCurrentThread());
-//
-//    LONG result = DetourAttach(&(PVOID&)HealthDetourer::setHealthReal, *(PBYTE*)&setHealthDetour);
-//
-//    LONG commitResult = DetourTransactionCommit();
-//
-//    if (commitResult)
-//    {
-//        return;
-//    }
-//}
+////////// Main Loop Detour
 
 typedef void(__thiscall* MainLoop_t)(LPVOID thisArg, DWORD param);
 
@@ -251,20 +238,25 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
 {
     OnlineEntityUpdates();
 
-    if (GbPendingSave)
+    if (GReplayManager.IsRecording())
+    {
+        GReplayManager.RecordFrame();
+    }
+    else if (GbPendingSave)
     {
         SaveState(GSaveStateBuffer);
-        GbPendingSave = false;
         GbStateSaved = true;
     }
-    if (GbPendingLoad)
+    else if (GbPendingLoad)
     {
-        GbPendingLoad = false;
         if (GbStateSaved)
         {
             LoadState(GSaveStateBuffer);
         }
     }
+
+    GbPendingSave = false;
+    GbPendingLoad = false;
 
     realMainLoop((LPVOID)this, param);
 }
@@ -284,6 +276,8 @@ void InitMainLoopDetour()
     DetourAttach(&(PVOID&)MainLoopDetourer::realMainLoop, *(PBYTE*)&detourMainLoop);
     DetourTransactionCommit();
 }
+
+////////// Entity Update Detour
 
 EntityUpdate_t GRealEntityUpdate = NULL;
 
