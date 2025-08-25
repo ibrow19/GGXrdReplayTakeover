@@ -326,12 +326,17 @@ EntityInit_t EntityInitDetourer::realEntityInit = nullptr;
  // initalisation data to recreate these entities later. 
 void EntityInitDetourer::DetourEntityInit(DWORD name, DWORD type)
 {
+    bool bRecreatingSimple = *(DWORD*)((DWORD)this + 0x27cc) != 0 && *(DWORD*)((DWORD)this + 0x2878) == 0;
+
     realEntityInit((LPVOID)this, name, type);
 
     // Don't overwrite these values if the entity needs them.
-    if (*(DWORD*)((DWORD)this + 0x2878) != 0 ||
-        *(DWORD*)((DWORD)this + 0x2858) != 0 ||
-        *(DWORD*)((DWORD)this + 0x287c) != 0)
+    // Ignore entities where the simple actor (27cc) is already set as that
+    // means we're resuing an existing simple actor and need to reset our custom changes.
+    if (!bRecreatingSimple &&
+            (*(DWORD*)((DWORD)this + 0x2878) != 0 ||
+             *(DWORD*)((DWORD)this + 0x2858) != 0 ||
+             *(DWORD*)((DWORD)this + 0x287c) != 0))
     {
         return;
     }
@@ -372,7 +377,7 @@ extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
     InitMainLoopDetour();
     //InitEntityUpdateDetour();
     InitEntityInitDetour();
-    DetourSaveStateTrackerFunctions();
+    InitSaveStateTrackerDetour();
 
     return 1;
 }

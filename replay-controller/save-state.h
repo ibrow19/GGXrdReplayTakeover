@@ -1,5 +1,6 @@
 #pragma once
 
+constexpr size_t SaveStateSize = 0x23C732;
 
 struct SaveStateTrackerIndirection
 {
@@ -61,6 +62,6 @@ struct SaveStateSection
     DWORD offset;
 };
 
-void DetourSaveStateTrackerFunctions();
+void InitSaveStateTrackerDetour();
 void SaveState();
 void LoadState();
