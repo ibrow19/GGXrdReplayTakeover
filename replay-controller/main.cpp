@@ -15,9 +15,11 @@ WNDPROC GRealWndProc = NULL;
 D3D9Present_t GRealPresent = NULL;
 //MainLoop_t GRealMainLoop = NULL;
 
-bool GbImguiInitialised = false;
-bool GbPendingSave = false;
-bool GbPendingLoad = false;
+static bool GbImguiInitialised = false;
+static bool GbPendingSave = false;
+static bool GbPendingLoad = false;
+static bool GbStateSaved = false;
+static char GSaveStateBuffer[SaveStateSize];
 
 void PrepareRenderImgui()
 {
@@ -251,13 +253,17 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
 
     if (GbPendingSave)
     {
-        SaveState();
+        SaveState(GSaveStateBuffer);
         GbPendingSave = false;
+        GbStateSaved = true;
     }
     if (GbPendingLoad)
     {
-        LoadState();
         GbPendingLoad = false;
+        if (GbStateSaved)
+        {
+            LoadState(GSaveStateBuffer);
+        }
     }
 
     realMainLoop((LPVOID)this, param);

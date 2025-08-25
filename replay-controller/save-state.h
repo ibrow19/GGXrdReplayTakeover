@@ -2,20 +2,6 @@
 
 constexpr size_t SaveStateSize = 0x23C732;
 
-struct SaveStateTrackerIndirection
-{
-    // TODO: give pointer to the other object with an offset instead of using this padding.
-    char padding[0x108];
-    DWORD TrackerPtrPtr = 0;
-};
-
-struct SaveStateTrackerPointer
-{
-    DWORD trackerPtr = 0;
-    DWORD saveStateIndex = 0;
-    char padding[1000];
-};
-
 struct SaveStateTracker
 {
     DWORD padding0;
@@ -63,5 +49,5 @@ struct SaveStateSection
 };
 
 void InitSaveStateTrackerDetour();
-void SaveState();
-void LoadState();
+void SaveState(char* dest);
+void LoadState(const char* src);

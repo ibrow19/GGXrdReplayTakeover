@@ -10,10 +10,7 @@ typedef void(__fastcall* EntityActorManagementFunction_t)(DWORD aswEngine);
 static RealGetSaveStateTracker_t GRealGetSaveStateTracker = NULL;
 static bool GbStateDetourActive = false;
 static SaveStateTracker GActiveSaveStateTracker;
-static char CustomSaveState[SaveStateSize];
-static SaveStateTracker Tracker;
-static SaveStateTrackerIndirection TrackerIndirection;
-static SaveStateTrackerPointer TrackerPtr;
+static SaveStateTracker GTracker;
 
 
 // TODO: naming scheme for constants like this.
@@ -154,7 +151,7 @@ DWORD __fastcall DetourGetSaveStateTracker(DWORD manager)
 {
     if (GbStateDetourActive)
     {
-        return (DWORD)&Tracker.getTrackerAnchor;
+        return (DWORD)&GTracker.getTrackerAnchor;
     }
 
     assert(GRealGetSaveStateTracker);
@@ -210,17 +207,17 @@ void CallPostLoad()
     actorsFunc(engineOffset);
 }
 
-void SaveState()
+void SaveState(char* dest)
 {
-    Tracker.saveMemCpyCount = 0;
-    Tracker.saveAddress1 = (DWORD)CustomSaveState;
-    Tracker.saveAddress2 = (DWORD)CustomSaveState;
+    GTracker.saveMemCpyCount = 0;
+    GTracker.saveAddress1 = (DWORD)dest;
+    GTracker.saveAddress2 = (DWORD)dest;
 
     char* xrdOffset = GetModuleOffset(GameName);
 
     // point to rollback manager to tracker
     DWORD* saveSlotPtr = (DWORD*)(xrdOffset + 0x16da4f0);
-    *saveSlotPtr = (DWORD)&Tracker;
+    *saveSlotPtr = (DWORD)&GTracker;
 
     GbStateDetourActive = true;
 
@@ -282,20 +279,20 @@ void DestroyNonPlayerActors()
         });
 }
 
-void LoadState()
+void LoadState(const char* src)
 {
     DestroyNonPlayerActors();
     CallPreLoad();
 
-    Tracker.loadMemCpyCount = 0;
-    Tracker.loadAddress = (DWORD)CustomSaveState;
+    GTracker.loadMemCpyCount = 0;
+    GTracker.loadAddress = (DWORD)src;
 
     char* xrdOffset = GetModuleOffset(GameName);
 
     // TODO: move to function.
     // point to rollback manager to tracker
     DWORD* saveSlotPtr = (DWORD*)(xrdOffset + 0x16da4f0);
-    *saveSlotPtr = (DWORD)&Tracker;
+    *saveSlotPtr = (DWORD)&GTracker;
 
     GbStateDetourActive = true;
 
