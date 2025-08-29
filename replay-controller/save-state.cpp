@@ -2,6 +2,7 @@
 #include <save-state.h>
 #include <detours.h>
 #include <cassert>
+#include <entity.h>
 
 typedef void(__fastcall* StateTransactionFunction_t)(DWORD address);
 typedef DWORD(__fastcall* RealGetSaveStateTracker_t)(DWORD manager);
@@ -279,6 +280,22 @@ void DestroyNonPlayerActors()
         });
 }
 
+typedef void(__thiscall* UpdatePlayerAnim_t)(DWORD entity, DWORD stateName, DWORD flag);
+static void UpdatePlayerAnimations()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    UpdatePlayerAnim_t updateAnim = (UpdatePlayerAnim_t)(xrdOffset + 0xa11ea0);
+
+    ForEachEntity([&updateAnim](DWORD entity)
+        {
+            if (Entity(entity).IsPlayer())
+            {
+                DWORD currentStateName = entity + 0xa58;
+                updateAnim(entity, currentStateName, 1);
+            }
+        });
+}
+
 void LoadState(const char* src)
 {
     DestroyNonPlayerActors();
@@ -309,4 +326,5 @@ void LoadState(const char* src)
 
     CallPostLoad();
     RecreateNonPlayerActors();
+    UpdatePlayerAnimations();
 }
