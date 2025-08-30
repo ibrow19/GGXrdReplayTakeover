@@ -22,6 +22,7 @@ static char GSaveStateBuffer[SaveStateSize];
 
 static int GSelectedFrame = 0;
 static ReplayManager GReplayManager;
+static bool GbPaused = false;
 
 void PrepareRenderImgui()
 {
@@ -38,6 +39,11 @@ void PrepareRenderImgui()
     if (ImGui::Button("Load") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F2))
     {
         GbPendingLoad = true;
+    }
+
+    if (ImGui::Button("Pause") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F4))
+    {
+        GbPaused = !GbPaused;
     }
 
     if (ImGui::Button("Start"))
@@ -236,6 +242,16 @@ void OnlineEntityUpdates()
 
 void MainLoopDetourer::DetourMainLoop(DWORD param)
 {
+    if (GbPaused)
+    {
+        char* xrdOffset = GetModuleOffset(GameName);
+        DWORD engine = GetEngineOffset(xrdOffset);
+        DWORD offset1 = *(DWORD*)(engine + 0x22e630);
+        DWORD offset2 = *(DWORD*)(offset1 + 0x37c);
+        DWORD* pauseFlag = (DWORD*)(offset2 + 0x1c8);
+        *pauseFlag = 1;
+    }
+
     OnlineEntityUpdates();
 
     if (GReplayManager.IsRecording())
