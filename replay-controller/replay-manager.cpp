@@ -1,68 +1,88 @@
 #include <replay-manager.h>
+#include <common.h>
 
 ReplayManager::ReplayManager()
-{
-    Reset();
-}
+: frameCount(0),
+  start(0),
+  currentFrame(0)
+{}
 
 void ReplayManager::Reset()
 {
-    bRecording = false;
-    bRecordingComplete = false;
+    frameCount = 0;
+    start = 0;
     currentFrame = 0;
 }
 
-void ReplayManager::BeginRecording()
+char* ReplayManager::GetCurrentFrameAddress()
 {
-    Reset();
-    bRecording = true;
+    size_t bufferIndex = (start + currentFrame) % MaxFrameCount;
+    return frames + bufferIndex * SaveStateSize;
 }
 
-void ReplayManager::RecordFrame()
+size_t ReplayManager::RecordFrame()
 {
-    if (!bRecording)
+    if (!IsEmpty())
     {
-        return;
+        ++currentFrame;
     }
 
-    SaveState(SavedFrames + currentFrame * SaveStateSize);
-    ++currentFrame;
-
-    if (currentFrame == FrameCount)
+    if (currentFrame == frameCount)
     {
-        bRecording = false;
-        bRecordingComplete = true;
+        SaveState(GetCurrentFrameAddress());
+
+        if (frameCount == MaxFrameCount)
+        {
+            ++start;
+            --currentFrame;
+        }
+        else
+        {
+            ++frameCount;
+        }
     }
+
+    return currentFrame;
 }
 
-size_t ReplayManager::SetFrame(size_t index)
+size_t ReplayManager::LoadFrame(size_t index)
 {
-    if (!bRecordingComplete || index >= FrameCount)
+    if (index >= frameCount)
     {
         return currentFrame;
     }
 
-    LoadState(SavedFrames + index * SaveStateSize);
     currentFrame = index;
+    LoadState(GetCurrentFrameAddress());
     return currentFrame;
 }
 
-size_t ReplayManager::IncrementFrame()
+size_t ReplayManager::LoadNextFrame()
 {
-    return SetFrame(currentFrame + 1);
+    return LoadFrame(currentFrame + 1);
 }
 
-size_t ReplayManager::DecrementFrame()
+size_t ReplayManager::LoadPreviousFrame()
 {
-    return SetFrame(currentFrame - 1);
+    if (currentFrame == 0)
+    {
+        return currentFrame;
+    }
+    return LoadFrame(currentFrame - 1);
 }
 
-bool ReplayManager::IsRecording() const
+size_t ReplayManager::GetCurrentFrame() const
 {
-    return bRecording;
+    return currentFrame;
 }
 
-bool ReplayManager::IsRecordingComplete() const
+size_t ReplayManager::GetFrameCount() const
 {
-    return bRecordingComplete;
+    return frameCount;
 }
+
+bool ReplayManager::IsEmpty() const
+{
+    return frameCount == 0;
+}
+

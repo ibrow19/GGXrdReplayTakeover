@@ -23,6 +23,8 @@ static char GSaveStateBuffer[SaveStateSize];
 static int GSelectedFrame = 0;
 static ReplayManager GReplayManager;
 static bool GbPaused = false;
+static bool GbRecording = false;
+static bool GbPendingLoadFrame = false;
 
 void PrepareRenderImgui()
 {
@@ -41,30 +43,37 @@ void PrepareRenderImgui()
         GbPendingLoad = true;
     }
 
-    if (ImGui::Button("Pause") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F4))
+    if (ImGui::Button("Start") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F3))
+    {
+        GbRecording = true;
+    }
+
+    if (ImGui::Button("Stop") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F4))
+    {
+        GbRecording = false;
+        GReplayManager.Reset();
+    }
+
+    if (ImGui::Button("Pause") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F5))
     {
         GbPaused = !GbPaused;
     }
 
-    if (ImGui::Button("Start"))
+    if (!GReplayManager.IsEmpty())
     {
-        GReplayManager.BeginRecording();
-    }
-
-    // TODO: move frame set to game loop.
-    if (GReplayManager.IsRecordingComplete())
-    {
-        if (ImGui::SliderInt("Frame", &GSelectedFrame, 0, ReplayManager::FrameCount - 1))
+        if (ImGui::SliderInt("Frame", &GSelectedFrame, 0, GReplayManager.GetFrameCount() - 1))
         {
-            GSelectedFrame = GReplayManager.SetFrame(GSelectedFrame);
+            GbPendingLoadFrame = true;
         }
         else if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_LeftArrow))
         {
-            GSelectedFrame = GReplayManager.DecrementFrame();
+            GbPendingLoadFrame = true;
+            GSelectedFrame = GReplayManager.GetCurrentFrame() - 1;
         }
         else if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_RightArrow))
         {
-            GSelectedFrame = GReplayManager.IncrementFrame();
+            GbPendingLoadFrame = true;
+            GSelectedFrame = GReplayManager.GetCurrentFrame() + 1;
         }
     }
 
@@ -254,9 +263,19 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
 
     OnlineEntityUpdates();
 
-    if (GReplayManager.IsRecording())
+    if (GbRecording)
     {
-        GReplayManager.RecordFrame();
+        if (GbPaused)
+        {
+            if (GbPendingLoadFrame)
+            {
+                GSelectedFrame = GReplayManager.LoadFrame(GSelectedFrame);
+            }
+        }
+        else
+        {
+            GSelectedFrame = GReplayManager.RecordFrame();
+        }
     }
     else if (GbPendingSave)
     {
