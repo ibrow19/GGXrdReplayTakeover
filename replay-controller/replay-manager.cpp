@@ -7,6 +7,11 @@ ReplayManager::ReplayManager()
   currentFrame(0)
 {}
 
+void ReplayManager::Init()
+{
+    inputManager.Init();
+}
+
 void ReplayManager::Reset()
 {
     frameCount = 0;
@@ -14,10 +19,9 @@ void ReplayManager::Reset()
     currentFrame = 0;
 }
 
-char* ReplayManager::GetCurrentFrameAddress()
+size_t ReplayManager::GetCurrentFrameBufferPos() const
 {
-    size_t bufferIndex = (start + currentFrame) % MaxFrameCount;
-    return frames + bufferIndex * SaveStateSize;
+    return (start + currentFrame) % MaxFrameCount;
 }
 
 size_t ReplayManager::RecordFrame()
@@ -29,7 +33,9 @@ size_t ReplayManager::RecordFrame()
 
     if (currentFrame == frameCount)
     {
-        SaveState(GetCurrentFrameAddress());
+        size_t bufferIndex = GetCurrentFrameBufferPos();
+        SaveState(frames + bufferIndex * SaveStateSize);
+        replayPositions[bufferIndex] = inputManager.GetReplayPosition();
 
         if (frameCount == MaxFrameCount)
         {
@@ -53,7 +59,9 @@ size_t ReplayManager::LoadFrame(size_t index)
     }
 
     currentFrame = index;
-    LoadState(GetCurrentFrameAddress());
+    size_t bufferIndex = GetCurrentFrameBufferPos();
+    LoadState(frames + bufferIndex * SaveStateSize);
+    inputManager.SetReplayPosition(replayPositions[bufferIndex]);
     return currentFrame;
 }
 
@@ -85,4 +93,3 @@ bool ReplayManager::IsEmpty() const
 {
     return frameCount == 0;
 }
-

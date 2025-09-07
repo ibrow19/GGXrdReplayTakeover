@@ -1,6 +1,7 @@
 #pragma once
 
 #include <save-state.h>
+#include <input-manager.h>
 
 // Ring buffer of recent frames in a replay with the ability to set
 // the current game state to any of the frames currently in the buffer.
@@ -15,6 +16,9 @@ public:
     ReplayManager();
 
     void Reset();
+
+    // Call once modules have been loaded to establishes pointers to game state
+    void Init();
 
     size_t GetCurrentFrame() const;
     size_t GetFrameCount() const;
@@ -35,7 +39,7 @@ public:
 
 private:
 
-    char* GetCurrentFrameAddress();
+    size_t GetCurrentFrameBufferPos() const;
 
 private:
 
@@ -49,4 +53,7 @@ private:
     size_t currentFrame;
 
     char frames[MaxFrameCount * SaveStateSize];
+    DWORD replayPositions[MaxFrameCount];
+
+    InputManager inputManager;
 };

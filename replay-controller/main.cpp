@@ -413,6 +413,7 @@ extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
     //InitEntityUpdateDetour();
     InitEntityInitDetour();
     InitSaveStateTrackerDetour();
+    GReplayManager.Init();
 
     return 1;
 }
