@@ -53,7 +53,8 @@ private:
     size_t currentFrame;
 
     char frames[MaxFrameCount * SaveStateSize];
-    DWORD replayPositions[MaxFrameCount];
+    ReplayPosition p1ReplayPositions[MaxFrameCount];
+    ReplayPosition p2ReplayPositions[MaxFrameCount];
 
     InputManager inputManager;
 };

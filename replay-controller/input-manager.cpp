@@ -17,9 +17,18 @@ DWORD InputManager::GetP2InputMode() const
     return *(DWORD*)(ptr + P2ModeOffset);
 }
 
-DWORD InputManager::GetReplayPosition() const
+ReplayPosition InputManager::GetP1ReplayPos() const
 {
-    return *(DWORD*)(ptr + ReplayPositionOffset);
+    ReplayPosition pos;
+    memcpy(&pos.data, (void*)(ptr + P1ReplayPosOffset), ReplayPosition::Size);
+    return pos;
+}
+
+ReplayPosition InputManager::GetP2ReplayPos() const
+{
+    ReplayPosition pos;
+    memcpy(&pos.data, (void*)(ptr + P2ReplayPosOffset), ReplayPosition::Size);
+    return pos;
 }
 
 void InputManager::SetP1InputMode(InputMode mode)
@@ -32,7 +41,12 @@ void InputManager::SetP2InputMode(InputMode mode)
     *(DWORD*)(ptr + P2ModeOffset) = (DWORD)mode;
 }
 
-void InputManager::SetReplayPosition(DWORD pos)
+void InputManager::SetP1ReplayPos(const ReplayPosition& pos)
 {  
-    *(DWORD*)(ptr + ReplayPositionOffset) = pos;
+    memcpy((void*)(ptr + P1ReplayPosOffset), &pos.data, ReplayPosition::Size);
+}
+
+void InputManager::SetP2ReplayPos(const ReplayPosition& pos)
+{  
+    memcpy((void*)(ptr + P2ReplayPosOffset), &pos.data, ReplayPosition::Size);
 }

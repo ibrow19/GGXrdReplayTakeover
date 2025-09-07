@@ -35,7 +35,8 @@ size_t ReplayManager::RecordFrame()
     {
         size_t bufferIndex = GetCurrentFrameBufferPos();
         SaveState(frames + bufferIndex * SaveStateSize);
-        replayPositions[bufferIndex] = inputManager.GetReplayPosition();
+        p1ReplayPositions[bufferIndex] = inputManager.GetP1ReplayPos();
+        p2ReplayPositions[bufferIndex] = inputManager.GetP2ReplayPos();
 
         if (frameCount == MaxFrameCount)
         {
@@ -61,7 +62,8 @@ size_t ReplayManager::LoadFrame(size_t index)
     currentFrame = index;
     size_t bufferIndex = GetCurrentFrameBufferPos();
     LoadState(frames + bufferIndex * SaveStateSize);
-    inputManager.SetReplayPosition(replayPositions[bufferIndex]);
+    inputManager.SetP1ReplayPos(p1ReplayPositions[bufferIndex]);
+    inputManager.SetP2ReplayPos(p2ReplayPositions[bufferIndex]);
     return currentFrame;
 }
 
