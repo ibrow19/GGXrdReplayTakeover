@@ -307,7 +307,7 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
             InputMode p2Mode = GbControlP2 ? InputMode::Player : InputMode::Replay;
             GReplayManager.SetPlayerControl(p1Mode, p2Mode);
         }
-        else if (GbPendingRetry && GbRetrying)
+        else if (GbPendingCancel && GbRetrying)
         {
             GbPaused = false;
             GbRetrying = false;
@@ -459,6 +459,32 @@ void InitEntityInitDetour()
     DetourTransactionCommit();
 }
 
+
+////////// Replay HUD Detouring
+
+typedef void(__fastcall* ReplayHUDUpdate_t)(DWORD param);
+static ReplayHUDUpdate_t GRealReplayHUDUpdate = NULL;
+void __fastcall DetourReplayHUDUpdate(DWORD param)
+{
+    if (!GbRetrying)
+    {
+        GRealReplayHUDUpdate(param);
+    }
+}
+
+void InitReplayHUDDetour()
+{
+    char* xrdOffset = GetModuleOffset(GameName);
+    char* hudUpdateAddress = xrdOffset + 0xbc30a0;
+
+    GRealReplayHUDUpdate = (ReplayHUDUpdate_t)hudUpdateAddress;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)GRealReplayHUDUpdate, DetourReplayHUDUpdate);
+    DetourTransactionCommit();
+}
+
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
     // TODO: Divide these into other files where appropriate
@@ -467,6 +493,7 @@ extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
     //InitEntityUpdateDetour();
     InitEntityInitDetour();
     InitSaveStateTrackerDetour();
+    InitReplayHUDDetour();
     GReplayManager.Init();
 
     return 1;
