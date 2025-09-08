@@ -8,15 +8,15 @@ struct ReplayPosition
     char data[Size];
 };
 
+enum class InputMode : DWORD
+{
+    Player = 0,
+    Replay = 2
+};
+
+
 class InputManager
 {
-public:
-    enum class InputMode : DWORD
-    {
-        Player = 0,
-        Replay = 2
-    };
-
 public:
 
     void Init();

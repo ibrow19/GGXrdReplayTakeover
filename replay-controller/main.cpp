@@ -25,6 +25,12 @@ static ReplayManager GReplayManager;
 static bool GbPaused = false;
 static bool GbRecording = false;
 static bool GbPendingLoadFrame = false;
+static bool GbPendingRetry = false;
+static bool GbPendingCancel = false;
+static int GBookmark = 0;
+static bool GbRetrying = false;
+static bool GbControlP1 = false;
+static bool GbControlP2 = false;
 
 void PrepareRenderImgui()
 {
@@ -34,30 +40,57 @@ void PrepareRenderImgui()
 
     ImGui::Begin("Test window");
 
+    ImGui::Text("Save State");
     if (ImGui::Button("Save") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F1))
     {
         GbPendingSave = true;
     }
+
+    ImGui::SameLine();
     if (ImGui::Button("Load") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F2))
     {
         GbPendingLoad = true;
     }
 
+    ImGui::Text("Replay Takeover");
     if (ImGui::Button("Start") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F3))
     {
         GbRecording = true;
     }
 
+    ImGui::SameLine();
     if (ImGui::Button("Stop") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F4))
     {
         GbRecording = false;
         GReplayManager.Reset();
     }
 
+    ImGui::SameLine();
     if (ImGui::Button("Pause") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F5))
     {
         GbPaused = !GbPaused;
     }
+
+    if (ImGui::Button("Bookmark") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F6))
+    {
+        GBookmark = GSelectedFrame; 
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Retry") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F7))
+    {
+        GbPendingRetry = true;
+    }
+
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F8))
+    {
+        GbPendingCancel = true;
+    }
+
+    ImGui::Checkbox("P1 Control", &GbControlP1);
+    ImGui::SameLine();
+    ImGui::Checkbox("P2 Control", &GbControlP2);
 
     if (!GReplayManager.IsEmpty())
     {
@@ -265,16 +298,35 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
 
     if (GbRecording)
     {
-        if (GbPaused)
+        if (GbPendingRetry)
         {
-            if (GbPendingLoadFrame)
-            {
-                GSelectedFrame = GReplayManager.LoadFrame(GSelectedFrame);
-            }
+            GbPaused = false;
+            GbRetrying = true;
+            GSelectedFrame = GReplayManager.LoadFrame(GBookmark);
+            InputMode p1Mode = GbControlP1 ? InputMode::Player : InputMode::Replay;
+            InputMode p2Mode = GbControlP2 ? InputMode::Player : InputMode::Replay;
+            GReplayManager.SetPlayerControl(p1Mode, p2Mode);
         }
-        else
+        else if (GbPendingRetry && GbRetrying)
         {
-            GSelectedFrame = GReplayManager.RecordFrame();
+            GbPaused = false;
+            GbRetrying = false;
+            GSelectedFrame = GReplayManager.LoadFrame(GBookmark);
+            GReplayManager.ResetPlayerControl();
+        }
+        else if (!GbRetrying)
+        {
+            if (GbPaused)
+            {
+                if (GbPendingLoadFrame)
+                {
+                    GSelectedFrame = GReplayManager.LoadFrame(GSelectedFrame);
+                }
+            }
+            else
+            {
+                GSelectedFrame = GReplayManager.RecordFrame();
+            }
         }
     }
     else if (GbPendingSave)
@@ -290,6 +342,8 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
         }
     }
 
+    GbPendingCancel = false;
+    GbPendingRetry = false;
     GbPendingSave = false;
     GbPendingLoad = false;
 

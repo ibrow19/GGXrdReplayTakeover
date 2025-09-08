@@ -95,3 +95,14 @@ bool ReplayManager::IsEmpty() const
 {
     return frameCount == 0;
 }
+
+void ReplayManager::SetPlayerControl(InputMode p1Mode, InputMode p2Mode)
+{
+    inputManager.SetP1InputMode(p1Mode);
+    inputManager.SetP2InputMode(p2Mode);
+}
+
+void ReplayManager::ResetPlayerControl()
+{
+    SetPlayerControl(InputMode::Replay, InputMode::Replay);
+}

@@ -37,6 +37,9 @@ public:
     size_t LoadNextFrame();
     size_t LoadPreviousFrame();
 
+    void SetPlayerControl(InputMode p1Mode, InputMode p2Mode);
+    void ResetPlayerControl();
+
 private:
 
     size_t GetCurrentFrameBufferPos() const;
