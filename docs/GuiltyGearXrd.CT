@@ -2,6 +2,50 @@
 <CheatTable CheatEngineTableVersion="16">
   <CheatEntries>
     <CheatEntry>
+      <ID>156</ID>
+      <Description>"GameData?"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+1a4059c</Address>
+      <Offsets>
+        <Offset>0</Offset>
+      </Offsets>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>157</ID>
+          <Description>"GameMode"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>+45</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>179</ID>
+      <Description>"InputHistory"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+1bf57f0</Address>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>182</ID>
+          <Description>"P1InputBuffer"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+6AC</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>183</ID>
+          <Description>"P2InputBuffer"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+6AC+2B</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
       <ID>149</ID>
       <Description>"InputData"</Description>
       <ShowAsHex>1</ShowAsHex>
@@ -34,16 +78,14 @@
               <Color>80000008</Color>
               <VariableType>4 Bytes</VariableType>
               <Address>+1c</Address>
-              <CheatEntries>
-                <CheatEntry>
-                  <ID>152</ID>
-                  <Description>"P2InputMode"</Description>
-                  <ShowAsSigned>0</ShowAsSigned>
-                  <Color>80000008</Color>
-                  <VariableType>4 Bytes</VariableType>
-                  <Address>+24</Address>
-                </CheatEntry>
-              </CheatEntries>
+            </CheatEntry>
+            <CheatEntry>
+              <ID>152</ID>
+              <Description>"P2InputMode"</Description>
+              <ShowAsSigned>0</ShowAsSigned>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>+1c+24</Address>
             </CheatEntry>
             <CheatEntry>
               <ID>155</ID>
@@ -1472,34 +1514,6 @@
         </CheatEntry>
       </CheatEntries>
     </CheatEntry>
-    <CheatEntry>
-      <ID>179</ID>
-      <Description>"InputHistory"</Description>
-      <Color>80000008</Color>
-      <VariableType>4 Bytes</VariableType>
-      <Address>GuiltyGearXrd.exe+1bf57f0</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>156</ID>
-      <Description>"gameData"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <Color>80000008</Color>
-      <VariableType>4 Bytes</VariableType>
-      <Address>GuiltyGearXrd.exe+1a4059c</Address>
-      <Offsets>
-        <Offset>0</Offset>
-      </Offsets>
-      <CheatEntries>
-        <CheatEntry>
-          <ID>157</ID>
-          <Description>"GameMode"</Description>
-          <ShowAsHex>1</ShowAsHex>
-          <Color>80000008</Color>
-          <VariableType>Byte</VariableType>
-          <Address>+45</Address>
-        </CheatEntry>
-      </CheatEntries>
-    </CheatEntry>
   </CheatEntries>
   <CheatCodes>
     <CodeEntry>
@@ -2186,6 +2200,33 @@
         <Byte>E4</Byte>
         <Byte>42</Byte>
         <Byte>DA</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of call GuiltyGearXrd.exe+B965F0</Description>
+      <Address>00C59FEC</Address>
+      <ModuleName>GuiltyGearXrd.exe</ModuleName>
+      <ModuleNameOffset>BC9FEC</ModuleNameOffset>
+      <Before>
+        <Byte>50</Byte>
+        <Byte>89</Byte>
+        <Byte>44</Byte>
+        <Byte>24</Byte>
+        <Byte>24</Byte>
+      </Before>
+      <Actual>
+        <Byte>E8</Byte>
+        <Byte>FF</Byte>
+        <Byte>C5</Byte>
+        <Byte>FC</Byte>
+        <Byte>FF</Byte>
+      </Actual>
+      <After>
+        <Byte>83</Byte>
+        <Byte>C4</Byte>
+        <Byte>10</Byte>
+        <Byte>83</Byte>
+        <Byte>3D</Byte>
       </After>
     </CodeEntry>
   </CheatCodes>
