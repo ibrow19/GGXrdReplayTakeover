@@ -77,7 +77,7 @@ void PrepareRenderImgui()
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("Retry") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F7))
+    if (ImGui::Button("Retry") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_Space))
     {
         GbPendingRetry = true;
     }
@@ -416,6 +416,16 @@ EntityInit_t EntityInitDetourer::realEntityInit = nullptr;
 void EntityInitDetourer::DetourEntityInit(DWORD name, DWORD type)
 {
     bool bRecreatingSimple = *(DWORD*)((DWORD)this + 0x27cc) != 0 && *(DWORD*)((DWORD)this + 0x2878) == 0;
+
+    // TODO: It should be impossible for type to be 0 here unless we're doing
+    // something wrong storing type in the entity. However, it still sometimes
+    // happens and causes a crash, seems common with Answer. As a temporary
+    // workaround forcing type to 0x17 seems to work as it is usually (always?)
+    // this value.
+    if (type == 0)
+    {
+        type = 0x17;
+    }
 
     realEntityInit((LPVOID)this, name, type);
 
