@@ -17,9 +17,6 @@ public:
 
     void Reset();
 
-    // Call once modules have been loaded to establishes pointers to game state
-    void Init();
-
     size_t GetCurrentFrame() const;
     size_t GetFrameCount() const;
     bool IsEmpty() const;
@@ -58,6 +55,4 @@ private:
     char frames[MaxFrameCount * SaveStateSize];
     ReplayPosition p1ReplayPositions[MaxFrameCount];
     ReplayPosition p2ReplayPositions[MaxFrameCount];
-
-    InputManager inputManager;
 };

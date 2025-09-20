@@ -1,4 +1,6 @@
 #include <common.h>
+#include <xrd-module.h>
+#include <asw-engine.h>
 #include <save-state.h>
 #include <replay-manager.h>
 #include <imgui.h>
@@ -7,12 +9,12 @@
 #include <d3d9.h>
 #include <detours.h>
 
-typedef HRESULT(STDMETHODCALLTYPE* D3D9Present_t)(IDirect3DDevice9* pThis, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
+typedef HRESULT(STDMETHODCALLTYPE* D3D9PresentFunc)(IDirect3DDevice9* pThis, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 static WNDPROC GRealWndProc = NULL;
-static D3D9Present_t GRealPresent = NULL;
+static D3D9PresentFunc GRealPresent = NULL;
 
 static bool GbImguiInitialised = false;
 static bool GbPendingSave = false;
@@ -233,9 +235,9 @@ void InitPresentDetour()
     // Find present address.
     DWORD_PTR* vtablePointer = (DWORD_PTR*)dummyDevice;
     DWORD_PTR* vtable = (DWORD_PTR*)vtablePointer[0];
-    GRealPresent = reinterpret_cast<D3D9Present_t>(vtable[17]);
+    GRealPresent = reinterpret_cast<D3D9PresentFunc>(vtable[17]);
 
-    D3D9Present_t detourPresent = DetourPresent;
+    D3D9PresentFunc detourPresent = DetourPresent;
 
     // TODO: we should probably pause the render thread here while we apply the
     // detour to make sure this is safe. But we can worry about that later when
@@ -254,44 +256,34 @@ void InitPresentDetour()
     DestroyWindow(dummyWindow);
 }
 
-////////// Main Loop Detour
+////////// Main Game Logic Detour
 
-typedef void(__thiscall* MainLoop_t)(LPVOID thisArg, DWORD param);
-
-class MainLoopDetourer
+struct MainGameLogicDetourer
 {
-public:
-    void DetourMainLoop(DWORD param);
-
-    static MainLoop_t realMainLoop;
+    void DetourMainGameLogic(DWORD param);
+    static MainGameLogicFunc realMainGameLogic;
 };
 
-MainLoop_t MainLoopDetourer::realMainLoop = nullptr;
+MainGameLogicFunc MainGameLogicDetourer::realMainGameLogic = nullptr;
 
-typedef void(__fastcall* EntityUpdate_t)(DWORD entity);
 void OnlineEntityUpdates()
 {
-    char* xrdOffset = GetModuleOffset(GameName);
-    DWORD onlineEntityUpdateOffset = 0xb6efd0;
-    EntityUpdate_t onlineEntityUpdate = (EntityUpdate_t)(xrdOffset + onlineEntityUpdateOffset);
-
-    // TODO: make sure this isn't doing some unecessary allocation or something.
-    ForEachEntity([&onlineEntityUpdate](DWORD entity)
+    EntityUpdateFunc update = XrdModule::GetOnlineEntityUpdate();
+    ForEachEntity([&update](DWORD entity)
         {
-            onlineEntityUpdate(entity);
+            update(entity);
         });
 }
 
-void MainLoopDetourer::DetourMainLoop(DWORD param)
+void MainGameLogicDetourer::DetourMainGameLogic(DWORD param)
 {
     if (GbPaused)
     {
-        char* xrdOffset = GetModuleOffset(GameName);
-        DWORD engine = GetEngineOffset(xrdOffset);
-        DWORD offset1 = *(DWORD*)(engine + 0x22e630);
-        DWORD offset2 = *(DWORD*)(offset1 + 0x37c);
-        DWORD* pauseFlag = (DWORD*)(offset2 + 0x1c8);
-        *pauseFlag = 1;
+        DWORD* pauseFlag = XrdModule::GetEngine().GetPauseEngineUpdateFlag();
+        if (pauseFlag != nullptr)
+        {
+            *pauseFlag = 1;
+        }
     }
 
     OnlineEntityUpdates();
@@ -347,73 +339,33 @@ void MainLoopDetourer::DetourMainLoop(DWORD param)
     GbPendingSave = false;
     GbPendingLoad = false;
 
-    realMainLoop((LPVOID)this, param);
+    realMainGameLogic((LPVOID)this, param);
 }
 
-// TODO: naming of detour and init functions to be consistent suffix/prefix
-void InitMainLoopDetour()
+void InitMainGameLogicDetour()
 {
-    DWORD mainLoopOffset = 0xa61240;
-    char* xrdOffset = GetModuleOffset(GameName);
-    char* mainLoopAddress = xrdOffset + mainLoopOffset;
-
-    MainLoopDetourer::realMainLoop = (MainLoop_t)mainLoopAddress;
-    void (MainLoopDetourer::* detourMainLoop)(DWORD) = &MainLoopDetourer::DetourMainLoop;
+    MainGameLogicDetourer::realMainGameLogic = XrdModule::GetMainGameLogic();
+    void (MainGameLogicDetourer::* detourMainGameLogic)(DWORD) = &MainGameLogicDetourer::DetourMainGameLogic;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)MainLoopDetourer::realMainLoop, *(PBYTE*)&detourMainLoop);
+    DetourAttach(&(PVOID&)MainGameLogicDetourer::realMainGameLogic, *(PBYTE*)&detourMainGameLogic);
     DetourTransactionCommit();
 }
 
-////////// Entity Update Detour
-
-EntityUpdate_t GRealEntityUpdate = NULL;
-
-void __fastcall DetourEntityUpdate(DWORD entity)
+////////// Entity Actor Creation Detouring
+struct CreateEntityActorDetourer
 {
-    char* xrdOffset = GetModuleOffset(GameName);
-    DWORD onlineEntityUpdateOffset = 0xb6efd0;
-    EntityUpdate_t onlineEntityUpdate = (EntityUpdate_t)(xrdOffset + onlineEntityUpdateOffset);
-    onlineEntityUpdate(entity);
-
-    GRealEntityUpdate(entity);
-}
-
-void InitEntityUpdateDetour()
-{
-    char* xrdOffset = GetModuleOffset(GameName);
-
-    DWORD entityUpdateOffset = 0x9f7950;
-    char* entityUpdateAddress = xrdOffset + entityUpdateOffset;
-
-    GRealEntityUpdate = (EntityUpdate_t)entityUpdateAddress;
-
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)GRealEntityUpdate, DetourEntityUpdate);
-    DetourTransactionCommit();
-}
-
-////////// Entity Init Detouring
-
-typedef void(__thiscall* EntityInit_t)(LPVOID thisArg, DWORD name, DWORD type);
-
-class EntityInitDetourer
-{
-public:
-    void DetourEntityInit(DWORD name, DWORD type);
-
-    static EntityInit_t realEntityInit;
+    void DetourCreateEntityActor(char* name, DWORD type);
+    static CreateActorFunc realCreateEntityActor;
 };
 
-EntityInit_t EntityInitDetourer::realEntityInit = nullptr;
-
+CreateActorFunc CreateEntityActorDetourer::realCreateEntityActor = nullptr;
 
  // This update function is only used with simple entities. We can use
  // entity fields reserved for more complicated, stateful entities to hold
  // initalisation data to recreate these entities later. 
-void EntityInitDetourer::DetourEntityInit(DWORD name, DWORD type)
+void CreateEntityActorDetourer::DetourCreateEntityActor(char* name, DWORD type)
 {
     bool bRecreatingSimple = *(DWORD*)((DWORD)this + 0x27cc) != 0 && *(DWORD*)((DWORD)this + 0x2878) == 0;
 
@@ -427,7 +379,7 @@ void EntityInitDetourer::DetourEntityInit(DWORD name, DWORD type)
         type = 0x17;
     }
 
-    realEntityInit((LPVOID)this, name, type);
+    realCreateEntityActor((LPVOID)this, name, type);
 
     // Don't overwrite these values if the entity needs them.
     // Ignore entities where the simple actor (27cc) is already set as that
@@ -440,71 +392,54 @@ void EntityInitDetourer::DetourEntityInit(DWORD name, DWORD type)
         return;
     }
 
-    // TODO: refactor all of this so setting/getting these particular flags
-    // doesn't involve any redefinition of addresses etc.
-    typedef void(__thiscall* SetString_t)(DWORD dest, DWORD src);
-
-    char* xrdOffset = GetModuleOffset(GameName);
-    DWORD setStringOffset = 0x973390;
-    SetString_t setStringFunc = (SetString_t)(xrdOffset + setStringOffset);
-
-    DWORD stateNamePtr = (DWORD)this + 0x2858;
-    setStringFunc(stateNamePtr, name);
+    SetStringFunc setString = XrdModule::GetSetString();
+    char* stateName = (char*)((DWORD)this + 0x2858);
+    setString(stateName, name);
 
     *(DWORD*)((DWORD)this + 0x287c) = type;
 }
 
-void InitEntityInitDetour()
+void InitCreateEntityActorDetour()
 {
-    DWORD entityInitOffset = 0xa0e020;
-    char* xrdOffset = GetModuleOffset(GameName);
-    char* entityInitAddress = xrdOffset + entityInitOffset;
-
-    EntityInitDetourer::realEntityInit = (EntityInit_t)entityInitAddress;
-    void (EntityInitDetourer::* detourEntityInit)(DWORD, DWORD) = &EntityInitDetourer::DetourEntityInit;
+    CreateEntityActorDetourer::realCreateEntityActor = XrdModule::GetCreateEntityActor();
+    void (CreateEntityActorDetourer::* detourCreateEntityActor)(char*, DWORD) = &CreateEntityActorDetourer::DetourCreateEntityActor;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)EntityInitDetourer::realEntityInit, *(PBYTE*)&detourEntityInit);
+    DetourAttach(&(PVOID&)CreateEntityActorDetourer::realCreateEntityActor, *(PBYTE*)&detourCreateEntityActor);
     DetourTransactionCommit();
 }
 
 
 ////////// Replay HUD Detouring
 
-typedef void(__fastcall* ReplayHUDUpdate_t)(DWORD param);
-static ReplayHUDUpdate_t GRealReplayHUDUpdate = NULL;
-void __fastcall DetourReplayHUDUpdate(DWORD param)
+static ReplayHudUpdateFunc GRealReplayHudUpdate = NULL;
+void __fastcall DetourReplayHudUpdate(DWORD param)
 {
     if (!GbRetrying)
     {
-        GRealReplayHUDUpdate(param);
+        GRealReplayHudUpdate(param);
     }
 }
 
-void InitReplayHUDDetour()
+void InitReplayHudDetour()
 {
-    char* xrdOffset = GetModuleOffset(GameName);
-    char* hudUpdateAddress = xrdOffset + 0xbc30a0;
-
-    GRealReplayHUDUpdate = (ReplayHUDUpdate_t)hudUpdateAddress;
+    GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)GRealReplayHUDUpdate, DetourReplayHUDUpdate);
+    DetourAttach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
     DetourTransactionCommit();
 }
 
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
-    // TODO: Divide these into other files where appropriate
+    XrdModule::Init();
     InitPresentDetour();
-    InitMainLoopDetour();
-    //InitEntityUpdateDetour();
-    InitEntityInitDetour();
+    InitMainGameLogicDetour();
+    InitCreateEntityActorDetour();
     InitSaveStateTrackerDetour();
-    InitReplayHUDDetour();
-    GReplayManager.Init();
+    InitReplayHudDetour();
 
     return 1;
 }

@@ -14,12 +14,10 @@ enum class InputMode : DWORD
     Replay = 2
 };
 
-
 class InputManager
 {
 public:
-
-    void Init();
+    InputManager(DWORD inPtr);
 
     DWORD GetP1InputMode() const;
     DWORD GetP2InputMode() const;
@@ -30,16 +28,11 @@ public:
     void SetP2InputMode(InputMode mode);
     void SetP1ReplayPos(const ReplayPosition& pos);
     void SetP2ReplayPos(const ReplayPosition& pos);
-
 private:
-
-    static constexpr DWORD InputDataOffset = 0x1c77180 + 0x25380;
     static constexpr DWORD P1ModeOffset = 0x1c;
     static constexpr DWORD P2ModeOffset = P1ModeOffset + 0x24;
     static constexpr DWORD P1ReplayPosOffset = 0x4;
     static constexpr DWORD P2ReplayPosOffset = 0x28;
-
 private:
-
-    DWORD ptr;
+    DWORD mPtr;
 };

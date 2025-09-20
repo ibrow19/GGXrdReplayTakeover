@@ -6,9 +6,8 @@ class Entity
 {
 public:
     Entity(DWORD inPtr);
-
     bool IsPlayer();
 
 private:
-    DWORD ptr;
+    DWORD mPtr;
 };

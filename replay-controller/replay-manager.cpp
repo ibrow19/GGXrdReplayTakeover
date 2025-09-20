@@ -1,4 +1,5 @@
 #include <replay-manager.h>
+#include <xrd-module.h>
 #include <common.h>
 
 ReplayManager::ReplayManager()
@@ -6,11 +7,6 @@ ReplayManager::ReplayManager()
   start(0),
   currentFrame(0)
 {}
-
-void ReplayManager::Init()
-{
-    inputManager.Init();
-}
 
 void ReplayManager::Reset()
 {
@@ -35,6 +31,7 @@ size_t ReplayManager::RecordFrame()
     {
         size_t bufferIndex = GetCurrentFrameBufferPos();
         SaveState(frames + bufferIndex * SaveStateSize);
+        InputManager inputManager = XrdModule::GetInputManager();
         p1ReplayPositions[bufferIndex] = inputManager.GetP1ReplayPos();
         p2ReplayPositions[bufferIndex] = inputManager.GetP2ReplayPos();
 
@@ -62,6 +59,7 @@ size_t ReplayManager::LoadFrame(size_t index)
     currentFrame = index;
     size_t bufferIndex = GetCurrentFrameBufferPos();
     LoadState(frames + bufferIndex * SaveStateSize);
+    InputManager inputManager = XrdModule::GetInputManager();
     inputManager.SetP1ReplayPos(p1ReplayPositions[bufferIndex]);
     inputManager.SetP2ReplayPos(p2ReplayPositions[bufferIndex]);
     return currentFrame;
@@ -98,6 +96,7 @@ bool ReplayManager::IsEmpty() const
 
 void ReplayManager::SetPlayerControl(InputMode p1Mode, InputMode p2Mode)
 {
+    InputManager inputManager = XrdModule::GetInputManager();
     inputManager.SetP1InputMode(p1Mode);
     inputManager.SetP2InputMode(p2Mode);
 }

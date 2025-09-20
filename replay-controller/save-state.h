@@ -30,10 +30,10 @@ struct SaveStateTracker
     DWORD saveAddress2 = 0;
 };
 
-enum SaveStateSectionBase 
+enum class SaveStateSectionBase 
 {
     Module,
-    AswEngine
+    Engine
 };
 
 // Part of the save state data. Each section has a function for loading and saving, 
