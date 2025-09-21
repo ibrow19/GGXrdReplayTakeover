@@ -11,6 +11,7 @@ typedef void(__fastcall* EntityActorManagementFunc)(DWORD engine);
 typedef void(__thiscall* CreateActorFunc)(LPVOID thisArg, char* name, DWORD type);
 typedef void(__fastcall* DestroyActorFunc)(DWORD entity);
 typedef void(__thiscall* UpdatePlayerAnimFunc)(DWORD entity, char* stateName, DWORD flag);
+typedef void(__thiscall* SetGameModeFunc)(LPVOID thisArg, DWORD newMode);
 
 class XrdModule
 {
@@ -68,6 +69,7 @@ public:
     static DestroyActorFunc GetDestroyEntityActor();
 
     static UpdatePlayerAnimFunc GetUpdatePlayerAnim();
+    static SetGameModeFunc GetGameModeSetter();
 private:
     static DWORD mBase;
 };

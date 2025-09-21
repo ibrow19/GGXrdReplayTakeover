@@ -109,3 +109,8 @@ UpdatePlayerAnimFunc XrdModule::GetUpdatePlayerAnim()
 {
     return (UpdatePlayerAnimFunc)(mBase + 0xa11ea0);
 }
+
+SetGameModeFunc XrdModule::GetGameModeSetter()
+{
+    return (SetGameModeFunc)(mBase + 0xb2ea20);
+}
