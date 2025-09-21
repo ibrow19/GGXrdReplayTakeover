@@ -353,64 +353,6 @@ void InitMainGameLogicDetour()
     DetourTransactionCommit();
 }
 
-////////// Entity Actor Creation Detouring
-struct CreateEntityActorDetourer
-{
-    void DetourCreateEntityActor(char* name, DWORD type);
-    static CreateActorFunc realCreateEntityActor;
-};
-
-CreateActorFunc CreateEntityActorDetourer::realCreateEntityActor = nullptr;
-
- // This update function is only used with simple entities. We can use
- // entity fields reserved for more complicated, stateful entities to hold
- // initalisation data to recreate these entities later. 
-void CreateEntityActorDetourer::DetourCreateEntityActor(char* name, DWORD type)
-{
-    bool bRecreatingSimple = *(DWORD*)((DWORD)this + 0x27cc) != 0 && *(DWORD*)((DWORD)this + 0x2878) == 0;
-
-    // TODO: It should be impossible for type to be 0 here unless we're doing
-    // something wrong storing type in the entity. However, it still sometimes
-    // happens and causes a crash, seems common with Answer. As a temporary
-    // workaround forcing type to 0x17 seems to work as it is usually (always?)
-    // this value.
-    if (type == 0)
-    {
-        type = 0x17;
-    }
-
-    realCreateEntityActor((LPVOID)this, name, type);
-
-    // Don't overwrite these values if the entity needs them.
-    // Ignore entities where the simple actor (27cc) is already set as that
-    // means we're resuing an existing simple actor and need to reset our custom changes.
-    if (!bRecreatingSimple &&
-            (*(DWORD*)((DWORD)this + 0x2878) != 0 ||
-             *(DWORD*)((DWORD)this + 0x2858) != 0 ||
-             *(DWORD*)((DWORD)this + 0x287c) != 0))
-    {
-        return;
-    }
-
-    SetStringFunc setString = XrdModule::GetSetString();
-    char* stateName = (char*)((DWORD)this + 0x2858);
-    setString(stateName, name);
-
-    *(DWORD*)((DWORD)this + 0x287c) = type;
-}
-
-void InitCreateEntityActorDetour()
-{
-    CreateEntityActorDetourer::realCreateEntityActor = XrdModule::GetCreateEntityActor();
-    void (CreateEntityActorDetourer::* detourCreateEntityActor)(char*, DWORD) = &CreateEntityActorDetourer::DetourCreateEntityActor;
-
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)CreateEntityActorDetourer::realCreateEntityActor, *(PBYTE*)&detourCreateEntityActor);
-    DetourTransactionCommit();
-}
-
-
 ////////// Replay HUD Detouring
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = NULL;
@@ -437,8 +379,7 @@ extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
     XrdModule::Init();
     InitPresentDetour();
     InitMainGameLogicDetour();
-    InitCreateEntityActorDetour();
-    InitSaveStateTrackerDetour();
+    AttachSaveStateDetours();
     InitReplayHudDetour();
 
     return 1;

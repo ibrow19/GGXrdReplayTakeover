@@ -7,7 +7,7 @@ constexpr size_t SaveStateSize = 0x23C732;
 struct SaveStateTracker
 {
     DWORD padding0;
-    DWORD saveStateIndex = 0;;
+    DWORD saveStateIndex = 0;
     DWORD padding1;
     DWORD padding2;
 
@@ -50,6 +50,7 @@ struct SaveStateSection
     DWORD offset;
 };
 
-void InitSaveStateTrackerDetour();
+void AttachSaveStateDetours();
+void DetachSaveStateDetours();
 void SaveState(char* dest);
 void LoadState(const char* src);

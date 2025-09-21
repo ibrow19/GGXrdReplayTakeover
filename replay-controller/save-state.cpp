@@ -6,6 +6,14 @@
 #include <cassert>
 #include <entity.h>
 
+class CreateEntityActorDetourer
+{
+public:
+    void DetourCreateEntityActor(char* name, DWORD type);
+    static CreateActorFunc mRealCreateEntityActor; 
+};
+CreateActorFunc CreateEntityActorDetourer::mRealCreateEntityActor = nullptr;
+
 static GetSaveStateTrackerFunc GRealGetSaveStateTracker = nullptr;
 static bool GbStateDetourActive = false;
 static SaveStateTracker GTracker;
@@ -143,28 +151,7 @@ static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
     },
 };
 
-DWORD __fastcall DetourGetSaveStateTracker(DWORD manager)
-{
-    if (GbStateDetourActive)
-    {
-        return (DWORD)&GTracker.getTrackerAnchor;
-    }
-
-    assert(GRealGetSaveStateTracker);
-    return GRealGetSaveStateTracker(manager);
-}
-
-void InitSaveStateTrackerDetour()
-{
-    GRealGetSaveStateTracker = XrdModule::GetSaveStateTrackerGetter();
-
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
-    DetourTransactionCommit();
-}
-
-void CallSaveStateFunction(DWORD functionOffset, SaveStateSectionBase base, DWORD stateOffset)
+static void CallSaveStateFunction(DWORD functionOffset, SaveStateSectionBase base, DWORD stateOffset)
 {
     const DWORD moduleBase = XrdModule::GetBase();
 
@@ -185,43 +172,18 @@ void CallSaveStateFunction(DWORD functionOffset, SaveStateSectionBase base, DWOR
     stateFunc(statePtr);
 }
 
-void CallPreLoad()
+static void CallPreLoad()
 {
     DWORD engineOffset = XrdModule::GetEngine().GetOffset4();
     EntityActorManagementFunc func = XrdModule::GetPreStateLoad();
     func(engineOffset);
 }
 
-void CallPostLoad()
+static void CallPostLoad()
 {
     DWORD engineOffset = XrdModule::GetEngine().GetOffset4();
     EntityActorManagementFunc func = XrdModule::GetPostStateLoad();
     func(engineOffset);
-}
-
-void SaveState(char* dest)
-{
-    GTracker.saveMemCpyCount = 0;
-    GTracker.saveAddress1 = (DWORD)dest;
-    GTracker.saveAddress2 = (DWORD)dest;
-
-    DWORD& trackerPtr = XrdModule::GetSaveStateTrackerPtr();
-    trackerPtr = (DWORD)&GTracker;
-
-    GbStateDetourActive = true;
-
-    for (int i = 0; i < SaveStateFunctionCount; ++i)
-    {
-        CallSaveStateFunction(
-            SaveStateSections[i].saveFunctionOffset, 
-            SaveStateSections[i].base, 
-            SaveStateSections[i].offset);
-    }
-
-    // If we don't reset the save slot ptr then the game will immediately crash
-    // trying to check it when exiting the current game.
-    trackerPtr = NULL;
-    GbStateDetourActive = false;
 }
 
 static void RecreateNonPlayerActors()
@@ -271,6 +233,31 @@ static void UpdatePlayerAnimations()
         });
 }
 
+void SaveState(char* dest)
+{
+    GTracker.saveMemCpyCount = 0;
+    GTracker.saveAddress1 = (DWORD)dest;
+    GTracker.saveAddress2 = (DWORD)dest;
+
+    DWORD& trackerPtr = XrdModule::GetSaveStateTrackerPtr();
+    trackerPtr = (DWORD)&GTracker;
+
+    GbStateDetourActive = true;
+
+    for (int i = 0; i < SaveStateFunctionCount; ++i)
+    {
+        CallSaveStateFunction(
+            SaveStateSections[i].saveFunctionOffset, 
+            SaveStateSections[i].base, 
+            SaveStateSections[i].offset);
+    }
+
+    // If we don't reset the save slot ptr then the game will immediately crash
+    // trying to check it when exiting the current game.
+    trackerPtr = NULL;
+    GbStateDetourActive = false;
+}
+
 void LoadState(const char* src)
 {
     DestroyNonPlayerActors();
@@ -297,4 +284,78 @@ void LoadState(const char* src)
     CallPostLoad();
     RecreateNonPlayerActors();
     UpdatePlayerAnimations();
+}
+
+ // This update function is only used with simple entities. We can use
+ // entity fields reserved for more complicated, stateful entities to hold
+ // initalisation data to recreate these entities later. 
+void CreateEntityActorDetourer::DetourCreateEntityActor(char* name, DWORD type)
+{
+    bool bRecreatingSimple = *(DWORD*)((DWORD)this + 0x27cc) != 0 && *(DWORD*)((DWORD)this + 0x2878) == 0;
+
+    // TODO: It should be impossible for type to be 0 here unless we're doing
+    // something wrong storing type in the entity. However, it still sometimes
+    // happens and causes a crash, seems common with Answer. As a temporary
+    // workaround forcing type to 0x17 seems to work as it is usually (always?)
+    // this value.
+    if (type == 0)
+    {
+        type = 0x17;
+    }
+
+    mRealCreateEntityActor((LPVOID)this, name, type);
+
+    // Don't overwrite these values if the entity needs them.
+    // Ignore entities where the simple actor (27cc) is already set as that
+    // means we're resuing an existing simple actor and need to reset our custom changes.
+    if (!bRecreatingSimple &&
+            (*(DWORD*)((DWORD)this + 0x2878) != 0 ||
+             *(DWORD*)((DWORD)this + 0x2858) != 0 ||
+             *(DWORD*)((DWORD)this + 0x287c) != 0))
+    {
+        return;
+    }
+
+    SetStringFunc setString = XrdModule::GetSetString();
+    char* stateName = (char*)((DWORD)this + 0x2858);
+    setString(stateName, name);
+
+    *(DWORD*)((DWORD)this + 0x287c) = type;
+}
+
+static DWORD __fastcall DetourGetSaveStateTracker(DWORD manager)
+{
+    if (GbStateDetourActive)
+    {
+        return (DWORD)&GTracker.getTrackerAnchor;
+    }
+
+    assert(GRealGetSaveStateTracker);
+    return GRealGetSaveStateTracker(manager);
+}
+
+void AttachSaveStateDetours()
+{
+    GRealGetSaveStateTracker = XrdModule::GetSaveStateTrackerGetter();
+    CreateEntityActorDetourer::mRealCreateEntityActor = XrdModule::GetCreateEntityActor();
+    void (CreateEntityActorDetourer::* detourCreateEntityActor)(char*, DWORD) = &CreateEntityActorDetourer::DetourCreateEntityActor;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
+    DetourAttach(&(PVOID&)CreateEntityActorDetourer::mRealCreateEntityActor, *(PBYTE*)&detourCreateEntityActor);
+    DetourTransactionCommit();
+}
+
+void DetachSaveStateDetours()
+{
+    GRealGetSaveStateTracker = nullptr;
+    CreateEntityActorDetourer::mRealCreateEntityActor = nullptr;
+    void (CreateEntityActorDetourer::* detourCreateEntityActor)(char*, DWORD) = &CreateEntityActorDetourer::DetourCreateEntityActor;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourDetach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
+    DetourDetach(&(PVOID&)CreateEntityActorDetourer::mRealCreateEntityActor, *(PBYTE*)&detourCreateEntityActor);
+    DetourTransactionCommit();
 }
