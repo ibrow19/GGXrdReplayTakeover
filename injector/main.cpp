@@ -2,29 +2,20 @@
 #include <windows.h>
 #include <tlhelp32.h>
 
-#define TEST_DEFINE 262144.0
-
-int findProcess(const char* processName)
+int FindProcess(const char* processName)
 {
     HANDLE snapshot;
-
-    // snapshot all processes in the system.
     snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, /*pid = */ 0);
     if (snapshot == INVALID_HANDLE_VALUE)
     {
         std::cout << "Invalid snapshot handle" << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << "valid snapshot" << std::endl;
 
     int pid = 0;
-
     PROCESSENTRY32 processEntry;
     processEntry.dwSize = sizeof(PROCESSENTRY32);
-
-    // Info about first process in the snapshotted list
     BOOL result = Process32First(snapshot, &processEntry);
-
     while (result)
     {
         if (strcmp(processEntry.szExeFile, processName) == 0)
@@ -38,46 +29,37 @@ int findProcess(const char* processName)
     return pid;
 }
 
-void injectDll(int pid)
+int InjectDll(int pid)
 {
-    // TODO: update path once project structure more developed.
-    const char dllPath[] = "GGXrdReplayController.dll";
+    // TODO: update path for release
+    char path[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, path);
+    strcat(path, "\\build\\Debug\\GGXrdReplayController.dll");
 
-    const unsigned int dllLen = sizeof(dllPath);
-
-    // TODO: error handling. with GetLastError.
     HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, /*bInheritHandle =*/ FALSE, DWORD(pid));
-
-    // TODO: why do all the windows docs still use NULL in the year 2025
     if (process == NULL)
     {
         std::cout << "Failed to open process" << std::endl;
         CloseHandle(process);
-        return;
+        return EXIT_FAILURE;
     }
 
-    // Allocate memory in process for dll.
-    LPVOID remoteBuffer = VirtualAllocEx(process, NULL, dllLen, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
-
+    LPVOID remoteBuffer = VirtualAllocEx(process, NULL, MAX_PATH, (MEM_RESERVE | MEM_COMMIT), PAGE_EXECUTE_READWRITE);
     if (remoteBuffer == NULL)
     {
         std::cout << "Failed to allocate space for dll in process" << std::endl;
         CloseHandle(process);
-        return;
+        return EXIT_FAILURE;
     }
 
-    // Copy dll to the allocated buffer
-    BOOL result = WriteProcessMemory(process, remoteBuffer, dllPath, dllLen, NULL);
-    std::cout << "dllLen: " << dllLen << std::endl;
-
+    BOOL result = WriteProcessMemory(process, remoteBuffer, path, MAX_PATH, NULL);
     if (!result)
     {
         std::cout << "Failed to copy dll path into process" << std::endl;
         CloseHandle(process);
-        return;
+        return EXIT_FAILURE;
     }
 
-    // TODO: error handling for this.
     HMODULE kernel = GetModuleHandle("Kernel32");
     VOID* loadFunction = GetProcAddress(kernel, "LoadLibraryA");
 
@@ -85,33 +67,32 @@ void injectDll(int pid)
     {
         std::cout << "Failed to get load function address" << std::endl;
         CloseHandle(process);
-        return;
+        return EXIT_FAILURE;
     }
 
     HANDLE injecterThread = CreateRemoteThread(process, NULL, 0, (LPTHREAD_START_ROUTINE)loadFunction, remoteBuffer, 0, NULL);
     if (injecterThread == NULL)
     {
         std::cout << "Failed to create thread" << std::endl;
-        return;
+        return EXIT_FAILURE;
     }
 
     WaitForSingleObject(injecterThread, INFINITE);
     DWORD injectedBase;
     GetExitCodeThread(injecterThread, &injectedBase);
 
-    // TODO: better way of getting function offset.
     HMODULE localModule = LoadLibrary("GGXrdReplayController.dll");
     if (localModule == NULL)
     {
         std::cout << "Failed to get local version of injected module" << std::endl;
-        return;
+        return EXIT_FAILURE;
     }
 
     VOID* localInitFunction = GetProcAddress(localModule, "RunInitThread");
     if (localInitFunction == NULL)
     {
         std::cout << "Failed to find init thread function: " << GetLastError() << std::endl;
-        return;
+        return EXIT_FAILURE;
     }
 
     DWORD initOffset = (DWORD)localInitFunction - (DWORD)localModule;
@@ -122,40 +103,23 @@ void injectDll(int pid)
     if (initThread == NULL)
     {
         std::cout << "Failed to create init thread" << std::endl;
+        return EXIT_FAILURE;
     }
     else
     {
-        std::cout << "waiting for init thread" << GetLastError() << std::endl;
         WaitForSingleObject(initThread, INFINITE);
-        std::cout << "Finished waiting for init thread" << GetLastError() << std::endl;
     }
 
     CloseHandle(process);
+    std::cout << "Injection complete" << std::endl;
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char** argv)
 {
-    std::cout << "Running" << std::endl;
-    float test2 = TEST_DEFINE * TEST_DEFINE;
-    float test3 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE;
-    float test4 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
-    float test5 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
-    float test6 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
-    float test7 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
-    float test8 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
-    float test9 = TEST_DEFINE * TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE* TEST_DEFINE;
-    if (test2 < test3)
-    {
-        std::cout << test2 << std::endl;
-    }
-    else
-    {
-        std::cout << test3 << std::endl;
-    }
-
+    std::cout << "Running Injector" << std::endl;
     const char* processName = "GuiltyGearXrd.exe";
-    //const char* processName = "TestLoad.exe";
-    int pid = findProcess(processName);
+    int pid = FindProcess(processName);
 
     if (pid)
     {
@@ -167,7 +131,5 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    injectDll(pid);
-
-    return EXIT_SUCCESS;
+    return InjectDll(pid);
 }
