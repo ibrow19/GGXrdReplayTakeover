@@ -349,8 +349,6 @@ void AttachSaveStateDetours()
 
 void DetachSaveStateDetours()
 {
-    GRealGetSaveStateTracker = nullptr;
-    CreateEntityActorDetourer::mRealCreateEntityActor = nullptr;
     void (CreateEntityActorDetourer::* detourCreateEntityActor)(char*, DWORD) = &CreateEntityActorDetourer::DetourCreateEntityActor;
 
     DetourTransactionBegin();
