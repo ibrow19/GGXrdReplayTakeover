@@ -7,17 +7,13 @@ set(CMAKE_GENERATOR_PLATFORM Win32)
 
 project(${PROJECT_NAME} C CXX)
 
-# set the output directory for built objects
-# This makes sure that the dynamic library goes into the build directory automatically
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
-# TODO: check which of these we actually need.
-set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_demo.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp)
+set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp)
 set(IMGUI_BACKEND_SOURCES imgui/backends/imgui_impl_dx9.cpp imgui/backends/imgui_impl_win32.cpp)
 set(IMGUI_DIRS imgui imgui/backends/)
 
-# Detours
 set(DETOURS_LIB ${PROJECT_SOURCE_DIR}/Detours/lib.X86/detours.lib)
 set(DETOURS_INCLUDES Detours/include/)
 
