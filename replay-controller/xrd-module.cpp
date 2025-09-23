@@ -1,7 +1,9 @@
 #include <xrd-module.h>
 #include <asw-engine.h>
 #include <input-manager.h>
+#include <input.h>
 #include <Psapi.h>
+#include <cassert>
 
 DWORD XrdModule::mBase = 0;
 
@@ -48,6 +50,15 @@ AswEngine XrdModule::GetEngine()
 InputManager XrdModule::GetInputManager()
 {
     return InputManager(mBase + 0x1c77180 + 0x25380);
+}
+
+GameInputCollection XrdModule::GetGameInput()
+{
+    DWORD ptr1 = *(DWORD*)(mBase + 0x1c9cfa0);
+    assert(ptr1 != 0);
+    DWORD ptr2 = *(DWORD*)(ptr1 + 0x28);
+    assert(ptr2 != 0);
+    return GameInputCollection(ptr2);
 }
 
 BYTE* XrdModule::GetControllerIndexInstruction()

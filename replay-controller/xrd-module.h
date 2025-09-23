@@ -21,6 +21,7 @@ public:
     static DWORD GetBase();
     static class AswEngine GetEngine();
     static class InputManager GetInputManager();
+    static class GameInputCollection GetGameInput();
     static BYTE* GetControllerIndexInstruction();
 
     // This function is called once per frame when playing online. It sets
