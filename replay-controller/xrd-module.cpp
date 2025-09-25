@@ -66,6 +66,11 @@ BYTE* XrdModule::GetControllerIndexInstruction()
     return (BYTE*)(mBase + 0x9e05f7);
 }
 
+DWORD& XrdModule::GetPreOrPostBattle()
+{
+    return *(DWORD*)(mBase + 0x1a4059c + 0x20);
+}
+
 EntityUpdateFunc XrdModule::GetOnlineEntityUpdate()
 {
     return (EntityUpdateFunc)(mBase + 0xb6efd0);

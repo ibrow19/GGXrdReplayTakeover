@@ -8,13 +8,9 @@
 class ReplayManager
 {
 public:
-
     static constexpr size_t MaxFrameCount = 450;
-
 public:
-
     ReplayManager();
-
     void Reset();
 
     size_t GetCurrentFrame() const;
@@ -33,16 +29,9 @@ public:
     size_t LoadFrame(size_t index);
     size_t LoadNextFrame();
     size_t LoadPreviousFrame();
-
-    void SetPlayerControl(InputMode p1Mode, InputMode p2Mode);
-    void ResetPlayerControl();
-
 private:
-
     size_t GetCurrentFrameBufferPos() const;
-
 private:
-
     // Number of currently saved frame states.
     size_t frameCount;
 

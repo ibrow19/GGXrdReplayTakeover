@@ -24,6 +24,11 @@ public:
     static class GameInputCollection GetGameInput();
     static BYTE* GetControllerIndexInstruction();
 
+    // This flag is 1 during the match intro (heaven or hell section) and
+    // exit (slash + spin around). It is 0 while a battle is in progress where 
+    // players have control.
+    static DWORD& GetPreOrPostBattle();
+
     // This function is called once per frame when playing online. It sets
     // specific fields on each entity, some of which are needed to recreate
     // the associated actor when loading a state on a rollback.

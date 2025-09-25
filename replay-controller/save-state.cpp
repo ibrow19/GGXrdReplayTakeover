@@ -357,3 +357,12 @@ void DetachSaveStateDetours()
     DetourDetach(&(PVOID&)CreateEntityActorDetourer::mRealCreateEntityActor, *(PBYTE*)&detourCreateEntityActor);
     DetourTransactionCommit();
 }
+
+void ApplySaveStateEntityUpdates()
+{
+    EntityUpdateFunc update = XrdModule::GetOnlineEntityUpdate();
+    ForEachEntity([&update](DWORD entity)
+        {
+            update(entity);
+        });
+}

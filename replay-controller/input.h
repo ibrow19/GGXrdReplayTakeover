@@ -41,8 +41,8 @@ enum class BattleInputMask : DWORD
     SH = 0x4000,
     HD = 0x8000,
 
-    Play = 0x10000,
-    Record = 0x20000,
+    PlayRecording = 0x10000,
+    StartRecording = 0x20000,
     Pause = 0x40000,
 };
 

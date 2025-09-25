@@ -54,3 +54,7 @@ void AttachSaveStateDetours();
 void DetachSaveStateDetours();
 void SaveState(char* dest);
 void LoadState(const char* src);
+
+// Should be called each frame to ensure entities have the necessary data to be
+// rebuilt from a save state.
+void ApplySaveStateEntityUpdates();

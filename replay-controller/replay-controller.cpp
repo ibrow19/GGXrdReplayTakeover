@@ -1,4 +1,6 @@
 #include <replay-controller.h>
+#include <asw-engine.h>
+#include <input.h>
 #include <save-state.h>
 #include <replay-manager.h>
 #include <common.h>
@@ -10,6 +12,7 @@
 typedef HRESULT(STDMETHODCALLTYPE* D3D9PresentFunc)(IDirect3DDevice9* device, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
 
 ReplayController* ReplayController::mInstance = nullptr;
+bool ReplayController::mbImGuiInitialised = false;
 
 static HWND GWindow;
 static WNDPROC GRealWndProc = nullptr;
@@ -25,88 +28,18 @@ public:
 };
 MainGameLogicFunc MainGameLogicDetourer::mRealMainGameLogic = nullptr;
 
-//static void ApplyOnlineEntityUpdates()
-//{
-//    EntityUpdateFunc update = XrdModule::GetOnlineEntityUpdate();
-//    ForEachEntity([&update](DWORD entity)
-//        {
-//            update(entity);
-//        });
-//}
-
 void MainGameLogicDetourer::DetourMainGameLogic(DWORD param)
 {
-    //if (GbPaused)
-    //{
-    //    DWORD* pauseFlag = XrdModule::GetEngine().GetPauseEngineUpdateFlag();
-    //    if (pauseFlag != nullptr)
-    //    {
-    //        *pauseFlag = 1;
-    //    }
-    //}
-
-    //OnlineEntityUpdates();
-
-    //if (GbRecording)
-    //{
-    //    if (GbPendingRetry)
-    //    {
-    //        GbPaused = false;
-    //        GbRetrying = true;
-    //        GSelectedFrame = GReplayManager.LoadFrame(GBookmark);
-    //        InputMode p1Mode = GbControlP1 ? InputMode::Player : InputMode::Replay;
-    //        InputMode p2Mode = GbControlP2 ? InputMode::Player : InputMode::Replay;
-    //        GReplayManager.SetPlayerControl(p1Mode, p2Mode);
-    //    }
-    //    else if (GbPendingCancel && GbRetrying)
-    //    {
-    //        GbPaused = false;
-    //        GbRetrying = false;
-    //        GSelectedFrame = GReplayManager.LoadFrame(GBookmark);
-    //        GReplayManager.ResetPlayerControl();
-    //    }
-    //    else if (!GbRetrying)
-    //    {
-    //        if (GbPaused)
-    //        {
-    //            if (GbPendingLoadFrame)
-    //            {
-    //                GSelectedFrame = GReplayManager.LoadFrame(GSelectedFrame);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            GSelectedFrame = GReplayManager.RecordFrame();
-    //        }
-    //    }
-    //}
-    //else if (GbPendingSave)
-    //{
-    //    SaveState(GSaveStateBuffer);
-    //    GbStateSaved = true;
-    //}
-    //else if (GbPendingLoad)
-    //{
-    //    if (GbStateSaved)
-    //    {
-    //        LoadState(GSaveStateBuffer);
-    //    }
-    //}
-
-    //GbPendingCancel = false;
-    //GbPendingRetry = false;
-    //GbPendingSave = false;
-    //GbPendingLoad = false;
-
+    ReplayController::Get().Tick();
     mRealMainGameLogic((LPVOID)this, param);
 }
 
 void __fastcall DetourReplayHudUpdate(DWORD param)
 {
-    //if (!GbRetrying)
-    //{
+    if (!ReplayController::Get().IsInReplayTakeoverMode())
+    {
         GRealReplayHudUpdate(param);
-    //}
+    }
 }
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
@@ -145,15 +78,20 @@ bool ReplayController::IsActive()
 
 ReplayController& ReplayController::Get()
 {
-    if (mInstance == nullptr)
-    {
-        CreateInstance();
-    }
+    // TODO: make sure accesses are safe
+    //if (mInstance == nullptr)
+    //{
+    //    CreateInstance();
+    //}
     return *mInstance;
 }
 
 ReplayController::ReplayController()
-: mbImGuiInitialised(false)
+: mMode(ReplayTakeoverMode::Disabled)
+, mbControlP1(true)
+, mCountdownTotal(DefaultCountdown)
+, mCountdown(0)
+, mBookmarkFrame(0)
 {
     AttachDetours();
     AttachSaveStateDetours();
@@ -164,7 +102,7 @@ ReplayController::~ReplayController()
     // TODO: imgui shutdown is not safe while the render thread could use it. Need to flush render commands.
     DetachDetours();
     DetachSaveStateDetours();
-    ShutdownImGui();
+    //ShutdownImGui();
 }
 
 HRESULT STDMETHODCALLTYPE DetourPresent(IDirect3DDevice9* device, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion)
@@ -266,8 +204,6 @@ void ReplayController::DetachDetours()
     // TODO: Flush render commands to prevent race condition from detoured render thread functions
     assert(GRealPresent);
     D3D9PresentFunc detourPresent = DetourPresent;
-    GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
-    MainGameLogicDetourer::mRealMainGameLogic = XrdModule::GetMainGameLogic();
     void (MainGameLogicDetourer::* detourMainGameLogic)(DWORD) = &MainGameLogicDetourer::DetourMainGameLogic;
 
     DetourTransactionBegin();
@@ -336,77 +272,243 @@ void ReplayController::PrepareImGuiFrame()
 
     ImGui::Begin("Replay Takeover");
 
-    //ImGui::Text("Save State");
-    //if (ImGui::Button("Save") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F1))
-    //{
-    //    GbPendingSave = true;
-    //}
+    ImGui::Text("Takeover Mode: ");
+    ImGui::SameLine();
+    switch (mMode)
+    {
+        case ReplayTakeoverMode::Disabled:
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+            ImGui::Text("DISABLED");
+            ImGui::PopStyleColor();
+            break;
+        case ReplayTakeoverMode::StandbyPaused:
+        case ReplayTakeoverMode::Standby:
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 0, 255));
+            ImGui::Text("STANDBY");
+            ImGui::PopStyleColor();
+            break;
+        case ReplayTakeoverMode::TakeoverCountdown:
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 100, 255));
+            ImGui::Text("COUNTDOWN");
+            ImGui::PopStyleColor();
+            break;
+        case ReplayTakeoverMode::TakeoverControl:
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
+            ImGui::Text("TAKEOVER");
+            ImGui::PopStyleColor();
+            break;
 
-    //ImGui::SameLine();
-    //if (ImGui::Button("Load") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F2))
-    //{
-    //    GbPendingLoad = true;
-    //}
+    }
 
-    ImGui::Text("Replay Takeover");
-    //if (ImGui::Button("Start") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F3))
-    //{
-    //    GbRecording = true;
-    //}
+    int playerNum = mbControlP1 ? 1 : 2;
+    ImGui::Text("Control: Player %d", playerNum);
 
-    //ImGui::SameLine();
-    //if (ImGui::Button("Stop") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F4))
-    //{
-    //    GbRecording = false;
-    //    GReplayManager.Reset();
-    //}
+    ImGui::SliderInt("Countdown Frames", &mCountdownTotal, MinCountdown, MaxCountdown);
 
-    //ImGui::SameLine();
-    //if (ImGui::Button("Pause") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F5))
-    //{
-    //    GbPaused = !GbPaused;
-    //}
-
-    //if (ImGui::Button("Bookmark") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F6))
-    //{
-    //    GBookmark = GSelectedFrame; 
-    //}
-
-    //ImGui::SameLine();
-    //if (ImGui::Button("Retry") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_Space))
-    //{
-    //    GbPendingRetry = true;
-    //}
-
-    //ImGui::SameLine();
-    //if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_F8))
-    //{
-    //    GbPendingCancel = true;
-    //}
-
-    //ImGui::Checkbox("P1 Control", &GbControlP1);
-    //ImGui::SameLine();
-    //ImGui::Checkbox("P2 Control", &GbControlP2);
-
-    //if (!GReplayManager.IsEmpty())
-    //{
-    //    if (ImGui::SliderInt("Frame", &GSelectedFrame, 0, GReplayManager.GetFrameCount() - 1))
-    //    {
-    //        GbPendingLoadFrame = true;
-    //    }
-    //    else if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_LeftArrow))
-    //    {
-    //        GbPendingLoadFrame = true;
-    //        GSelectedFrame = GReplayManager.GetCurrentFrame() - 1;
-    //    }
-    //    else if (ImGui::IsKeyPressed(ImGuiKey::ImGuiKey_RightArrow))
-    //    {
-    //        GbPendingLoadFrame = true;
-    //        GSelectedFrame = GReplayManager.GetCurrentFrame() + 1;
-    //    }
-    //}
+    if (!mReplayManager.IsEmpty())
+    {
+        int selectedFrame = mReplayManager.GetCurrentFrame();
+        ImGui::SliderInt("Replay Frame", &selectedFrame, 0, mReplayManager.GetFrameCount() - 1);
+    }
 
     ImGui::End();
     ImGui::EndFrame();
 }
 
+void ReplayController::OverridePlayerControl()
+{
+    InputManager inputManager = XrdModule::GetInputManager();
+    if (mbControlP1)
+    {
+        inputManager.SetP1InputMode(InputMode::Player);
+        inputManager.SetP2InputMode(InputMode::Replay);
+    }
+    else
+    {
+        inputManager.SetP1InputMode(InputMode::Replay);
+        inputManager.SetP2InputMode(InputMode::Player);
+    }
+}
+
+void ReplayController::ResetPlayerControl()
+{
+    InputManager inputManager = XrdModule::GetInputManager();
+    inputManager.SetP1InputMode(InputMode::Replay);
+    inputManager.SetP2InputMode(InputMode::Replay);
+}
+
+void ReplayController::HandleDisabledMode()
+{
+    GameInputCollection input = XrdModule::GetGameInput();
+    DWORD& menuInput = input.GetP1MenuInput().GetPressedMask();
+
+    // Disable normal replay controls, enable replay takeover
+    if (menuInput & (DWORD)MenuInputMask::Reset)
+    {
+        mMode = ReplayTakeoverMode::Standby;
+        menuInput = 0;
+    }
+}
+
+void ReplayController::HandleStandbyMode()
+{
+    GameInputCollection input = XrdModule::GetGameInput();
+    DWORD& menuInput = input.GetP1MenuInput().GetPressedMask();
+    DWORD& battleInput = input.GetP1BattleInput().GetPressedMask();
+
+    // Return to regular replay mode
+    if (menuInput & (DWORD)MenuInputMask::Reset)
+    {
+        ResetPlayerControl();
+        menuInput = 0;
+        mMode = ReplayTakeoverMode::Disabled;
+        return;
+    }
+
+    // Initiate takeover
+    if (battleInput & (DWORD)BattleInputMask::PlayRecording)
+    {
+        OverridePlayerControl();
+        mBookmarkFrame = mReplayManager.GetCurrentFrame();
+        mCountdown = 0;
+        mMode = ReplayTakeoverMode::TakeoverCountdown;
+        return;
+    }
+
+    // Toggle player controlled in takeover
+    if (battleInput & (DWORD)BattleInputMask::K)
+    {
+        mbControlP1 = !mbControlP1;
+    }
+
+    // Replay scrubbing while paused.
+    if (mMode == ReplayTakeoverMode::StandbyPaused)
+    {
+        if (battleInput & (DWORD)BattleInputMask::Left)
+        {
+            mReplayManager.LoadPreviousFrame();
+        }
+        else if (battleInput & (DWORD)BattleInputMask::Right)
+        {
+            mReplayManager.LoadNextFrame();
+        }
+        else if (battleInput & (DWORD)BattleInputMask::Down)
+        {
+            size_t currentFrame = mReplayManager.GetCurrentFrame();
+            if (currentFrame <= PausedFrameJump)
+            {
+                mReplayManager.LoadFrame(0);
+            }
+            else
+            {
+                mReplayManager.LoadFrame(currentFrame - PausedFrameJump);
+            }
+        }
+        else if (battleInput & (DWORD)BattleInputMask::Up)
+        {
+            size_t newFrame = mReplayManager.GetCurrentFrame() + PausedFrameJump;
+            size_t maxFrame = mReplayManager.GetFrameCount() - 1;
+            if (newFrame > maxFrame)
+            {
+                newFrame = maxFrame;
+            }
+            mReplayManager.LoadFrame(newFrame);
+        }
+    }
+
+    // Toggle pause
+    if (battleInput & (DWORD)BattleInputMask::P)
+    {
+        if (mMode == ReplayTakeoverMode::Standby)
+        {
+            mMode = ReplayTakeoverMode::StandbyPaused;
+        }
+        else
+        {
+            mMode = ReplayTakeoverMode::Standby;
+        }
+    }
+}
+
+void ReplayController::HandleTakeoverMode()
+{
+    GameInputCollection input = XrdModule::GetGameInput();
+    DWORD& battleInput = input.GetP1BattleInput().GetPressedMask();
+
+    // Restart takeover
+    if (battleInput & (DWORD)BattleInputMask::PlayRecording)
+    {
+        mReplayManager.LoadFrame(mBookmarkFrame);
+        mCountdown = 0;
+        mMode = ReplayTakeoverMode::TakeoverCountdown;
+        return;
+    }
+
+    // Cancel takeover
+    if (battleInput & (DWORD)BattleInputMask::StartRecording)
+    {
+        mReplayManager.LoadFrame(mBookmarkFrame);
+        ResetPlayerControl();
+        mMode = ReplayTakeoverMode::StandbyPaused;
+        return;
+    }
+
+    // Progress countdown
+    if (mMode == ReplayTakeoverMode::TakeoverCountdown)
+    {
+        ++mCountdown;
+        if (mCountdown >= mCountdownTotal)
+        {
+            mMode = ReplayTakeoverMode::TakeoverControl;
+        }
+    }
+}
+
+void ReplayController::Tick()
+{
+    if (XrdModule::GetPreOrPostBattle())
+    {
+        mReplayManager.Reset();
+        if (mMode != ReplayTakeoverMode::Disabled)
+        {
+            mMode = ReplayTakeoverMode::Disabled;
+            ResetPlayerControl();
+        }
+        return;
+    }
+
+    if (mMode == ReplayTakeoverMode::Disabled || mMode == ReplayTakeoverMode::Standby)
+    {
+        ApplySaveStateEntityUpdates();
+        mReplayManager.RecordFrame();
+    }
+
+    switch (mMode)
+    {
+        case ReplayTakeoverMode::Disabled:
+            HandleDisabledMode();
+            break;
+        case ReplayTakeoverMode::Standby:
+        case ReplayTakeoverMode::StandbyPaused:
+            HandleStandbyMode();
+            break;
+        case ReplayTakeoverMode::TakeoverCountdown:
+        case ReplayTakeoverMode::TakeoverControl:
+            HandleTakeoverMode();
+            break;
+    }
+
+    if (mMode == ReplayTakeoverMode::StandbyPaused || mMode == ReplayTakeoverMode::TakeoverCountdown)
+    {
+        DWORD* pause = XrdModule::GetEngine().GetPauseEngineUpdateFlag();
+        if (pause != nullptr)
+        {
+            *pause = 1;
+        }
+    }
+}
+
+bool ReplayController::IsInReplayTakeoverMode() const
+{
+    return mMode != ReplayTakeoverMode::Disabled;
+}
