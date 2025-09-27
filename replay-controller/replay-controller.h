@@ -1,9 +1,7 @@
 #pragma once
 
-#include <windows.h>
-#include <d3d9.h>
-#include <xrd-module.h>
 #include <replay-manager.h>
+#include <game-mode-controller.h>
 
 enum class ReplayTakeoverMode
 {
@@ -14,28 +12,16 @@ enum class ReplayTakeoverMode
     TakeoverControl,
 };
 
-class ReplayController
+class ReplayController : public GameModeController
 {
 public:
-    static void CreateInstance();
-    static void DestroyInstance();
-    static bool IsActive();
-    static ReplayController& Get();
-    static void InitRealPresent();
-
-    void RenderUi(IDirect3DDevice9* device);
-    void Tick();
+    ReplayController();
     bool IsInReplayTakeoverMode() const;
 private:
-    ReplayController();
-    ~ReplayController();
-
-    static void AttachDetours();
-    static void DetachDetours();
-
-    void InitImGui(IDirect3DDevice9* device);
-    void ShutdownImGui();
-    void PrepareImGuiFrame();
+    void AttachModeDetours() override;
+    void DetachModeDetours() override;
+    void Tick() override;
+    void PrepareImGuiFrame() override;
 
     void OverridePlayerControl();
     void ResetPlayerControl();
@@ -49,9 +35,6 @@ private:
     static constexpr int DefaultCountdown = 10;
     static constexpr size_t PausedFrameJump = 10;
 private:
-    static ReplayController* mInstance;
-    static bool mbImGuiInitialised;
-
     ReplayTakeoverMode mMode;
     bool mbControlP1;
     int mCountdownTotal;
