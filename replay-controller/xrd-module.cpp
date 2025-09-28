@@ -66,6 +66,12 @@ BYTE* XrdModule::GetControllerIndexInstruction()
     return (BYTE*)(mBase + 0x9e05f7);
 }
 
+bool XrdModule::IsPauseMenuActive()
+{
+    IsPauseMenuActiveFunc func = (IsPauseMenuActiveFunc)(mBase + 0xbd8cf0);
+    return func();
+}
+
 DWORD& XrdModule::GetPreOrPostBattle()
 {
     return *(DWORD*)(mBase + 0x1a4059c + 0x20);

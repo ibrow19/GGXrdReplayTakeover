@@ -243,6 +243,11 @@ void ReplayController::HandleTakeoverMode()
 
 void ReplayController::Tick()
 {
+    if (XrdModule::IsPauseMenuActive())
+    {
+        return;
+    }
+
     if (XrdModule::GetPreOrPostBattle())
     {
         mReplayManager.Reset();

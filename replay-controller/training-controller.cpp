@@ -20,7 +20,9 @@ void TrainingController::DetachModeDetours()
 
 void TrainingController::Tick()
 {
-    if (!XrdModule::GetEngine().IsValid() || XrdModule::GetPreOrPostBattle())
+    if (!XrdModule::GetEngine().IsValid() || 
+        XrdModule::GetPreOrPostBattle() ||
+        XrdModule::IsPauseMenuActive())
     {
         return;
     }

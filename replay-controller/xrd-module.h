@@ -12,6 +12,7 @@ typedef void(__thiscall* CreateActorFunc)(LPVOID thisArg, char* name, DWORD type
 typedef void(__fastcall* DestroyActorFunc)(DWORD entity);
 typedef void(__thiscall* UpdatePlayerAnimFunc)(DWORD entity, char* stateName, DWORD flag);
 typedef void(__thiscall* SetGameModeFunc)(LPVOID thisArg, DWORD newMode);
+typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
 
 class XrdModule
 {
@@ -23,6 +24,7 @@ public:
     static class InputManager GetInputManager();
     static class GameInputCollection GetGameInput();
     static BYTE* GetControllerIndexInstruction();
+    static bool IsPauseMenuActive();
 
     // This flag is 1 during the match intro (heaven or hell section) and
     // exit (slash + spin around). It is 0 while a battle is in progress where 
