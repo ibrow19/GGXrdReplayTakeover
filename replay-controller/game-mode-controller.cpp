@@ -194,7 +194,12 @@ void GameModeController::RenderUi(IDirect3DDevice9* device)
         InitImGui(device);
     }
     
+    ImGui_ImplDX9_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
     PrepareImGuiFrame();
+    ImGui::EndFrame();
+
     device->BeginScene();
     ImGui::Render();
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());

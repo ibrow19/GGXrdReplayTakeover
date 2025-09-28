@@ -4,8 +4,6 @@
 #include <xrd-module.h>
 #include <asw-engine.h>
 #include <imgui.h>
-#include <imgui_impl_dx9.h>
-#include <imgui_impl_win32.h>
 #include <detours.h>
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
@@ -50,10 +48,6 @@ void ReplayController::DetachModeDetours()
 
 void ReplayController::PrepareImGuiFrame()
 {
-    ImGui_ImplDX9_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-
     ImGui::Begin("Replay Takeover");
 
     ImGui::Text("Takeover Mode: ");
@@ -96,7 +90,6 @@ void ReplayController::PrepareImGuiFrame()
     }
 
     ImGui::End();
-    ImGui::EndFrame();
 }
 
 void ReplayController::OverridePlayerControl()
