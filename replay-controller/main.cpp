@@ -1,5 +1,6 @@
 #include <xrd-module.h>
 #include <replay-controller.h>
+#include <training-controller.h>
 #include <detours.h>
 
 enum class GameMode : DWORD
@@ -18,11 +19,16 @@ SetGameModeFunc SetGameModeDetours::mRealSetGameMode = nullptr;
 
 void SetGameModeDetours::DetourSetGameMode(DWORD newMode)
 {
-    if (newMode == (DWORD)GameMode::Replay)
+    DWORD modeByte = newMode&0xff;
+    if (modeByte == (DWORD)GameMode::Replay)
     {
         GameModeController::Set<ReplayController>();
     }
-    else 
+    else if (modeByte == (DWORD)GameMode::Training)
+    {
+        GameModeController::Set<TrainingController>();
+    }
+    else
     {
         GameModeController::Destroy();
     }
