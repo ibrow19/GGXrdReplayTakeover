@@ -130,20 +130,21 @@ void ReplayController::HandleDisabledMode()
 void ReplayController::HandleStandbyMode()
 {
     GameInputCollection input = XrdModule::GetGameInput();
-    DWORD& menuInput = input.GetP1MenuInput().GetPressedMask();
-    DWORD& battleInput = input.GetP1BattleInput().GetPressedMask();
+    DWORD& menuPressed = input.GetP1MenuInput().GetPressedMask();
+    DWORD& battlePressed = input.GetP1BattleInput().GetPressedMask();
+    DWORD& battleHeld = input.GetP1BattleInput().GetHeldMask();
 
     // Return to regular replay mode
-    if (menuInput & (DWORD)MenuInputMask::Reset)
+    if (menuPressed & (DWORD)MenuInputMask::Reset)
     {
         ResetPlayerControl();
-        menuInput = 0;
+        menuPressed = 0;
         mMode = ReplayTakeoverMode::Disabled;
         return;
     }
 
     // Initiate takeover
-    if (battleInput & (DWORD)BattleInputMask::PlayRecording)
+    if (battlePressed & (DWORD)BattleInputMask::PlayRecording)
     {
         OverridePlayerControl();
         mBookmarkFrame = mReplayManager.GetCurrentFrame();
@@ -153,7 +154,7 @@ void ReplayController::HandleStandbyMode()
     }
 
     // Toggle player controlled in takeover
-    if (battleInput & (DWORD)BattleInputMask::K)
+    if (battlePressed & (DWORD)BattleInputMask::K)
     {
         mbControlP1 = !mbControlP1;
     }
@@ -161,15 +162,15 @@ void ReplayController::HandleStandbyMode()
     // Replay scrubbing while paused.
     if (mMode == ReplayTakeoverMode::StandbyPaused)
     {
-        if (battleInput & (DWORD)BattleInputMask::Left)
+        if (battleHeld & (DWORD)BattleInputMask::Left)
         {
             mReplayManager.LoadPreviousFrame();
         }
-        else if (battleInput & (DWORD)BattleInputMask::Right)
+        else if (battleHeld & (DWORD)BattleInputMask::Right)
         {
             mReplayManager.LoadNextFrame();
         }
-        else if (battleInput & (DWORD)BattleInputMask::Down)
+        else if (battleHeld & (DWORD)BattleInputMask::Down)
         {
             size_t currentFrame = mReplayManager.GetCurrentFrame();
             if (currentFrame <= PausedFrameJump)
@@ -181,7 +182,7 @@ void ReplayController::HandleStandbyMode()
                 mReplayManager.LoadFrame(currentFrame - PausedFrameJump);
             }
         }
-        else if (battleInput & (DWORD)BattleInputMask::Up)
+        else if (battleHeld & (DWORD)BattleInputMask::Up)
         {
             size_t newFrame = mReplayManager.GetCurrentFrame() + PausedFrameJump;
             size_t maxFrame = mReplayManager.GetFrameCount() - 1;
@@ -194,7 +195,7 @@ void ReplayController::HandleStandbyMode()
     }
 
     // Toggle pause
-    if (battleInput & (DWORD)BattleInputMask::P)
+    if (battlePressed & (DWORD)BattleInputMask::P)
     {
         if (mMode == ReplayTakeoverMode::Standby)
         {
