@@ -3,6 +3,7 @@
 #include <save-state.h>
 #include <xrd-module.h>
 #include <asw-engine.h>
+#include <replay-hud.h>
 #include <imgui.h>
 #include <detours.h>
 
@@ -122,8 +123,12 @@ void ReplayController::HandleDisabledMode()
     // Disable normal replay controls, enable replay takeover
     if (menuInput & (DWORD)MenuInputMask::Reset)
     {
-        mMode = ReplayTakeoverMode::Standby;
+        ReplayHud hud = XrdModule::GetEngine().GetReplayHud();
+        hud.GetPause() = 0;
+        hud.GetShouldStepNextFrame() = 0;
+        hud.GetDisplayReplayHud() = 0;
         menuInput = 0;
+        mMode = ReplayTakeoverMode::Standby;
     }
 }
 
@@ -138,6 +143,7 @@ void ReplayController::HandleStandbyMode()
     if (menuPressed & (DWORD)MenuInputMask::Reset)
     {
         ResetPlayerControl();
+        XrdModule::GetEngine().GetReplayHud().GetDisplayReplayHud() = 1;
         menuPressed = 0;
         mMode = ReplayTakeoverMode::Disabled;
         return;
@@ -162,11 +168,13 @@ void ReplayController::HandleStandbyMode()
     // Replay scrubbing while paused.
     if (mMode == ReplayTakeoverMode::StandbyPaused)
     {
-        if (battleHeld & (DWORD)BattleInputMask::Left)
+        if ((battleHeld & (DWORD)BattleInputMask::Left) ||
+            (battlePressed & (DWORD)BattleInputMask::S))
         {
             mReplayManager.LoadPreviousFrame();
         }
-        else if (battleHeld & (DWORD)BattleInputMask::Right)
+        else if ((battleHeld & (DWORD)BattleInputMask::Right) ||
+                 (battlePressed & (DWORD)BattleInputMask::H))
         {
             mReplayManager.LoadNextFrame();
         }

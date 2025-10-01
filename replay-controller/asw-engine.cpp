@@ -1,4 +1,5 @@
 #include <asw-engine.h>
+#include <replay-hud.h>
 
 AswEngine::AswEngine(DWORD inPtr)
 : mPtr(inPtr)
@@ -9,12 +10,12 @@ bool AswEngine::IsValid() const
     return mPtr != 0;
 }
 
-DWORD AswEngine::GetPtr() const
+DWORD AswEngine::GetPtr() 
 {
     return mPtr;
 }
 
-DWORD AswEngine::GetOffset4() const
+DWORD AswEngine::GetOffset4()
 {
     return mPtr + 4;
 }
@@ -24,7 +25,7 @@ DWORD AswEngine::GetEntityCount() const
     return *(DWORD*)(mPtr + 0xb4);
 }
 
-DWORD* AswEngine::GetEntityList() const
+DWORD* AswEngine::GetEntityList()
 {
     return (DWORD*)(mPtr + 0x1fc);
 }
@@ -46,4 +47,9 @@ DWORD* AswEngine::GetPauseEngineUpdateFlag()
     }
 
     return (DWORD*)(object2 + 0x1c8);
+}
+
+ReplayHud AswEngine::GetReplayHud()
+{
+    return ReplayHud(mPtr + 0x1c7400);
 }

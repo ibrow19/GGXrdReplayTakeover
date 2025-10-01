@@ -7,14 +7,15 @@ class AswEngine
 public:
     AswEngine(DWORD inPtr);
     bool IsValid() const;
-    DWORD GetPtr() const;
+    DWORD GetPtr();
+    DWORD GetEntityCount() const;
+    DWORD* GetEntityList();
+    class ReplayHud GetReplayHud();
 
     // Many functions use this slight offset from the engine when
     // accessing it. It's possible this should be what we treat as 
     // the actual base address of the engine.
-    DWORD GetOffset4() const;
-    DWORD GetEntityCount() const;
-    DWORD* GetEntityList() const;
+    DWORD GetOffset4();
 
     // This flag specifically stops the Asw engine from updating but does
     // not stop animations from updating. It also gets reset every frame 
