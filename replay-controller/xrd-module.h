@@ -59,22 +59,23 @@ public:
     static DWORD& GetSaveStateTrackerPtr();
 
     // These functions handle actor destruction/recreation when loading a
-    // rollback save state. PreLoad destroys actors that won't necessarily be
-    // in the loaded state and PostLoad recreates actors for new entities or
-    // those that have changed state. This only applies to stateful entities
-    // that can change based on user input like little Eddie. Player actors
-    // are not recreated as the rollback knows they'll still be there. Simple
-    // entities like projectiles aren't recreated as they'll either be using
-    // the same animation in the rolled back state or will not have been
-    // created yet.
+    // rollback save state. PreLoad builds a list of references to actors
+    // to re-attach to entities in the loaded state. This only applies to 
+    // complex entities that can change based on user input like little Eddie. 
+    // Player actors are not recreated as the rollback knows they'll still be 
+    // there. Simple entities like projectiles aren't recreated as they'll 
+    // either be using the same animation in the rolled back state or will
+    // not have been created yet.
     static EntityActorManagementFunc GetPreStateLoad();
     static EntityActorManagementFunc GetPostStateLoad();
 
-    // This function is called when an entity is created to initialise its
-    // associated actor. It is called again on some existing entities when
-    // they transition to new state.
-    static CreateActorFunc GetCreateEntityActor();
-    static DestroyActorFunc GetDestroyEntityActor();
+    // This function is called when a simple entity is created to initialise 
+    // its associated actor. It is called again on some existing entities when
+    // they need to change the animation they are displaying.
+    static CreateActorFunc GetCreateSimpleActor();
+
+    static DestroyActorFunc GetDestroySimpleActor();
+    static DestroyActorFunc GetDestroyComplexActor();
 
     static UpdatePlayerAnimFunc GetUpdatePlayerAnim();
     static SetGameModeFunc GetGameModeSetter();

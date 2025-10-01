@@ -117,14 +117,19 @@ EntityActorManagementFunc XrdModule::GetPostStateLoad()
     return (EntityActorManagementFunc)(mBase + 0x9e2030);
 }
 
-CreateActorFunc XrdModule::GetCreateEntityActor()
+CreateActorFunc XrdModule::GetCreateSimpleActor()
 {
     return (CreateActorFunc)(mBase + 0xa0e020);
 }
 
-DestroyActorFunc XrdModule::GetDestroyEntityActor()
+DestroyActorFunc XrdModule::GetDestroySimpleActor()
 {
     return (DestroyActorFunc)(mBase + 0xa08c20);
+}
+
+DestroyActorFunc XrdModule::GetDestroyComplexActor()
+{
+    return (DestroyActorFunc)(mBase + 0xb6a7b0);
 }
 
 UpdatePlayerAnimFunc XrdModule::GetUpdatePlayerAnim()

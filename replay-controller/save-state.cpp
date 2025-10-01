@@ -6,13 +6,13 @@
 #include <cassert>
 #include <entity.h>
 
-class CreateEntityActorDetourer
+class CreateSimpleActorDetourer
 {
 public:
-    void DetourCreateEntityActor(char* name, DWORD type);
-    static CreateActorFunc mRealCreateEntityActor; 
+    void DetourCreateSimpleActor(char* name, DWORD type);
+    static CreateActorFunc mRealCreateSimpleActor; 
 };
-CreateActorFunc CreateEntityActorDetourer::mRealCreateEntityActor = nullptr;
+CreateActorFunc CreateSimpleActorDetourer::mRealCreateSimpleActor = nullptr;
 
 static GetSaveStateTrackerFunc GRealGetSaveStateTracker = nullptr;
 static bool GbStateDetourActive = false;
@@ -188,7 +188,7 @@ static void CallPostLoad()
 
 static void RecreateNonPlayerActors()
 {
-    CreateActorFunc createActor = XrdModule::GetCreateEntityActor();
+    CreateActorFunc createActor = XrdModule::GetCreateSimpleActor();
     ForEachEntity([&createActor](DWORD entity)
         {
             // TODO: move to class managing these queries.
@@ -207,15 +207,21 @@ static void RecreateNonPlayerActors()
 
 static void DestroyNonPlayerActors()
 {
-    DestroyActorFunc destroyActor = XrdModule::GetDestroyEntityActor();
-    ForEachEntity([&destroyActor](DWORD entity)
+    ForEachEntity([](DWORD entityPtr)
         {
-            // TODO: refactor to avoid rewriting 27cc everythere etc.
-            DWORD actorPtr = *(DWORD*)(entity + 0x27cc);
-            DWORD isPlayer = *(DWORD*)(entity + 0x10);
-            if (isPlayer == 0 && actorPtr != NULL)
+            Entity entity(entityPtr);
+            if (!entity.IsPlayer())
             {
-                destroyActor(entity);
+                if (entity.GetSimpleActor())
+                {
+                    DestroyActorFunc destroySimple = XrdModule::GetDestroySimpleActor();
+                    destroySimple(entityPtr);
+                }
+                if (entity.GetComplexActor())
+                {
+                    DestroyActorFunc destroyComplex = XrdModule::GetDestroyComplexActor();
+                    destroyComplex(entityPtr);
+                }
             }
         });
 }
@@ -261,6 +267,9 @@ void SaveState(char* dest)
 void LoadState(const char* src)
 {
     DestroyNonPlayerActors();
+
+    // Probably don't need this anymore as we manually destroy complex actors
+    // instead, but will still call just in case.
     CallPreLoad();
 
     GTracker.loadMemCpyCount = 0;
@@ -289,7 +298,7 @@ void LoadState(const char* src)
  // This update function is only used with simple entities. We can use
  // entity fields reserved for more complicated, stateful entities to hold
  // initalisation data to recreate these entities later. 
-void CreateEntityActorDetourer::DetourCreateEntityActor(char* name, DWORD type)
+void CreateSimpleActorDetourer::DetourCreateSimpleActor(char* name, DWORD type)
 {
     bool bRecreatingSimple = *(DWORD*)((DWORD)this + 0x27cc) != 0 && *(DWORD*)((DWORD)this + 0x2878) == 0;
 
@@ -303,7 +312,7 @@ void CreateEntityActorDetourer::DetourCreateEntityActor(char* name, DWORD type)
         type = 0x17;
     }
 
-    mRealCreateEntityActor((LPVOID)this, name, type);
+    mRealCreateSimpleActor((LPVOID)this, name, type);
 
     // Don't overwrite these values if the entity needs them.
     // Ignore entities where the simple actor (27cc) is already set as that
@@ -337,24 +346,24 @@ static DWORD __fastcall DetourGetSaveStateTracker(DWORD manager)
 void AttachSaveStateDetours()
 {
     GRealGetSaveStateTracker = XrdModule::GetSaveStateTrackerGetter();
-    CreateEntityActorDetourer::mRealCreateEntityActor = XrdModule::GetCreateEntityActor();
-    void (CreateEntityActorDetourer::* detourCreateEntityActor)(char*, DWORD) = &CreateEntityActorDetourer::DetourCreateEntityActor;
+    CreateSimpleActorDetourer::mRealCreateSimpleActor = XrdModule::GetCreateSimpleActor();
+    void (CreateSimpleActorDetourer::* detourCreateSimpleActor)(char*, DWORD) = &CreateSimpleActorDetourer::DetourCreateSimpleActor;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
-    DetourAttach(&(PVOID&)CreateEntityActorDetourer::mRealCreateEntityActor, *(PBYTE*)&detourCreateEntityActor);
+    DetourAttach(&(PVOID&)CreateSimpleActorDetourer::mRealCreateSimpleActor, *(PBYTE*)&detourCreateSimpleActor);
     DetourTransactionCommit();
 }
 
 void DetachSaveStateDetours()
 {
-    void (CreateEntityActorDetourer::* detourCreateEntityActor)(char*, DWORD) = &CreateEntityActorDetourer::DetourCreateEntityActor;
+    void (CreateSimpleActorDetourer::* detourCreateSimpleActor)(char*, DWORD) = &CreateSimpleActorDetourer::DetourCreateSimpleActor;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
-    DetourDetach(&(PVOID&)CreateEntityActorDetourer::mRealCreateEntityActor, *(PBYTE*)&detourCreateEntityActor);
+    DetourDetach(&(PVOID&)CreateSimpleActorDetourer::mRealCreateSimpleActor, *(PBYTE*)&detourCreateSimpleActor);
     DetourTransactionCommit();
 }
 
