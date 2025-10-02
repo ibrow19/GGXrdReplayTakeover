@@ -268,7 +268,8 @@ void ReplayController::Tick()
         return;
     }
 
-    if (mMode == ReplayTakeoverMode::Disabled || mMode == ReplayTakeoverMode::Standby)
+    ReplayHud hud = XrdModule::GetEngine().GetReplayHud();
+    if ((mMode == ReplayTakeoverMode::Disabled && !hud.GetPause()) || mMode == ReplayTakeoverMode::Standby)
     {
         ApplySaveStateEntityUpdates();
         mReplayManager.RecordFrame();
