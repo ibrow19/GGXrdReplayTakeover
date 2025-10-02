@@ -226,15 +226,15 @@ static void DestroyNonPlayerActors()
         });
 }
 
-static void UpdatePlayerAnimations()
+static void UpdateAnimations()
 {
-    UpdatePlayerAnimFunc updateAnim = XrdModule::GetUpdatePlayerAnim();
-    ForEachEntity([&updateAnim](DWORD entity)
+    UpdateAnimationFunc updateAnim = XrdModule::GetUpdateComplexActorAnimation();
+    ForEachEntity([&updateAnim](DWORD entityPtr)
         {
-            if (Entity(entity).IsPlayer())
+            Entity entity(entityPtr);
+            if (entity.GetComplexActor())
             {
-                char* currentStateName = (char*)(entity + 0xa58);
-                updateAnim(entity, currentStateName, 1);
+                updateAnim(entityPtr, entity.GetAnimationState(), 1);
             }
         });
 }
@@ -292,7 +292,7 @@ void LoadState(const char* src)
 
     CallPostLoad();
     RecreateNonPlayerActors();
-    UpdatePlayerAnimations();
+    UpdateAnimations();
 }
 
  // This update function is only used with simple entities. We can use

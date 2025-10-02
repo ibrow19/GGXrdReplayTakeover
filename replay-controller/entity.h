@@ -10,6 +10,7 @@ public:
     bool IsPlayer();
     DWORD GetSimpleActor();
     DWORD GetComplexActor();
+    char* GetAnimationState();
 private:
     DWORD mPtr;
 };

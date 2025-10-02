@@ -132,9 +132,9 @@ DestroyActorFunc XrdModule::GetDestroyComplexActor()
     return (DestroyActorFunc)(mBase + 0xb6a7b0);
 }
 
-UpdatePlayerAnimFunc XrdModule::GetUpdatePlayerAnim()
+UpdateAnimationFunc XrdModule::GetUpdateComplexActorAnimation()
 {
-    return (UpdatePlayerAnimFunc)(mBase + 0xa11ea0);
+    return (UpdateAnimationFunc)(mBase + 0xa11ea0);
 }
 
 SetGameModeFunc XrdModule::GetGameModeSetter()

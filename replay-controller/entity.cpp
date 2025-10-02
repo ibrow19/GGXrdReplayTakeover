@@ -23,3 +23,8 @@ DWORD Entity::GetComplexActor()
 {
     return *(DWORD*)(mPtr + 0x27a8);
 }
+
+char* Entity::GetAnimationState()
+{
+    return (char*)(mPtr + 0xa58);
+}

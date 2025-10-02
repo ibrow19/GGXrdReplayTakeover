@@ -10,7 +10,7 @@ typedef DWORD(__fastcall* GetSaveStateTrackerFunc)(DWORD manager);
 typedef void(__fastcall* EntityActorManagementFunc)(DWORD engine);
 typedef void(__thiscall* CreateActorFunc)(LPVOID thisArg, char* name, DWORD type);
 typedef void(__fastcall* DestroyActorFunc)(DWORD entity);
-typedef void(__thiscall* UpdatePlayerAnimFunc)(DWORD entity, char* stateName, DWORD flag);
+typedef void(__thiscall* UpdateAnimationFunc)(DWORD entity, char* stateName, DWORD flag);
 typedef void(__thiscall* SetGameModeFunc)(LPVOID thisArg, DWORD newMode);
 typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
 
@@ -77,7 +77,7 @@ public:
     static DestroyActorFunc GetDestroySimpleActor();
     static DestroyActorFunc GetDestroyComplexActor();
 
-    static UpdatePlayerAnimFunc GetUpdatePlayerAnim();
+    static UpdateAnimationFunc GetUpdateComplexActorAnimation();
     static SetGameModeFunc GetGameModeSetter();
 private:
     static DWORD mBase;
