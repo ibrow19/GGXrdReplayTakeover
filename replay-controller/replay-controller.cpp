@@ -7,12 +7,20 @@
 #include <imgui.h>
 #include <detours.h>
 
+class SetHealthDetourer
+{
+public:
+    void DetourSetHealth(int newHealth);
+    static SetHealthFunc mRealSetHealth; 
+};
+SetHealthFunc SetHealthDetourer::mRealSetHealth = nullptr;
+
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static bool GbReplayFrameStep = false;
 
 void __fastcall DetourReplayHudUpdate(DWORD param)
 {
-    if (!GameModeController::Get<ReplayController>()->IsInReplayTakeoverMode())
+    if (GameModeController::Get<ReplayController>()->GetMode() == ReplayTakeoverMode::Disabled)
     {
         GRealReplayHudUpdate(param);
         if (XrdModule::GetEngine().GetReplayHud().GetShouldStepNextFrame())
@@ -22,23 +30,40 @@ void __fastcall DetourReplayHudUpdate(DWORD param)
     }
 }
 
+void SetHealthDetourer::DetourSetHealth(int newHealth)
+{
+    ReplayController* controller = GameModeController::Get<ReplayController>();
+    assert(controller);
+    if (newHealth <= 0 && (controller->GetMode() == ReplayTakeoverMode::TakeoverControl))
+    {
+        controller->EndTakeoverRound();
+        newHealth = 1;
+    }
+    mRealSetHealth(this, newHealth);
+}
+
 ReplayController::ReplayController()
 : mMode(ReplayTakeoverMode::Disabled)
 , mbControlP1(true)
 , mCountdownTotal(DefaultCountdown)
 , mCountdown(0)
 , mBookmarkFrame(0)
-{}
+{
+    GbReplayFrameStep = false;
+}
 
 void ReplayController::AttachModeDetours()
 {
     AttachSaveStateDetours();
 
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
+    SetHealthDetourer::mRealSetHealth = XrdModule::GetSetHealth();
+    void (SetHealthDetourer::* detourSetHealth)(int) = &SetHealthDetourer::DetourSetHealth;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
+    DetourAttach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourTransactionCommit();
 }
 
@@ -46,9 +71,12 @@ void ReplayController::DetachModeDetours()
 {
     DetachSaveStateDetours();
 
+    void (SetHealthDetourer::* detourSetHealth)(int) = &SetHealthDetourer::DetourSetHealth;
+
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
+    DetourDetach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourTransactionCommit();
 }
 
@@ -81,7 +109,11 @@ void ReplayController::PrepareImGuiFrame()
             ImGui::Text("TAKEOVER");
             ImGui::PopStyleColor();
             break;
-
+        case ReplayTakeoverMode::TakeoverRoundEnded:
+            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 0, 255));
+            ImGui::Text("ROUND ENDED");
+            ImGui::PopStyleColor();
+            break;
     }
 
     int playerNum = mbControlP1 ? 1 : 2;
@@ -264,6 +296,7 @@ void ReplayController::Tick()
 
     if (XrdModule::GetPreOrPostBattle())
     {
+        GbReplayFrameStep = false;
         mReplayManager.Reset();
         if (mMode != ReplayTakeoverMode::Disabled)
         {
@@ -294,11 +327,14 @@ void ReplayController::Tick()
             break;
         case ReplayTakeoverMode::TakeoverCountdown:
         case ReplayTakeoverMode::TakeoverControl:
+        case ReplayTakeoverMode::TakeoverRoundEnded:
             HandleTakeoverMode();
             break;
     }
 
-    if (mMode == ReplayTakeoverMode::StandbyPaused || mMode == ReplayTakeoverMode::TakeoverCountdown)
+    if (mMode == ReplayTakeoverMode::StandbyPaused || 
+        mMode == ReplayTakeoverMode::TakeoverCountdown ||
+        mMode == ReplayTakeoverMode::TakeoverRoundEnded)
     {
         DWORD* pause = XrdModule::GetEngine().GetPauseEngineUpdateFlag();
         if (pause != nullptr)
@@ -308,7 +344,13 @@ void ReplayController::Tick()
     }
 }
 
-bool ReplayController::IsInReplayTakeoverMode() const
+ReplayTakeoverMode ReplayController::GetMode() const
 {
-    return mMode != ReplayTakeoverMode::Disabled;
+    return mMode;
+}
+
+void ReplayController::EndTakeoverRound()
+{
+    assert(mMode == ReplayTakeoverMode::TakeoverControl);
+    mMode = ReplayTakeoverMode::TakeoverRoundEnded;
 }

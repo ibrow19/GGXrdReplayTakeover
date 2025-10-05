@@ -10,13 +10,15 @@ enum class ReplayTakeoverMode
     StandbyPaused,
     TakeoverCountdown,
     TakeoverControl,
+    TakeoverRoundEnded,
 };
 
 class ReplayController : public GameModeController
 {
 public:
     ReplayController();
-    bool IsInReplayTakeoverMode() const;
+    ReplayTakeoverMode GetMode() const;
+    void EndTakeoverRound();
 private:
     void AttachModeDetours() override;
     void DetachModeDetours() override;

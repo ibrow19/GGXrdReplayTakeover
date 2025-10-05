@@ -13,6 +13,7 @@ typedef void(__fastcall* DestroyActorFunc)(DWORD entity);
 typedef void(__thiscall* UpdateAnimationFunc)(DWORD entity, char* stateName, DWORD flag);
 typedef void(__thiscall* SetGameModeFunc)(LPVOID thisArg, DWORD newMode);
 typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
+typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 
 class XrdModule
 {
@@ -79,6 +80,8 @@ public:
 
     static UpdateAnimationFunc GetUpdateComplexActorAnimation();
     static SetGameModeFunc GetGameModeSetter();
+
+    static SetHealthFunc GetSetHealth();
 private:
     static DWORD mBase;
 };

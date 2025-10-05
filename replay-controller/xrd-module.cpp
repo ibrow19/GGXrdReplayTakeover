@@ -141,3 +141,8 @@ SetGameModeFunc XrdModule::GetGameModeSetter()
 {
     return (SetGameModeFunc)(mBase + 0xb2ea20);
 }
+
+SetHealthFunc XrdModule::GetSetHealth()
+{
+    return (SetHealthFunc)(mBase + 0xa05060);
+}
