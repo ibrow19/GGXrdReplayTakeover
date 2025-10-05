@@ -262,8 +262,15 @@ void ReplayController::HandleTakeoverMode()
     if (battleInput & (DWORD)BattleInputMask::PlayRecording)
     {
         mReplayManager.LoadFrame(mBookmarkFrame);
-        mCountdown = 0;
-        mMode = ReplayTakeoverMode::TakeoverCountdown;
+        if (mCountdownTotal == 0)
+        {
+            mMode = ReplayTakeoverMode::TakeoverControl;
+        }
+        else
+        {
+            mCountdown = 0;
+            mMode = ReplayTakeoverMode::TakeoverCountdown;
+        }
         return;
     }
 
