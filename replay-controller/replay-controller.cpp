@@ -8,12 +8,17 @@
 #include <detours.h>
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
+static bool GbReplayFrameStep = false;
 
 void __fastcall DetourReplayHudUpdate(DWORD param)
 {
     if (!GameModeController::Get<ReplayController>()->IsInReplayTakeoverMode())
     {
         GRealReplayHudUpdate(param);
+        if (XrdModule::GetEngine().GetReplayHud().GetShouldStepNextFrame())
+        {
+            GbReplayFrameStep = true;
+        }
     }
 }
 
@@ -269,10 +274,13 @@ void ReplayController::Tick()
     }
 
     ReplayHud hud = XrdModule::GetEngine().GetReplayHud();
-    if ((mMode == ReplayTakeoverMode::Disabled && !hud.GetPause()) || mMode == ReplayTakeoverMode::Standby)
+    if ((mMode == ReplayTakeoverMode::Disabled && !hud.GetPause()) || 
+         mMode == ReplayTakeoverMode::Standby ||
+         GbReplayFrameStep)
     {
         ApplySaveStateEntityUpdates();
         mReplayManager.RecordFrame();
+        GbReplayFrameStep = false;
     }
 
     switch (mMode)
