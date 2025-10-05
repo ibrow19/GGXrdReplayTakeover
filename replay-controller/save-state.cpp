@@ -219,7 +219,7 @@ static void DestroyNonPlayerActors()
             Entity entity(entityPtr);
             if (!entity.IsPlayer())
             {
-                if (entity.GetSiimpeActor())
+                if (entity.GetSimpleActor())
                 {
                     DestroyActorFunc destroySimple = XrdModule::GetDestroySimpleActor();
                     destroySimple(entityPtr);
