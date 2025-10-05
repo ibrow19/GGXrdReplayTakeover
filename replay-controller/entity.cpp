@@ -14,12 +14,12 @@ bool Entity::IsPlayer()
     return *(DWORD*)(mPtr + 0x10) == 1;
 }
 
-DWORD Entity::GetSimpleActor()
+DWORD& Entity::GetSimpleActor()
 {
     return *(DWORD*)(mPtr + 0x27cc);
 }
 
-DWORD Entity::GetComplexActor()
+DWORD& Entity::GetComplexActor()
 {
     return *(DWORD*)(mPtr + 0x27a8);
 }

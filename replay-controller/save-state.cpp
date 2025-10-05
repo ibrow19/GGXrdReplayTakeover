@@ -189,18 +189,25 @@ static void CallPostLoad()
 static void RecreateNonPlayerActors()
 {
     CreateActorFunc createActor = XrdModule::GetCreateSimpleActor();
-    ForEachEntity([&createActor](DWORD entity)
+    ForEachEntity([&createActor](DWORD entityPtr)
         {
-            // TODO: move to class managing these queries.
-            DWORD actorPtr = *(DWORD*)(entity + 0x27cc);
-            DWORD isPlayer = *(DWORD*)(entity + 0x10);
-            DWORD isStateful = *(DWORD*)(entity + 0x2878);
+            Entity entity(entityPtr);
+            DWORD& simpleActor = entity.GetSimpleActor();
+            
+            // TODO: move to class managing these queries, can use 27a8 for this?
+            DWORD isStateful = *(DWORD*)(entityPtr + 0x2878);
 
-            if (isPlayer == 0 && actorPtr != NULL && isStateful == 0)
+            if (!entity.IsPlayer() && simpleActor && isStateful == 0)
             {
-                char* name = (char*)(entity + 0x2858);
-                DWORD type = *(DWORD*)(entity + 0x287c);
-                createActor((LPVOID)entity, name, type);
+                // If we don't null the simple actor pointer here CreateActor
+                // will try and destroy the old actor. Sometimes this could work
+                // fine as the actors in the loaded state won't exist, but it's
+                // possible for a newly created actor to reuse the address from one 
+                // of the old actors, in which case we would accidentally destroy it.
+                simpleActor = 0;
+                char* name = (char*)(entityPtr + 0x2858);
+                DWORD type = *(DWORD*)(entityPtr + 0x287c);
+                createActor((LPVOID)entityPtr, name, type);
             }
         });
 }
@@ -212,7 +219,7 @@ static void DestroyNonPlayerActors()
             Entity entity(entityPtr);
             if (!entity.IsPlayer())
             {
-                if (entity.GetSimpleActor())
+                if (entity.GetSiimpeActor())
                 {
                     DestroyActorFunc destroySimple = XrdModule::GetDestroySimpleActor();
                     destroySimple(entityPtr);
@@ -290,8 +297,8 @@ void LoadState(const char* src)
     GbStateDetourActive = false;
     trackerPtr = NULL;
 
-    CallPostLoad();
     RecreateNonPlayerActors();
+    CallPostLoad();
     UpdateAnimations();
 }
 
