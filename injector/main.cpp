@@ -31,10 +31,6 @@ int FindProcess(const char* processName)
 
 int InjectDll(int pid)
 {
-    // TODO: update path for release
-    char path[MAX_PATH];
-    GetCurrentDirectory(MAX_PATH, path);
-    strcat(path, "\\build\\Debug\\GGXrdReplayController.dll");
 
     HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, /*bInheritHandle =*/ FALSE, DWORD(pid));
     if (process == NULL)
@@ -51,6 +47,14 @@ int InjectDll(int pid)
         CloseHandle(process);
         return EXIT_FAILURE;
     }
+
+    char path[MAX_PATH];
+    GetCurrentDirectory(MAX_PATH, path);
+#ifdef NDEBUG
+    strcat(path, "\\GGXrdReplayTakeover.dll");
+#else
+    strcat(path, "\\build\\Debug\\GGXrdReplayTakeover.dll");
+#endif
 
     BOOL result = WriteProcessMemory(process, remoteBuffer, path, MAX_PATH, NULL);
     if (!result)
@@ -81,7 +85,7 @@ int InjectDll(int pid)
     DWORD injectedBase;
     GetExitCodeThread(injecterThread, &injectedBase);
 
-    HMODULE localModule = LoadLibrary("GGXrdReplayController.dll");
+    HMODULE localModule = LoadLibrary("GGXrdReplayTakeover.dll");
     if (localModule == NULL)
     {
         std::cout << "Failed to get local version of injected module" << std::endl;
