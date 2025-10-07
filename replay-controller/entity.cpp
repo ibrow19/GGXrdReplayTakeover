@@ -28,3 +28,8 @@ char* Entity::GetAnimationState()
 {
     return (char*)(mPtr + 0xa58);
 }
+
+char* Entity::GetCharacterCode()
+{
+    return (char*)(mPtr + 0x27ac);
+}

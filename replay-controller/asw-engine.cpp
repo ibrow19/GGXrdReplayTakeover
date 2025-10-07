@@ -1,4 +1,5 @@
 #include <asw-engine.h>
+#include <entity.h>
 #include <replay-hud.h>
 
 AswEngine::AswEngine(DWORD inPtr)
@@ -30,6 +31,26 @@ DWORD* AswEngine::GetEntityList()
     return (DWORD*)(mPtr + 0x1fc);
 }
 
+DWORD* AswEngine::GetPlayerList()
+{
+    return (DWORD*)(mPtr + 0xc8);
+}
+
+Entity AswEngine::GetP1Entity()
+{
+    return Entity(GetPlayerList()[0]);
+}
+
+Entity AswEngine::GetP2Entity()
+{
+    return Entity(GetPlayerList()[1]);
+}
+
+ReplayHud AswEngine::GetReplayHud()
+{
+    return ReplayHud(mPtr + 0x1c7400);
+}
+
 DWORD* AswEngine::GetPauseEngineUpdateFlag()
 {
     // Not sure exactly what these objects are for other than they
@@ -47,9 +68,4 @@ DWORD* AswEngine::GetPauseEngineUpdateFlag()
     }
 
     return (DWORD*)(object2 + 0x1c8);
-}
-
-ReplayHud AswEngine::GetReplayHud()
-{
-    return ReplayHud(mPtr + 0x1c7400);
 }

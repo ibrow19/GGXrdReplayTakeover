@@ -11,6 +11,7 @@ public:
     DWORD& GetSimpleActor();
     DWORD& GetComplexActor();
     char* GetAnimationState();
+    char* GetCharacterCode();
 private:
     DWORD mPtr;
 };

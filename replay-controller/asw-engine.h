@@ -10,6 +10,9 @@ public:
     DWORD GetPtr();
     DWORD GetEntityCount() const;
     DWORD* GetEntityList();
+    DWORD* GetPlayerList();
+    class Entity GetP1Entity();
+    Entity GetP2Entity();
     class ReplayHud GetReplayHud();
 
     // Many functions use this slight offset from the engine when
