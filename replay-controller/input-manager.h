@@ -29,10 +29,5 @@ public:
     void SetP1ReplayPos(const ReplayPosition& pos);
     void SetP2ReplayPos(const ReplayPosition& pos);
 private:
-    static constexpr DWORD P1ModeOffset = 0x1c;
-    static constexpr DWORD P2ModeOffset = P1ModeOffset + 0x24;
-    static constexpr DWORD P1ReplayPosOffset = 0x4;
-    static constexpr DWORD P2ReplayPosOffset = 0x28;
-private:
     DWORD mPtr;
 };
