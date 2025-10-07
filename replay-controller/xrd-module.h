@@ -42,8 +42,8 @@ public:
     // is used.
     static MainGameLogicFunc GetMainGameLogic();
 
-    // Setter for built in string type that seems to use a fixed buffer size.
-    // The dest string is replaced with he src string then has the remaining 
+    // Setter for built in string type that use a fixed 32 byte buffer size.
+    // The dest string is replaced with the src string then has the remaining 
     // bytes in the buffer memset to 0.
     static SetStringFunc GetSetString();
 
