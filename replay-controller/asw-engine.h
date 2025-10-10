@@ -8,6 +8,7 @@ public:
     AswEngine(DWORD inPtr);
     bool IsValid() const;
     DWORD GetPtr();
+    DWORD& GetErrorCode();
     DWORD GetEntityCount() const;
     DWORD* GetEntityList();
     DWORD* GetPlayerList();

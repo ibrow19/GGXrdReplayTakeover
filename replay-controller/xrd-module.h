@@ -15,6 +15,7 @@ typedef void(__thiscall* SetGameModeFunc)(LPVOID thisArg, DWORD newMode);
 typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
 typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
+typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
 
 class XrdModule
 {
@@ -84,6 +85,7 @@ public:
 
     static SetHealthFunc GetSetHealth();
     static UpdateTimeFunc GetUpdateTime();
+    static HandleInputsFunc GetHandleInputs();
 private:
     static DWORD mBase;
 };

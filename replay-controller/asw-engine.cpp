@@ -69,3 +69,8 @@ DWORD* AswEngine::GetPauseEngineUpdateFlag()
 
     return (DWORD*)(object2 + 0x1c8);
 }
+
+DWORD& AswEngine::GetErrorCode()
+{
+    return *(DWORD*)(mPtr + 0x1c6f4c + 0x4);
+}

@@ -151,3 +151,8 @@ UpdateTimeFunc XrdModule::GetUpdateTime()
 {
     return (UpdateTimeFunc)(mBase + 0xbaab80);
 }
+
+HandleInputsFunc XrdModule::GetHandleInputs()
+{
+    return (HandleInputsFunc)(mBase + 0x9e0290);
+}

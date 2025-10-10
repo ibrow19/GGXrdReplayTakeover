@@ -17,6 +17,7 @@ SetHealthFunc SetHealthDetourer::mRealSetHealth = nullptr;
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
+static HandleInputsFunc GRealHandleInputs = nullptr;
 static bool GbReplayFrameStep = false;
 
 void SetHealthDetourer::DetourSetHealth(int newHealth)
@@ -56,6 +57,13 @@ void __fastcall DetourUpdateTime(DWORD timeData)
     }
 }
 
+void __fastcall DetourHandleInputs(DWORD engine)
+{
+    // Suppress errors from overriding inputs in replay.
+    GRealHandleInputs(engine);
+    XrdModule::GetEngine().GetErrorCode() = 0;
+}
+
 ReplayController::ReplayController()
 : mMode(ReplayTakeoverMode::Disabled)
 , mbControlP1(true)
@@ -72,6 +80,7 @@ void ReplayController::AttachModeDetours()
 
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
     GRealUpdateTime = XrdModule::GetUpdateTime();
+    GRealHandleInputs = XrdModule::GetHandleInputs();
     SetHealthDetourer::mRealSetHealth = XrdModule::GetSetHealth();
     void (SetHealthDetourer::* detourSetHealth)(int) = &SetHealthDetourer::DetourSetHealth;
 
@@ -79,6 +88,7 @@ void ReplayController::AttachModeDetours()
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
     DetourAttach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
+    DetourAttach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
     DetourAttach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourTransactionCommit();
 }
@@ -93,6 +103,7 @@ void ReplayController::DetachModeDetours()
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
     DetourDetach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
+    DetourDetach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
     DetourDetach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourTransactionCommit();
 }
