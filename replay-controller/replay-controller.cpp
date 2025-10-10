@@ -16,7 +16,20 @@ public:
 SetHealthFunc SetHealthDetourer::mRealSetHealth = nullptr;
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
+static UpdateTimeFunc GRealUpdateTime = nullptr;
 static bool GbReplayFrameStep = false;
+
+void SetHealthDetourer::DetourSetHealth(int newHealth)
+{
+    ReplayController* controller = GameModeController::Get<ReplayController>();
+    assert(controller);
+    if (newHealth <= 0 && (controller->GetMode() == ReplayTakeoverMode::TakeoverControl))
+    {
+        controller->EndTakeoverRound();
+        newHealth = 1;
+    }
+    mRealSetHealth(this, newHealth);
+}
 
 void __fastcall DetourReplayHudUpdate(DWORD param)
 {
@@ -30,16 +43,17 @@ void __fastcall DetourReplayHudUpdate(DWORD param)
     }
 }
 
-void SetHealthDetourer::DetourSetHealth(int newHealth)
+void __fastcall DetourUpdateTime(DWORD timeData)
 {
+    GRealUpdateTime(timeData);
+    int& time = *(int*)(timeData + 0xc);
     ReplayController* controller = GameModeController::Get<ReplayController>();
     assert(controller);
-    if (newHealth <= 0 && (controller->GetMode() == ReplayTakeoverMode::TakeoverControl))
+    if (time <= 0 && (controller->GetMode() == ReplayTakeoverMode::TakeoverControl))
     {
         controller->EndTakeoverRound();
-        newHealth = 1;
+        time = 1;
     }
-    mRealSetHealth(this, newHealth);
 }
 
 ReplayController::ReplayController()
@@ -57,12 +71,14 @@ void ReplayController::AttachModeDetours()
     AttachSaveStateDetours();
 
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
+    GRealUpdateTime = XrdModule::GetUpdateTime();
     SetHealthDetourer::mRealSetHealth = XrdModule::GetSetHealth();
     void (SetHealthDetourer::* detourSetHealth)(int) = &SetHealthDetourer::DetourSetHealth;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
+    DetourAttach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourAttach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourTransactionCommit();
 }
@@ -76,6 +92,7 @@ void ReplayController::DetachModeDetours()
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
+    DetourDetach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourDetach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourTransactionCommit();
 }

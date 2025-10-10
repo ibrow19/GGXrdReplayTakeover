@@ -146,3 +146,8 @@ SetHealthFunc XrdModule::GetSetHealth()
 {
     return (SetHealthFunc)(mBase + 0xa05060);
 }
+
+UpdateTimeFunc XrdModule::GetUpdateTime()
+{
+    return (UpdateTimeFunc)(mBase + 0xbaab80);
+}
