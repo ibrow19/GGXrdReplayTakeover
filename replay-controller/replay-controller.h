@@ -34,7 +34,7 @@ private:
 private:
     static constexpr int MinCountdown = 0;
     static constexpr int MaxCountdown = 60;
-    static constexpr int DefaultCountdown = 30;
+    static constexpr int DefaultCountdown = 15;
     static constexpr size_t PausedFrameJump = 3;
 private:
     ReplayTakeoverMode mMode;
