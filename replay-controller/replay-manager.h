@@ -8,7 +8,7 @@
 class ReplayManager
 {
 public:
-    static constexpr size_t MaxFrameCount = 450;
+    static constexpr size_t MaxFrameCount = 500;
 public:
     ReplayManager();
     void Reset();
