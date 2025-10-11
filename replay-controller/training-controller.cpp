@@ -5,9 +5,6 @@
 #include <imgui.h>
 #include <cstdio>
 
-size_t TrainingController::mSelectedState = 0;
-TrainingSaveState TrainingController::mSaveStates[SaveStateCount];
-
 void TrainingController::AttachModeDetours()
 {
     AttachSaveStateDetours();
@@ -20,11 +17,27 @@ void TrainingController::DetachModeDetours()
 
 void TrainingController::Tick()
 {
-    if (!XrdModule::GetEngine().IsValid() || 
+    AswEngine engine = XrdModule::GetEngine();
+    if (!engine.IsValid() || 
         XrdModule::GetPreOrPostBattle() ||
         XrdModule::IsPauseMenuActive())
     {
         return;
+    }
+
+    // If the engine changes location from reloading training mode then none
+    // of our save states are valid anymore.
+    if (mEnginePtr == 0)
+    {
+        mEnginePtr = engine.GetPtr();
+    }
+    else if (mEnginePtr != engine.GetPtr())
+    {
+        mEnginePtr = engine.GetPtr();
+        for (int i = 0; i < SaveStateCount; ++i)
+        {
+            mSaveStates[i].bValid = false;
+        }
     }
 
     ApplySaveStateEntityUpdates();
@@ -76,11 +89,15 @@ void TrainingController::PrepareImGuiFrame()
     ImGui::SameLine();
     if (mSaveStates[mSelectedState].bValid)
     {
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
         ImGui::Text("Valid Save Data");
+        ImGui::PopStyleColor();
     }
     else
     {
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
         ImGui::Text("No Save Data");
+        ImGui::PopStyleColor();
     }
     ImGui::End();
 }

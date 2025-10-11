@@ -19,6 +19,7 @@ private:
 private:
     static constexpr size_t SaveStateCount = 10;
 private:
-    static size_t mSelectedState; 
-    static TrainingSaveState mSaveStates[SaveStateCount];
+    size_t mSelectedState = 0; 
+    TrainingSaveState mSaveStates[SaveStateCount];
+    DWORD mEnginePtr = 0;
 };
