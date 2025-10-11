@@ -5,7 +5,7 @@ This mod is still somewhat experimental, expect some bugs or crashes.
 - Open Guilty Gear Xrd.
 - Run GGXrdReplayTakeoverInjector.exe
 
-At the moment you're going to have to do this again each time you launch the game but I'll add some steps to enable it automatically once I'm sure the mod is more stable.
+At the moment you're going to have to do this again each time you launch the game and want to use the mod but I'll add some steps to enable it automatically once I'm sure the mod is more stable.
 
 ## Using Replay Takeover
 Enter a replay, a Replay Takeover window should pop up with info about the current replay takeover state.
@@ -38,10 +38,16 @@ The takeover countdown is a short delay before takeover takes effect after press
 
 ## Using Save States
 Enter training mode, a Save state window should pop up with info about the current save state data.
+
 <img width="225" height="104" alt="image" src="https://github.com/user-attachments/assets/30be80ec-e33d-4b12-8919-706b2a92d75a" />
 
 ### Controls
+Save states uses contextual controls based on whether the "Special Move" button held. You probably won't have this button bound already since it's normally only used with stylish mode.
 
+- Special Move + Record - Save State
+- Special Move + Play - Load State
 
 ## Known Issues
-- Many simple visual effects display incorrectly when loaded from a save state as they always begin from their first frame of animation. 
+- Many simple actors/visual effects display incorrectly when loaded from a save state as they always begin from their first frame of animation. Furthermore, these visual effects are not paused in replay takeover standby mode/rewinding.
+- Some visual effects are not stored in the save states so will be absent from any loaded state. Furthermore their absence can cause other visual effects to appear in the wrong place. For example, Answer's scrolls have a green glow that is not part of the save state, the glow will be missing from states loaded that include scrolls.
+- The camera angle for some cinematic supers is not correctly stored in save states. Loading a save state or initating replay takeover mid-way through a cinematic super can result in an incorrect camera angle until you exit the replay/training.
