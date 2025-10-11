@@ -155,6 +155,24 @@ void ReplayController::PrepareImGuiFrame()
         ImGui::SliderInt("Replay Frame", &selectedFrame, 0, mReplayManager.GetFrameCount() - 1);
     }
 
+    if (ImGui::CollapsingHeader("Controls"))
+    {
+        if (mMode != ReplayTakeoverMode::Disabled)
+        {
+            ImGui::Text("Reset: Disable mod controls");
+            ImGui::Text("P: Pause/unpause");
+            ImGui::Text("K: Change player for takeover");
+            ImGui::Text("Left/Right: rewind/advance paused replay");
+            ImGui::Text("Down/Up: Fast rewind/advance paused replay");
+            ImGui::Text("S/H: Single frame step back/forward");
+            ImGui::Text("Play: Initiate/restart takeover");
+            ImGui::Text("Record: Cancel takeover");
+        }
+        else
+        {
+            ImGui::Text("Reset: Enable mod controls");
+        }
+    }
     ImGui::End();
 }
 

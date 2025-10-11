@@ -99,5 +99,11 @@ void TrainingController::PrepareImGuiFrame()
         ImGui::Text("No Save Data");
         ImGui::PopStyleColor();
     }
+
+    if (ImGui::CollapsingHeader("Controls"))
+    {
+        ImGui::Text("Special Move + Play: Load State");
+        ImGui::Text("Special Move + Record: Save State");
+    }
     ImGui::End();
 }
