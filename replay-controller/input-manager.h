@@ -19,8 +19,8 @@ class InputManager
 public:
     InputManager(DWORD inPtr);
 
-    DWORD GetP1InputMode() const;
-    DWORD GetP2InputMode() const;
+    InputMode GetP1InputMode() const;
+    InputMode GetP2InputMode() const;
     ReplayPosition GetP1ReplayPos() const;
     ReplayPosition GetP2ReplayPos() const;
 

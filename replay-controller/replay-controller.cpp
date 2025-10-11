@@ -1,4 +1,5 @@
 #include <replay-controller.h>
+#include <common.h>
 #include <input.h>
 #include <save-state.h>
 #include <xrd-module.h>
@@ -74,8 +75,22 @@ ReplayController::ReplayController()
     GbReplayFrameStep = false;
 }
 
-void ReplayController::AttachModeDetours()
+void ReplayController::InitMode()
 {
+    // If we set player 2 to player control then it will look for input
+    // from a second controller. However, we want it to use the first
+    // controller. So we change this instruction in the input handling
+    // so that it pushes player 1 index onto the stack instead of player 2 when
+    // it's about to call the function for getting controller inputs it's going
+    // to add to the input buffer. Normally this instruction is Push ESI which
+    // is 0 or 1. We replace it with Push EDX as we know (pretty sure) that EDX
+    // is always 0 here in replays. However, EDX can be 1 in other modes such
+    // as training so we need to make sure we change the instruction back once
+    // we're done so that we don't break the other game modes.
+    BYTE* instruction = XrdModule::GetControllerIndexInstruction();
+    MakeRegionWritable((DWORD)instruction, 1);
+    *instruction = 0x52;
+
     AttachSaveStateDetours();
 
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
@@ -93,8 +108,12 @@ void ReplayController::AttachModeDetours()
     DetourTransactionCommit();
 }
 
-void ReplayController::DetachModeDetours()
+void ReplayController::ShutdownMode()
 {
+    // Restore instruction to it's original value so it works in other game modes
+    BYTE* instruction = XrdModule::GetControllerIndexInstruction();
+    *instruction = 0x56;
+
     DetachSaveStateDetours();
 
     void (SetHealthDetourer::* detourSetHealth)(int) = &SetHealthDetourer::DetourSetHealth;

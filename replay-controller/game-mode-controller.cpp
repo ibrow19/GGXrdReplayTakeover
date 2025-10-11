@@ -1,10 +1,10 @@
+#include <game-mode-controller.h>
 #include <common.h>
 #include <xrd-module.h>
 #include <detours.h>
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
-#include <game-mode-controller.h>
 
 class GameModeControllerDetours
 {
@@ -49,7 +49,7 @@ HRESULT STDMETHODCALLTYPE DetourPresent(IDirect3DDevice9* device, const RECT* pS
     return GRealPresent(device, pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion);
 }
 
-void GameModeController::Init()
+void GameModeController::InitD3DPresent()
 {
     // Create D3D device to find present address.
     IDirect3D9* dummyD3D = Direct3DCreate9(D3D_SDK_VERSION);
@@ -128,14 +128,13 @@ void GameModeController::Destroy()
 {
     if (mInstance != nullptr)
     {
-        mInstance->DetachCommonDetours();
-        mInstance->DetachModeDetours();
+        mInstance->Shutdown();
         delete mInstance;
         mInstance = nullptr;
     }
 }
 
-void GameModeController::AttachCommonDetours()
+void GameModeController::Init()
 {
     // TODO: flush render command queue so that render thread detours are attached safely. 
     assert(GRealPresent);
@@ -148,9 +147,11 @@ void GameModeController::AttachCommonDetours()
     DetourAttach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
     DetourAttach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
     DetourTransactionCommit();
+
+    InitMode();
 }
 
-void GameModeController::DetachCommonDetours()
+void GameModeController::Shutdown()
 {
     // TODO: flush render command queue so that render thread detours are detached safely. 
     assert(GRealPresent);
@@ -162,6 +163,8 @@ void GameModeController::DetachCommonDetours()
     DetourDetach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
     DetourDetach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
     DetourTransactionCommit();
+
+    ShutdownMode();
 }
 
 void GameModeController::InitImGui(IDirect3DDevice9* device)

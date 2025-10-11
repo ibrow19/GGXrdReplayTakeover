@@ -20,8 +20,8 @@ public:
     ReplayTakeoverMode GetMode() const;
     void EndTakeoverRound();
 private:
-    void AttachModeDetours() override;
-    void DetachModeDetours() override;
+    void InitMode() override;
+    void ShutdownMode() override;
     void Tick() override;
     void PrepareImGuiFrame() override;
 

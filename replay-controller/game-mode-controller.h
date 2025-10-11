@@ -16,7 +16,7 @@ public:
     // why but it probably interferes with the existing D3D device somehow. So
     // we we need to initalise this on the injection initialisation thread,
     // otherwise we need to find present some other way.
-    static void Init();
+    static void InitD3DPresent();
 
     template <typename Controller>
     static void Set();
@@ -29,12 +29,12 @@ public:
     void RenderUi(IDirect3DDevice9* device);
     virtual void Tick() = 0;
 private:
-    static void AttachCommonDetours();
-    static void DetachCommonDetours();
     static void InitImGui(IDirect3DDevice9* device);
+    void Init();
+    void Shutdown();
 
-    virtual void AttachModeDetours() = 0;
-    virtual void DetachModeDetours() = 0;
+    virtual void InitMode() = 0;
+    virtual void ShutdownMode() = 0;
     virtual void PrepareImGuiFrame() = 0;
 private:
     static GameModeController* mInstance;
@@ -48,8 +48,7 @@ void GameModeController::Set()
     {
         Destroy();
         mInstance = new Controller;
-        mInstance->AttachCommonDetours();
-        mInstance->AttachModeDetours();
+        mInstance->Init();
     }
 }
 

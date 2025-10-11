@@ -5,12 +5,12 @@
 #include <imgui.h>
 #include <cstdio>
 
-void TrainingController::AttachModeDetours()
+void TrainingController::InitMode()
 {
     AttachSaveStateDetours();
 }
 
-void TrainingController::DetachModeDetours()
+void TrainingController::ShutdownMode()
 {
     DetachSaveStateDetours();
 }
