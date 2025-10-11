@@ -48,6 +48,7 @@ Save states uses contextual controls based on whether the "Special Move" button 
 - Special Move + Play - Load State
 
 ## Known Issues
+- Some save states can cause a crash, the only way I've been able to consistently repro this is spawning lots of houses with jack-o but I still haven't investigated in detail to find the cause.
 - Many simple actors/visual effects display incorrectly when loaded from a save state as they always begin from their first frame of animation. Furthermore, these visual effects are not paused in replay takeover standby mode/rewinding.
 - Some visual effects are not stored in the save states so will be absent from any loaded state. Furthermore their absence can cause other visual effects to appear in the wrong place. For example, Answer's scrolls have a green glow that is not part of the save state, the glow will be missing from states loaded that include scrolls.
 - The camera angle for some cinematic supers is not correctly stored in save states. Loading a save state or initating replay takeover mid-way through a cinematic super can result in an incorrect camera angle until you exit the replay/training.
