@@ -3,7 +3,7 @@ This mod is still somewhat experimental, expect some bugs or crashes.
 ## Enabling the mod
 - Grab the latest build from releases and unzip it.
 - Open Guilty Gear Xrd.
-- Run GGXrdReplayTakeoverInjector.exe
+- Run GGXrdReplayTakeoverInjector.exe (If you run it more than once atm stuff will start to break)
 
 At the moment you're going to have to do this again each time you launch the game and want to use the mod but I'll add some steps to enable it automatically once I'm sure the mod is more stable.
 
