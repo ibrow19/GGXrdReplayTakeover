@@ -37,7 +37,7 @@ Currently the mod's fixed maximum for the rewind buffer is 500 frames (8 seconds
 The takeover countdown is a short delay before takeover takes effect after pressing play. The number of frames can be configured using the slider in the replay takeover window.
 
 ## Using Save States
-Enter training mode, a Save State window should pop up with info about the current save state data.
+Enter training mode, a Save State window should pop up with info about the current save state data. You can select from 10 different saved states.
 
 <img width="225" height="104" alt="image" src="https://github.com/user-attachments/assets/30be80ec-e33d-4b12-8919-706b2a92d75a" />
 
@@ -51,3 +51,4 @@ Save states uses contextual controls based on whether the "Special Move" button 
 - Many simple actors/visual effects display incorrectly when loaded from a save state as they always begin from their first frame of animation. Furthermore, these visual effects are not paused in replay takeover standby mode/rewinding.
 - Some visual effects are not stored in the save states so will be absent from any loaded state. Furthermore their absence can cause other visual effects to appear in the wrong place. For example, Answer's scrolls have a green glow that is not part of the save state, the glow will be missing from states loaded that include scrolls.
 - The camera angle for some cinematic supers is not correctly stored in save states. Loading a save state or initating replay takeover mid-way through a cinematic super can result in an incorrect camera angle until you exit the replay/training.
+- Currently any time you change character or leave training mode your save states get reset. Ideally they would presist but they depend certain data being in very specific positions in memory which changes whenever you leave training mode. So making these states persist is not trivial.
