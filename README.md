@@ -37,7 +37,7 @@ Currently the mod's fixed maximum for the rewind buffer is 500 frames (8 seconds
 The takeover countdown is a short delay before takeover takes effect after pressing play. The number of frames can be configured using the slider in the replay takeover window.
 
 ## Using Save States
-Enter training mode, a Save state window should pop up with info about the current save state data.
+Enter training mode, a Save State window should pop up with info about the current save state data.
 
 <img width="225" height="104" alt="image" src="https://github.com/user-attachments/assets/30be80ec-e33d-4b12-8919-706b2a92d75a" />
 
