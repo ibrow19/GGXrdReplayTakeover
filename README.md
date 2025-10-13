@@ -11,7 +11,7 @@ At the moment you're going to have to do this again each time you launch the gam
 Enter a replay, a Replay Takeover window should pop up with info about the current replay takeover state.
 <img width="367" height="109" alt="image" src="https://github.com/user-attachments/assets/a25fa7dc-605d-4a76-8706-46010fe3b513" />
 ### Modes
-- DISABLED - The mod is disabled and the normal replay controls for pausing, chaning camera etc can be used.
+- DISABLED - The mod is disabled and the normal replay controls for pausing, changing camera etc can be used.
 - STANDBY - The mod is overriding the regular replay controls to enable rewinding and takeover but takeover is not currently active.
 - TAKEOVER - Replay takeover is active controlling one of the players.
 
