@@ -25,7 +25,7 @@ Note that all controls will not be usable until Reset is pressed to override the
 - Left/Right - Go back or forward in the replay. Can be held.
 - Up/down - Fast forward/rewind 3 frames at a time. Can be held.
 - S/H - Step back or forward one frame at a time. Cannot be held so allows for more precise navigation than directions.
-- Play - Initiate replay takeover on the current frame. If already in takeover then it will restart the takeover from the original frame.
+- Play - Initiate replay takeover on the current frame. If already in takeover then it will restart the takeover.
 - Record - Cancel the current takeover and go back to standby mode on the frame takeover began.
 
 ### Rewinding Limits
@@ -50,6 +50,6 @@ Save states uses contextual controls based on whether the "Special Move" button 
 ## Known Issues
 - Some save states can cause a crash, the only way I've been able to consistently repro this is spawning lots of houses with jack-o but I still haven't investigated in detail to find the cause.
 - Many simple actors/visual effects display incorrectly when loaded from a save state as they always begin from their first frame of animation. Furthermore, these visual effects are not paused in replay takeover standby mode/rewinding.
-- Some visual effects are not stored in the save states so will be absent from any loaded state. Furthermore their absence can cause other visual effects to appear in the wrong place. For example, Answer's scrolls have a green glow that is not part of the save state, the glow will be missing from states loaded that include scrolls.
-- The camera angle for some cinematic supers is not correctly stored in save states. Loading a save state or initating replay takeover mid-way through a cinematic super can result in an incorrect camera angle until you exit the replay/training.
-- Currently any time you change character or leave training mode your save states get reset. Ideally they would presist but they depend on certain data being in very specific positions in memory which changes whenever you leave training mode. So making these states persist is not trivial.
+- Some visual effects are not stored in the save states so will be absent from any loaded state. Their absence can cause other visual effects to appear in the wrong place. For example, Answer's scrolls have a green glow that is not part of the save state, the glow will be missing from states loaded that include scrolls.
+- The camera angle for some cinematic supers is not correctly stored in save states. Loading a save state or initiating replay takeover mid-way through a cinematic super can result in an incorrect camera angle until you exit the replay/training.
+- Currently any time you change character or leave training mode your save states get reset. Ideally they would persist but they depend on certain data being in very specific positions in memory which changes whenever you leave training mode. So making these states persist is not trivial.
