@@ -1,22 +1,4 @@
 #include <common.h>
-#include <xrd-module.h>
-#include <asw-engine.h>
-
-void ForEachEntity(const std::function<void (DWORD)>& func)
-{
-    AswEngine engine = XrdModule::GetEngine();
-    if (!engine.IsValid())
-    {
-        return;
-    }
-
-    DWORD entityCount = engine.GetEntityCount();
-    DWORD* entityList =  engine.GetEntityList();
-    for (DWORD i = 0; i < entityCount; ++i)
-    {
-        func(entityList[i]);
-    }
-}
 
 void MakeRegionWritable(DWORD base, DWORD size)
 {

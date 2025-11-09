@@ -151,6 +151,20 @@ static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
     },
 };
 
+static void ForEachEntity(void(*func)(DWORD, DWORD, void*), void* extraData = nullptr)
+{
+    AswEngine engine = XrdModule::GetEngine();
+    assert(engine.IsValid());
+
+    DWORD entityCount = engine.GetEntityCount();
+    DWORD* entityList =  engine.GetEntityList();
+    for (DWORD i = 0; i < entityCount; ++i)
+    {
+        func(entityList[i], i, extraData);
+    }
+}
+
+
 static void CallSaveStateFunction(DWORD functionOffset, SaveStateSectionBase base, DWORD stateOffset)
 {
     const DWORD moduleBase = XrdModule::GetBase();
@@ -186,18 +200,14 @@ static void CallPostLoad()
     func(engineOffset);
 }
 
-static void RecreateNonPlayerActors()
+static void RecreateSimpleActors()
 {
-    CreateActorFunc createActor = XrdModule::GetCreateSimpleActor();
-    ForEachEntity([&createActor](DWORD entityPtr)
+    ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
         {
             Entity entity(entityPtr);
             DWORD& simpleActor = entity.GetSimpleActor();
             
-            // TODO: move to class managing these queries, can use 27a8 for this?
-            DWORD isStateful = *(DWORD*)(entityPtr + 0x2878);
-
-            if (!entity.IsPlayer() && simpleActor && isStateful == 0)
+            if (!entity.IsPlayer() && simpleActor)
             {
                 // If we don't null the simple actor pointer here CreateActor
                 // will try and destroy the old actor. Sometimes this could work
@@ -205,8 +215,14 @@ static void RecreateNonPlayerActors()
                 // possible for a newly created actor to reuse the address from one 
                 // of the old actors, in which case we would accidentally destroy it.
                 simpleActor = 0;
-                char* name = (char*)(entityPtr + 0x2858);
-                DWORD type = *(DWORD*)(entityPtr + 0x287c);
+
+                // Currently working under the assumption that this parameter
+                // should always be 0x17 based on code at xrd + 0xa126a4. Other
+                // parts of the code call it with 0x16 but I don't know why/if
+                // they are used in regular gameplay.
+                DWORD type = 0x17;
+                char* name = (char*)entity.GetSimpleActorSaveData();
+                CreateActorFunc createActor = XrdModule::GetCreateSimpleActor();
                 createActor((LPVOID)entityPtr, name, type);
             }
         });
@@ -214,7 +230,7 @@ static void RecreateNonPlayerActors()
 
 static void DestroyNonPlayerActors()
 {
-    ForEachEntity([](DWORD entityPtr)
+    ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
         {
             Entity entity(entityPtr);
             if (!entity.IsPlayer())
@@ -235,22 +251,53 @@ static void DestroyNonPlayerActors()
 
 static void UpdateAnimations()
 {
-    UpdateAnimationFunc updateAnim = XrdModule::GetUpdateComplexActorAnimation();
-    ForEachEntity([&updateAnim](DWORD entityPtr)
+    ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
         {
             Entity entity(entityPtr);
             if (entity.GetComplexActor())
             {
-                updateAnim(entityPtr, entity.GetAnimationState(), 1);
+                UpdateAnimationFunc updateAnim = XrdModule::GetUpdateComplexActorAnimation();
+                updateAnim(entityPtr, entity.GetAnimationFrameName(), 1);
             }
         });
 }
 
-void SaveState(char* dest)
+// Apply online entity update that adds extra data needed for save state
+// loading. Also store custom data needed for restoring simple actors.
+static void PreSaveEntityUpdates(EntitySaveData* entitySaveData)
 {
+    ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
+        {
+            Entity entity(entityPtr);
+            EntitySaveData* saveData = (EntitySaveData*)extraData;
+            DWORD simpleActor = entity.GetSimpleActor();
+            DWORD namePtr = 0;
+
+            if (simpleActor)
+            {
+                namePtr = entity.GetSimpleActorSaveData();
+                saveData[index].simpleActorTime = SimpleActor(simpleActor).GetTime();
+            }
+
+            EntityUpdateFunc update = XrdModule::GetOnlineEntityUpdate();
+            update(entityPtr);
+
+            // Restore name in entity as it will have been overwritten by the online entity update.
+            if (simpleActor)
+            {
+                entity.GetSimpleActorSaveData() = namePtr;
+            }
+        },
+        entitySaveData);
+}
+
+void SaveState(SaveData& dest)
+{
+    PreSaveEntityUpdates(dest.entityData);
+
     GTracker.saveMemCpyCount = 0;
-    GTracker.saveAddress1 = (DWORD)dest;
-    GTracker.saveAddress2 = (DWORD)dest;
+    GTracker.saveAddress1 = (DWORD)dest.xrdData;
+    GTracker.saveAddress2 = (DWORD)dest.xrdData;
 
     DWORD& trackerPtr = XrdModule::GetSaveStateTrackerPtr();
     trackerPtr = (DWORD)&GTracker;
@@ -271,7 +318,7 @@ void SaveState(char* dest)
     GbStateDetourActive = false;
 }
 
-void LoadState(const char* src)
+void LoadState(const SaveData& src)
 {
     DestroyNonPlayerActors();
 
@@ -280,7 +327,7 @@ void LoadState(const char* src)
     CallPreLoad();
 
     GTracker.loadMemCpyCount = 0;
-    GTracker.loadAddress = (DWORD)src;
+    GTracker.loadAddress = (DWORD)src.xrdData;
 
     DWORD& trackerPtr = XrdModule::GetSaveStateTrackerPtr();
     trackerPtr = (DWORD)&GTracker;
@@ -297,46 +344,21 @@ void LoadState(const char* src)
     GbStateDetourActive = false;
     trackerPtr = NULL;
 
-    RecreateNonPlayerActors();
+    RecreateSimpleActors();
     CallPostLoad();
     UpdateAnimations();
 }
 
- // This update function is only used with simple entities. We can use
- // entity fields reserved for more complicated, stateful entities to hold
- // initalisation data to recreate these entities later. 
+// This update function is only used with simple actors. We store the
+// name used to initialise the actor in entity fields reserved for 
+// save data that we know we won't use. Then we can use this name to
+// recreate the simple actor on save state load.
 void CreateSimpleActorDetourer::DetourCreateSimpleActor(char* name, DWORD type)
 {
-    bool bRecreatingSimple = *(DWORD*)((DWORD)this + 0x27cc) != 0 && *(DWORD*)((DWORD)this + 0x2878) == 0;
-
-    // TODO: It should be impossible for type to be 0 here unless we're doing
-    // something wrong storing type in the entity. However, it still sometimes
-    // happens and causes a crash, seems common with Answer. As a temporary
-    // workaround forcing type to 0x17 seems to work as it is usually (always?)
-    // this value.
-    if (type == 0)
-    {
-        type = 0x17;
-    }
-
     mRealCreateSimpleActor((LPVOID)this, name, type);
 
-    // Don't overwrite these values if the entity needs them.
-    // Ignore entities where the simple actor (27cc) is already set as that
-    // means we're resuing an existing simple actor and need to reset our custom changes.
-    if (!bRecreatingSimple &&
-            (*(DWORD*)((DWORD)this + 0x2878) != 0 ||
-             *(DWORD*)((DWORD)this + 0x2858) != 0 ||
-             *(DWORD*)((DWORD)this + 0x287c) != 0))
-    {
-        return;
-    }
-
-    SetStringFunc setString = XrdModule::GetSetString();
-    char* stateName = (char*)((DWORD)this + 0x2858);
-    setString(stateName, name);
-
-    *(DWORD*)((DWORD)this + 0x287c) = type;
+    // Assuming none of the names passed to this function are on the heap.
+    Entity((DWORD)this).GetSimpleActorSaveData() = (DWORD)name;
 }
 
 static DWORD __fastcall DetourGetSaveStateTracker(DWORD manager)
@@ -372,13 +394,4 @@ void DetachSaveStateDetours()
     DetourDetach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
     DetourDetach(&(PVOID&)CreateSimpleActorDetourer::mRealCreateSimpleActor, *(PBYTE*)&detourCreateSimpleActor);
     DetourTransactionCommit();
-}
-
-void ApplySaveStateEntityUpdates()
-{
-    EntityUpdateFunc update = XrdModule::GetOnlineEntityUpdate();
-    ForEachEntity([&update](DWORD entity)
-        {
-            update(entity);
-        });
 }

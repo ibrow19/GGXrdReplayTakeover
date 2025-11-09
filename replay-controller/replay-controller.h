@@ -18,6 +18,7 @@ class ReplayController : public GameModeController
 public:
     ReplayController();
     ReplayTakeoverMode GetMode() const;
+    bool IsPaused() const;
     void EndTakeoverRound();
 private:
     void InitMode() override;

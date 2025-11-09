@@ -3,6 +3,12 @@
 #include <save-state.h>
 #include <input-manager.h>
 
+struct ReplaySaveData : public SaveData
+{
+    ReplayPosition p1ReplayPosition;
+    ReplayPosition p2ReplayPosition;
+};
+
 // Ring buffer of recent frames in a replay with the ability to set
 // the current game state to any of the frames currently in the buffer.
 class ReplayManager
@@ -33,15 +39,13 @@ private:
     size_t GetCurrentFrameBufferPos() const;
 private:
     // Number of currently saved frame states.
-    size_t frameCount;
+    size_t mFrameCount;
 
     // Start position in ring buffer.
-    size_t start;
+    size_t mStart;
 
     // Index from start rather than index into frames buffer.
-    size_t currentFrame;
+    size_t mCurrentFrame;
 
-    char frames[MaxFrameCount * SaveStateSize];
-    ReplayPosition p1ReplayPositions[MaxFrameCount];
-    ReplayPosition p2ReplayPositions[MaxFrameCount];
+    ReplaySaveData mSavedFrames[MaxFrameCount];
 };

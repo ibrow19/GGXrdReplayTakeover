@@ -3,10 +3,9 @@
 #include <save-state.h>
 #include <game-mode-controller.h>
 
-struct TrainingSaveState
+struct TrainingSaveData : public SaveData
 {
     bool bValid = false;
-    char saveData[SaveStateSize];
 };
 
 class TrainingController : public GameModeController
@@ -20,6 +19,6 @@ private:
     static constexpr size_t SaveStateCount = 10;
 private:
     size_t mSelectedState = 0; 
-    TrainingSaveState mSaveStates[SaveStateCount];
     DWORD mEnginePtr = 0;
+    TrainingSaveData mSaveStates[SaveStateCount];
 };

@@ -8,20 +8,23 @@
 #include <imgui.h>
 #include <detours.h>
 
-class SetHealthDetourer
+class ReplayControllerDetourer
 {
 public:
     void DetourSetHealth(int newHealth);
+    void DetourTickSimpleActor(float delta);
     static SetHealthFunc mRealSetHealth; 
+    static TickActorFunc mRealTickSimpleActor; 
 };
-SetHealthFunc SetHealthDetourer::mRealSetHealth = nullptr;
+SetHealthFunc ReplayControllerDetourer::mRealSetHealth = nullptr;
+TickActorFunc ReplayControllerDetourer::mRealTickSimpleActor = nullptr;
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
 static bool GbReplayFrameStep = false;
 
-void SetHealthDetourer::DetourSetHealth(int newHealth)
+void ReplayControllerDetourer::DetourSetHealth(int newHealth)
 {
     ReplayController* controller = GameModeController::Get<ReplayController>();
     assert(controller);
@@ -31,6 +34,21 @@ void SetHealthDetourer::DetourSetHealth(int newHealth)
         newHealth = 1;
     }
     mRealSetHealth(this, newHealth);
+}
+
+// We don't want to completely pause the game in replays as then it won't
+// update with our loaded states. Instead we just prevent the Asw engine from
+// updating and here make sure simple actors for things like projectiles don't
+// progress their animations. There are probably better mechanisms for doing
+// this somewhere in the game but I haven't found them and this works for now.
+void ReplayControllerDetourer::DetourTickSimpleActor(float delta)
+{
+    ReplayController* controller = GameModeController::Get<ReplayController>();
+    assert(controller);
+    if (!controller->IsPaused())
+    {
+        mRealTickSimpleActor(this, delta);
+    }
 }
 
 void __fastcall DetourReplayHudUpdate(DWORD param)
@@ -96,15 +114,18 @@ void ReplayController::InitMode()
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
     GRealUpdateTime = XrdModule::GetUpdateTime();
     GRealHandleInputs = XrdModule::GetHandleInputs();
-    SetHealthDetourer::mRealSetHealth = XrdModule::GetSetHealth();
-    void (SetHealthDetourer::* detourSetHealth)(int) = &SetHealthDetourer::DetourSetHealth;
+    ReplayControllerDetourer::mRealSetHealth = XrdModule::GetSetHealth();
+    ReplayControllerDetourer::mRealTickSimpleActor = XrdModule::GetTickSimpleActor();
+    void (ReplayControllerDetourer::* detourSetHealth)(int) = &ReplayControllerDetourer::DetourSetHealth;
+    void (ReplayControllerDetourer::* detourTickSimpleActor)(float) = &ReplayControllerDetourer::DetourTickSimpleActor;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
     DetourAttach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourAttach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
-    DetourAttach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
+    DetourAttach(&(PVOID&)ReplayControllerDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
+    DetourAttach(&(PVOID&)ReplayControllerDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourTransactionCommit();
 }
 
@@ -116,14 +137,16 @@ void ReplayController::ShutdownMode()
 
     DetachSaveStateDetours();
 
-    void (SetHealthDetourer::* detourSetHealth)(int) = &SetHealthDetourer::DetourSetHealth;
+    void (ReplayControllerDetourer::* detourSetHealth)(int) = &ReplayControllerDetourer::DetourSetHealth;
+    void (ReplayControllerDetourer::* detourTickSimpleActor)(float) = &ReplayControllerDetourer::DetourTickSimpleActor;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
     DetourDetach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourDetach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
-    DetourDetach(&(PVOID&)SetHealthDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
+    DetourDetach(&(PVOID&)ReplayControllerDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
+    DetourDetach(&(PVOID&)ReplayControllerDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourTransactionCommit();
 }
 
@@ -383,7 +406,6 @@ void ReplayController::Tick()
          mMode == ReplayTakeoverMode::Standby ||
          GbReplayFrameStep)
     {
-        ApplySaveStateEntityUpdates();
         mReplayManager.RecordFrame();
         GbReplayFrameStep = false;
     }
@@ -404,9 +426,7 @@ void ReplayController::Tick()
             break;
     }
 
-    if (mMode == ReplayTakeoverMode::StandbyPaused || 
-        mMode == ReplayTakeoverMode::TakeoverCountdown ||
-        mMode == ReplayTakeoverMode::TakeoverRoundEnded)
+    if (IsPaused())
     {
         DWORD* pause = XrdModule::GetEngine().GetPauseEngineUpdateFlag();
         if (pause != nullptr)
@@ -419,6 +439,13 @@ void ReplayController::Tick()
 ReplayTakeoverMode ReplayController::GetMode() const
 {
     return mMode;
+}
+
+bool ReplayController::IsPaused() const
+{
+    return mMode == ReplayTakeoverMode::StandbyPaused || 
+           mMode == ReplayTakeoverMode::TakeoverCountdown ||
+           mMode == ReplayTakeoverMode::TakeoverRoundEnded;
 }
 
 void ReplayController::EndTakeoverRound()

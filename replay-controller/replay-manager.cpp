@@ -3,93 +3,93 @@
 #include <common.h>
 
 ReplayManager::ReplayManager()
-: frameCount(0),
-  start(0),
-  currentFrame(0)
+: mFrameCount(0),
+  mStart(0),
+  mCurrentFrame(0)
 {}
 
 void ReplayManager::Reset()
 {
-    frameCount = 0;
-    start = 0;
-    currentFrame = 0;
+    mFrameCount = 0;
+    mStart = 0;
+    mCurrentFrame = 0;
 }
 
 size_t ReplayManager::GetCurrentFrameBufferPos() const
 {
-    return (start + currentFrame) % MaxFrameCount;
+    return (mStart + mCurrentFrame) % MaxFrameCount;
 }
 
 size_t ReplayManager::RecordFrame()
 {
     if (!IsEmpty())
     {
-        ++currentFrame;
+        ++mCurrentFrame;
     }
 
-    if (currentFrame == frameCount)
+    if (mCurrentFrame == mFrameCount)
     {
-        size_t bufferIndex = GetCurrentFrameBufferPos();
-        SaveState(frames + bufferIndex * SaveStateSize);
+        ReplaySaveData& saveData = mSavedFrames[GetCurrentFrameBufferPos()];
+        SaveState(saveData);
         InputManager inputManager = XrdModule::GetInputManager();
-        p1ReplayPositions[bufferIndex] = inputManager.GetP1ReplayPos();
-        p2ReplayPositions[bufferIndex] = inputManager.GetP2ReplayPos();
+        saveData.p1ReplayPosition = inputManager.GetP1ReplayPos();
+        saveData.p2ReplayPosition = inputManager.GetP2ReplayPos();
 
-        if (frameCount == MaxFrameCount)
+        if (mFrameCount == MaxFrameCount)
         {
-            ++start;
-            --currentFrame;
+            ++mStart;
+            --mCurrentFrame;
         }
         else
         {
-            ++frameCount;
+            ++mFrameCount;
         }
     }
 
-    return currentFrame;
+    return mCurrentFrame;
 }
 
 size_t ReplayManager::LoadFrame(size_t index)
 {
-    if (index >= frameCount)
+    if (index >= mFrameCount)
     {
-        return currentFrame;
+        return mCurrentFrame;
     }
 
-    currentFrame = index;
-    size_t bufferIndex = GetCurrentFrameBufferPos();
-    LoadState(frames + bufferIndex * SaveStateSize);
+    mCurrentFrame = index;
+    ReplaySaveData& saveData = mSavedFrames[GetCurrentFrameBufferPos()];
+    LoadState(saveData);
     InputManager inputManager = XrdModule::GetInputManager();
-    inputManager.SetP1ReplayPos(p1ReplayPositions[bufferIndex]);
-    inputManager.SetP2ReplayPos(p2ReplayPositions[bufferIndex]);
-    return currentFrame;
+    inputManager.SetP1ReplayPos(saveData.p1ReplayPosition);
+    inputManager.SetP2ReplayPos(saveData.p2ReplayPosition);
+    return mCurrentFrame;
 }
 
 size_t ReplayManager::LoadNextFrame()
 {
-    return LoadFrame(currentFrame + 1);
+    return LoadFrame(mCurrentFrame + 1);
 }
 
 size_t ReplayManager::LoadPreviousFrame()
 {
-    if (currentFrame == 0)
+    if (mCurrentFrame == 0)
     {
-        return currentFrame;
+        return mCurrentFrame;
     }
-    return LoadFrame(currentFrame - 1);
+    return LoadFrame(mCurrentFrame - 1);
 }
 
 size_t ReplayManager::GetCurrentFrame() const
 {
-    return currentFrame;
+    return mCurrentFrame;
 }
 
 size_t ReplayManager::GetFrameCount() const
 {
-    return frameCount;
+    return mFrameCount;
 }
 
 bool ReplayManager::IsEmpty() const
 {
-    return frameCount == 0;
+    return mFrameCount == 0;
 }

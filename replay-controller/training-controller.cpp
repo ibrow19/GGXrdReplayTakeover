@@ -40,23 +40,21 @@ void TrainingController::Tick()
         }
     }
 
-    ApplySaveStateEntityUpdates();
-
     GameInputCollection input = XrdModule::GetGameInput();
     DWORD& battlePressed = input.GetP1BattleInput().GetPressedMask();
     DWORD& battleHeld = input.GetP1BattleInput().GetHeldMask();
     if (battleHeld & (DWORD)BattleInputMask::Special)
     {
-        TrainingSaveState& state = mSaveStates[mSelectedState];
+        TrainingSaveData& saveData = mSaveStates[mSelectedState];
         if ((battlePressed & (DWORD)BattleInputMask::PlayRecording) &&
-            state.bValid)
+            saveData.bValid)
         {
-            LoadState(state.saveData);
+            LoadState(saveData);
         }
         else if (battlePressed & (DWORD)BattleInputMask::StartRecording)
         {
-            SaveState(state.saveData);
-            state.bValid = true;
+            SaveState(saveData);
+            saveData.bValid = true;
         }
 
         // Consume all inputs while using contextual controls.

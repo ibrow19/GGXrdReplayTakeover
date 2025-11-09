@@ -156,3 +156,8 @@ HandleInputsFunc XrdModule::GetHandleInputs()
 {
     return (HandleInputsFunc)(mBase + 0x9e0290);
 }
+
+TickActorFunc XrdModule::GetTickSimpleActor()
+{
+    return (TickActorFunc)(mBase + 0x6ee9c0);
+}
