@@ -32,12 +32,26 @@ private:
     DWORD mPtr;
 };
 
+class TimeStepData
+{
+public:
+    TimeStepData(DWORD inPtr);
+    DWORD GetPtr();
+    bool IsValid();
+    bool ShouldUseFixedTimeStep();
+    float& GetFixedTimeStep();
+private:
+    DWORD mPtr;
+};
+
 class SimpleActor
 {
 public:
     SimpleActor(DWORD inPtr);
     DWORD GetPtr();
-    DWORD& GetTime();
+    float& GetTime();
+    float& GetDeltaCoeff();
+    TimeStepData GetTimeStepData();
 private:
     DWORD mPtr;
 };

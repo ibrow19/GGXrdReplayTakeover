@@ -249,7 +249,7 @@ static void DestroyNonPlayerActors()
         });
 }
 
-static void UpdateAnimations()
+static void UpdateAnimations(const EntitySaveData* entitySaveData)
 {
     ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
         {
@@ -259,7 +259,29 @@ static void UpdateAnimations()
                 UpdateAnimationFunc updateAnim = XrdModule::GetUpdateComplexActorAnimation();
                 updateAnim(entityPtr, entity.GetAnimationFrameName(), 1);
             }
-        });
+
+            DWORD simpleActor = entity.GetSimpleActor();
+            if (simpleActor)
+            {
+                EntitySaveData* saveData = (EntitySaveData*)extraData;
+                TickActorFunc tickActor = XrdModule::GetTickSimpleActor();
+                float delta = saveData[index].simpleActorTime;
+                TimeStepData timeStepData = SimpleActor(simpleActor).GetTimeStepData();
+                if (timeStepData.IsValid() && timeStepData.ShouldUseFixedTimeStep())
+                {
+                    float& fixedTimeStep = timeStepData.GetFixedTimeStep();
+                    float oldTimeStep = fixedTimeStep;
+                    fixedTimeStep = delta;
+                    tickActor((LPVOID)simpleActor, 0);
+                    fixedTimeStep = oldTimeStep;
+                }
+                else
+                {
+                    tickActor((LPVOID)simpleActor, delta);
+                }
+            }
+        },
+        (void*)entitySaveData);
 }
 
 // Apply online entity update that adds extra data needed for save state
@@ -346,7 +368,7 @@ void LoadState(const SaveData& src)
 
     RecreateSimpleActors();
     CallPostLoad();
-    UpdateAnimations();
+    UpdateAnimations(src.entityData);
 }
 
 // This update function is only used with simple actors. We store the

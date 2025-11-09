@@ -5,6 +5,7 @@
 #include <xrd-module.h>
 #include <asw-engine.h>
 #include <replay-hud.h>
+#include <entity.h>
 #include <imgui.h>
 #include <detours.h>
 
@@ -23,6 +24,7 @@ static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
 static bool GbReplayFrameStep = false;
+static bool GbOverrideSimpleActorPause = false;
 
 void ReplayControllerDetourer::DetourSetHealth(int newHealth)
 {
@@ -45,9 +47,25 @@ void ReplayControllerDetourer::DetourTickSimpleActor(float delta)
 {
     ReplayController* controller = GameModeController::Get<ReplayController>();
     assert(controller);
-    if (!controller->IsPaused())
+    if (GbOverrideSimpleActorPause || !controller->IsPaused())
     {
         mRealTickSimpleActor(this, delta);
+    }
+    else
+    {
+        TimeStepData timeStepData = SimpleActor((DWORD)this).GetTimeStepData();
+        if (timeStepData.IsValid() && timeStepData.ShouldUseFixedTimeStep())
+        {
+            float& fixedTimeStep = timeStepData.GetFixedTimeStep();
+            float oldTimeStep = fixedTimeStep;
+            fixedTimeStep = 0;
+            mRealTickSimpleActor(this, 0);
+            fixedTimeStep = oldTimeStep;
+        }
+        else
+        {
+            mRealTickSimpleActor(this, 0);
+        }
     }
 }
 
@@ -293,6 +311,7 @@ void ReplayController::HandleStandbyMode()
     // Replay scrubbing while paused.
     if (mMode == ReplayTakeoverMode::StandbyPaused)
     {
+        GbOverrideSimpleActorPause = true;
         if ((battleHeld & (DWORD)BattleInputMask::Left) ||
             (battlePressed & (DWORD)BattleInputMask::S))
         {
@@ -325,6 +344,7 @@ void ReplayController::HandleStandbyMode()
             }
             mReplayManager.LoadFrame(newFrame);
         }
+        GbOverrideSimpleActorPause = false;
     }
 
     // Toggle pause
@@ -349,7 +369,9 @@ void ReplayController::HandleTakeoverMode()
     // Restart takeover
     if (battleInput & (DWORD)BattleInputMask::PlayRecording)
     {
+        GbOverrideSimpleActorPause = true;
         mReplayManager.LoadFrame(mBookmarkFrame);
+        GbOverrideSimpleActorPause = false;
         if (mCountdownTotal == 0)
         {
             mMode = ReplayTakeoverMode::TakeoverControl;
@@ -365,7 +387,9 @@ void ReplayController::HandleTakeoverMode()
     // Cancel takeover
     if (battleInput & (DWORD)BattleInputMask::StartRecording)
     {
+        GbOverrideSimpleActorPause = true;
         mReplayManager.LoadFrame(mBookmarkFrame);
+        GbOverrideSimpleActorPause = false;
         ResetPlayerControl();
         mMode = ReplayTakeoverMode::StandbyPaused;
         return;
