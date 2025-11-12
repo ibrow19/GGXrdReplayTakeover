@@ -128,6 +128,221 @@
       <Address>GuiltyGearXrd.exe+108d4d4</Address>
     </CheatEntry>
     <CheatEntry>
+      <ID>358</ID>
+      <Description>"+1611d2c (Menu Object)"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+1611d2c</Address>
+      <Offsets>
+        <Offset>0</Offset>
+      </Offsets>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>174</ID>
+          <Description>"+4 (StringTableChain)"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+4</Address>
+          <Offsets>
+            <Offset>0</Offset>
+          </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>175</ID>
+              <Description>"+514"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>+514</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>176</ID>
+                  <Description>"+c"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+c</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>177</ID>
+                      <Description>"+59080 +8"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>20</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+59080 +8</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>362</ID>
+                          <Description>"+4c20"</Description>
+                          <Color>80000008</Color>
+                          <VariableType>String</VariableType>
+                          <Length>32</Length>
+                          <Unicode>1</Unicode>
+                          <ZeroTerminate>1</ZeroTerminate>
+                          <Address>+4c20</Address>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>361</ID>
+                      <Description>"+48e14"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+48e14</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>368</ID>
+                      <Description>"+48B20"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+48b20</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>370</ID>
+                      <Description>"+48B3c"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+48b3c</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>369</ID>
+                      <Description>"+48B58"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+48b58</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>371</ID>
+                      <Description>"+48e30"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>String</VariableType>
+                      <Length>32</Length>
+                      <Unicode>1</Unicode>
+                      <ZeroTerminate>1</ZeroTerminate>
+                      <Address>+48e30</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                    </CheatEntry>
+                  </CheatEntries>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>354</ID>
+      <Description>"+1464670 (MenuButtonEnabledFlags)"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+1464670</Address>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>363</ID>
+          <Description>"+8 (First Replay Menu Flag)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>+8</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>372</ID>
+          <Description>"+38 (Button Display)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>+38</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>364</ID>
+          <Description>"+128 (Replay Regenerate)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>+128</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>365</ID>
+          <Description>"+138 (Replay P1 Max HP)"</Description>
+          <Color>80000008</Color>
+          <VariableType>Byte</VariableType>
+          <Address>+138</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>356</ID>
+      <Description>"+1ad2918 (GameSettingsButtonDisplay)"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+1ad2918</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>373</ID>
+      <Description>"+1ac8ab8 (TrainingModeSettings)"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+1ac8ab8</Address>
+      <CheatEntries>
+        <CheatEntry>
+          <ID>374</ID>
+          <Description>"+6*4 (P1 Max HP)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+6*4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>375</ID>
+          <Description>"+5*4 (Regen)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+5*4</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>376</ID>
+          <Description>"+20 (Tension)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+20</Address>
+        </CheatEntry>
+      </CheatEntries>
+    </CheatEntry>
+    <CheatEntry>
       <ID>51</ID>
       <Description>"+22e630"</Description>
       <ShowAsHex>1</ShowAsHex>
@@ -788,11 +1003,33 @@
           <Address>+1c6e68</Address>
         </CheatEntry>
         <CheatEntry>
-          <ID>2</ID>
-          <Description>"EntityCount"</Description>
+          <ID>350</ID>
+          <Description>"+c0"</Description>
           <Color>80000008</Color>
           <VariableType>4 Bytes</VariableType>
-          <Address>+b4</Address>
+          <Address>+c0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>2</ID>
+          <Description>"+b0"</Description>
+          <ShowAsHex>1</ShowAsHex>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+b0</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>348</ID>
+          <Description>"+bc (Unused Entities)"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+bc</Address>
+        </CheatEntry>
+        <CheatEntry>
+          <ID>349</ID>
+          <Description>"+c0"</Description>
+          <Color>80000008</Color>
+          <VariableType>4 Bytes</VariableType>
+          <Address>+c0</Address>
         </CheatEntry>
         <CheatEntry>
           <ID>1</ID>
@@ -1652,7 +1889,7 @@
                       <Address>+25c</Address>
                     </CheatEntry>
                     <CheatEntry>
-                      <ID>329</ID>
+                      <ID>351</ID>
                       <Description>"+260"</Description>
                       <Color>80000008</Color>
                       <VariableType>Float</VariableType>
@@ -1671,6 +1908,33 @@
                       <Color>80000008</Color>
                       <VariableType>Float</VariableType>
                       <Address>+2d8</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>329</ID>
+                      <Description>"+1d8"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+1d8</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>352</ID>
+                          <Description>"+3c (UseFixedTimeStep?)"</Description>
+                          <ShowAsHex>1</ShowAsHex>
+                          <Color>80000008</Color>
+                          <VariableType>Byte</VariableType>
+                          <Address>+3c</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>353</ID>
+                          <Description>"+44 (FixedTimeStep)"</Description>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>+44</Address>
+                        </CheatEntry>
+                      </CheatEntries>
                     </CheatEntry>
                   </CheatEntries>
                 </CheatEntry>
@@ -2572,6 +2836,21 @@
     </CheatEntry>
     <CheatEntry>
       <ID>103</ID>
+      <Description>"10a0ba0"</Description>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+10a0ba0</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>360</ID>
+      <Description>"1611b10"</Description>
+      <ShowAsHex>1</ShowAsHex>
+      <Color>80000008</Color>
+      <VariableType>4 Bytes</VariableType>
+      <Address>GuiltyGearXrd.exe+1611b10</Address>
+    </CheatEntry>
+    <CheatEntry>
+      <ID>359</ID>
       <Description>"1641bd8"</Description>
       <Color>80000008</Color>
       <VariableType>4 Bytes</VariableType>
@@ -2579,7 +2858,7 @@
     </CheatEntry>
     <CheatEntry>
       <ID>134</ID>
-      <Description>"GlobalPointerToPauseState"</Description>
+      <Description>"1611d64 (GlobalPointerToPauseState)"</Description>
       <ShowAsHex>1</ShowAsHex>
       <Color>80000008</Color>
       <VariableType>4 Bytes</VariableType>
@@ -2693,84 +2972,12 @@
       <Address>GuiltyGearXrd.exe+15efacc</Address>
     </CheatEntry>
     <CheatEntry>
-      <ID>171</ID>
-      <Description>"String Table"</Description>
-      <ShowAsHex>1</ShowAsHex>
-      <Color>80000008</Color>
-      <VariableType>4 Bytes</VariableType>
-      <Address>29030000</Address>
-    </CheatEntry>
-    <CheatEntry>
       <ID>172</ID>
       <Description>"ReferencesStringTable"</Description>
       <ShowAsHex>1</ShowAsHex>
       <Color>80000008</Color>
       <VariableType>4 Bytes</VariableType>
       <Address>C591514</Address>
-    </CheatEntry>
-    <CheatEntry>
-      <ID>173</ID>
-      <Description>"StringTableChain"</Description>
-      <Color>80000008</Color>
-      <VariableType>4 Bytes</VariableType>
-      <Address>GuiltyGearXrd.exe+1611d2c</Address>
-      <Offsets>
-        <Offset>0</Offset>
-      </Offsets>
-      <CheatEntries>
-        <CheatEntry>
-          <ID>174</ID>
-          <Description>"StringTableChain2"</Description>
-          <ShowAsHex>1</ShowAsHex>
-          <Color>80000008</Color>
-          <VariableType>4 Bytes</VariableType>
-          <Address>+4</Address>
-          <Offsets>
-            <Offset>0</Offset>
-          </Offsets>
-          <CheatEntries>
-            <CheatEntry>
-              <ID>175</ID>
-              <Description>"+514"</Description>
-              <ShowAsHex>1</ShowAsHex>
-              <Color>80000008</Color>
-              <VariableType>4 Bytes</VariableType>
-              <Address>+514</Address>
-              <Offsets>
-                <Offset>0</Offset>
-              </Offsets>
-              <CheatEntries>
-                <CheatEntry>
-                  <ID>176</ID>
-                  <Description>"+c"</Description>
-                  <ShowAsHex>1</ShowAsHex>
-                  <Color>80000008</Color>
-                  <VariableType>4 Bytes</VariableType>
-                  <Address>+c</Address>
-                  <Offsets>
-                    <Offset>0</Offset>
-                  </Offsets>
-                  <CheatEntries>
-                    <CheatEntry>
-                      <ID>177</ID>
-                      <Description>"+59080 +8"</Description>
-                      <Color>80000008</Color>
-                      <VariableType>String</VariableType>
-                      <Length>20</Length>
-                      <Unicode>1</Unicode>
-                      <ZeroTerminate>1</ZeroTerminate>
-                      <Address>+59080 +8</Address>
-                      <Offsets>
-                        <Offset>0</Offset>
-                      </Offsets>
-                    </CheatEntry>
-                  </CheatEntries>
-                </CheatEntry>
-              </CheatEntries>
-            </CheatEntry>
-          </CheatEntries>
-        </CheatEntry>
-      </CheatEntries>
     </CheatEntry>
     <CheatEntry>
       <ID>298</ID>
