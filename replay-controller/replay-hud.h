@@ -13,6 +13,7 @@ public:
     DWORD& GetDisplayReplayHud();
     DWORD& GetDisplayInputHistory();
     DWORD& GetUseSpecialCamera();
+    DWORD& GetCameraUnavailable();
     DWORD& GetCameraPosition();
     DWORD& GetCameraTimer();
     DWORD& GetCameraMode();

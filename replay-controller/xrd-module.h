@@ -6,6 +6,8 @@ typedef void(__thiscall* MainGameLogicFunc)(LPVOID thisArg, DWORD param);
 typedef void(__thiscall* SetStringFunc)(char* dest, char* src);
 typedef void(__fastcall* EntityUpdateFunc)(DWORD entity);
 typedef void(__fastcall* ReplayHudUpdateFunc)(DWORD param);
+typedef void(__thiscall* DisplayReplayHudMenuFunc)(LPVOID replayHud);
+typedef void(__cdecl* AddUiTextFunc)(DWORD* textParams, DWORD param1, DWORD param2, DWORD param3, DWORD param4, DWORD param5);
 typedef DWORD(__fastcall* GetSaveStateTrackerFunc)(DWORD manager);
 typedef void(__fastcall* EntityActorManagementFunc)(DWORD engine);
 typedef void(__thiscall* CreateActorFunc)(LPVOID thisArg, char* name, DWORD type);
@@ -17,6 +19,7 @@ typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
 typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
 typedef void(__thiscall* TickActorFunc)(LPVOID actor, float delta);
+typedef bool(__cdecl* CheckInBattleFunc)(void);
 
 class XrdModule
 {
@@ -29,11 +32,16 @@ public:
     static class GameInputCollection GetGameInput();
     static BYTE* GetControllerIndexInstruction();
     static bool IsPauseMenuActive();
+    static DWORD GetUiStringTable();
+    static float GetReplayTextSpacing();
 
     // This flag is 1 during the match intro (heaven or hell section) and
     // exit (slash + spin around). It is 0 while a battle is in progress where 
     // players have control.
     static DWORD& GetPreOrPostBattle();
+    // This function should be approximately the inverse of checking the above flag
+    // but is used in some different places in xrd's code. Might vary in some circumstances.
+    static bool CheckInBattle();
 
     // This function is called once per frame when playing online. It sets
     // specific fields on each entity, some of which are needed to recreate
@@ -51,6 +59,8 @@ public:
     static SetStringFunc GetSetString();
 
     static ReplayHudUpdateFunc GetReplayHudUpdate();
+    static DisplayReplayHudMenuFunc GetDisplayReplayHudMenu();
+    static AddUiTextFunc GetAddUiText();
 
     // This getter returns a pointer to a struct with various info about
     // the current state being saved/loaded from. Some save/load state

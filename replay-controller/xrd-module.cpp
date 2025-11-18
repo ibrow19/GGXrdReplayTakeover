@@ -55,9 +55,9 @@ InputManager XrdModule::GetInputManager()
 GameInputCollection XrdModule::GetGameInput()
 {
     DWORD ptr1 = *(DWORD*)(mBase + 0x1c9cfa0);
-    assert(ptr1 != 0);
+    assert(ptr1);
     DWORD ptr2 = *(DWORD*)(ptr1 + 0x28);
-    assert(ptr2 != 0);
+    assert(ptr2);
     return GameInputCollection(ptr2);
 }
 
@@ -75,6 +75,30 @@ bool XrdModule::IsPauseMenuActive()
 DWORD& XrdModule::GetPreOrPostBattle()
 {
     return *(DWORD*)(mBase + 0x1a4059c + 0x20);
+}
+
+bool XrdModule::CheckInBattle()
+{
+    CheckInBattleFunc func = (CheckInBattleFunc)(mBase + 0xb34eb0);
+    return func();
+}
+
+DWORD XrdModule::GetUiStringTable()
+{
+    DWORD menuObject = *(DWORD*)(mBase + 0x1611d2c);
+    assert(menuObject);
+    DWORD ptr1 = *(DWORD*)(menuObject + 0x4);
+    assert(ptr1);
+    DWORD ptr2 = *(DWORD*)(ptr1 + 0x514);
+    assert(ptr2);
+    DWORD tablePtr = *(DWORD*)(ptr2 + 0xc);
+    assert(tablePtr);
+    return tablePtr;
+}
+
+float XrdModule::GetReplayTextSpacing()
+{
+    return *(float*)(mBase + 0x10a1148);
 }
 
 EntityUpdateFunc XrdModule::GetOnlineEntityUpdate()
@@ -95,6 +119,16 @@ SetStringFunc XrdModule::GetSetString()
 ReplayHudUpdateFunc XrdModule::GetReplayHudUpdate()
 {
     return (ReplayHudUpdateFunc)(mBase + 0xbc30a0);
+}
+
+DisplayReplayHudMenuFunc XrdModule::GetDisplayReplayHudMenu()
+{
+    return (DisplayReplayHudMenuFunc)(mBase + 0xbc5430);
+}
+
+AddUiTextFunc XrdModule::GetAddUiText()
+{
+    return (AddUiTextFunc)(mBase + 0xba7ac0);
 }
 
 GetSaveStateTrackerFunc XrdModule::GetSaveStateTrackerGetter()

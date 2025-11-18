@@ -14,17 +14,23 @@ class ReplayControllerDetourer
 public:
     void DetourSetHealth(int newHealth);
     void DetourTickSimpleActor(float delta);
+    void DetourDisplayReplayHudMenu();
     static SetHealthFunc mRealSetHealth; 
     static TickActorFunc mRealTickSimpleActor; 
+    static DisplayReplayHudMenuFunc mRealDisplayReplayHudMenu; 
 };
 SetHealthFunc ReplayControllerDetourer::mRealSetHealth = nullptr;
 TickActorFunc ReplayControllerDetourer::mRealTickSimpleActor = nullptr;
+DisplayReplayHudMenuFunc ReplayControllerDetourer::mRealDisplayReplayHudMenu = nullptr;
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
+static AddUiTextFunc GRealAddUiText = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
 static bool GbReplayFrameStep = false;
 static bool GbOverrideSimpleActorPause = false;
+static bool GbOverrideHudText = false;
+static bool GbAddingFirstTextRow = false;
 
 void ReplayControllerDetourer::DetourSetHealth(int newHealth)
 {
@@ -69,6 +75,74 @@ void ReplayControllerDetourer::DetourTickSimpleActor(float delta)
     }
 }
 
+void ReplayControllerDetourer::DetourDisplayReplayHudMenu()
+{
+    GbOverrideHudText = true;
+    GbAddingFirstTextRow = true;
+
+    ReplayController* controller = GameModeController::Get<ReplayController>();
+    assert(controller);
+    if (controller->GetMode() == ReplayTakeoverMode::Disabled)
+    {
+        mRealDisplayReplayHudMenu((LPVOID)this);
+    }
+    else
+    {
+        // When takeover controls are enabled, temporarily edit hud settings
+        // so that all lines of text will be displayed.
+        ReplayHud hud = XrdModule::GetEngine().GetReplayHud();
+        DWORD& shouldPause = hud.GetPause();
+        DWORD& specialCamera = hud.GetUseSpecialCamera();
+        DWORD& cameraUnavailable = hud.GetCameraUnavailable();
+        DWORD realShouldPause = shouldPause;
+        DWORD realSpecialCamera = specialCamera;
+        DWORD realCameraUnavailable = cameraUnavailable;
+        shouldPause = 1;
+        specialCamera = 0;
+        cameraUnavailable = 0;
+
+        mRealDisplayReplayHudMenu((LPVOID)this);
+
+        shouldPause = realShouldPause;
+        specialCamera = realSpecialCamera;
+        cameraUnavailable = realCameraUnavailable;
+    }
+    GbOverrideHudText = false;
+}
+
+void DetourAddUiText(DWORD* textParams, DWORD param1, DWORD param2, DWORD param3, DWORD param4, DWORD param5)
+{
+    GRealAddUiText(textParams, param1, param2, param3, param4, param5);
+    if (GbOverrideHudText)
+    {
+        if (GbAddingFirstTextRow)
+        {
+            float* spacing = &(float)textParams[3];
+            float prevSpacing = *spacing;
+
+            // Play/pause isn't shown before round begins/after it ends so we
+            // need less spacing in those cases.
+            int textElements = 9;
+            ReplayController* controller = GameModeController::Get<ReplayController>();
+            assert(controller);
+            if (controller->GetMode() == ReplayTakeoverMode::Disabled && !XrdModule::CheckInBattle())
+            {
+                --textElements;
+            }
+            *spacing += XrdModule::GetReplayTextSpacing() * textElements;
+
+            // This entry in the text parameters is a label for identifying
+            // the text to display. It is not the actual text that gets displayed.
+            char** textLabel = &(char*)textParams[10];
+            *textLabel = "TrainingEtc_ComboDamage";
+
+            GRealAddUiText(textParams, param1, param2, param3, param4, param5);
+            *spacing = prevSpacing;
+            GbAddingFirstTextRow = false;
+        }
+    }
+}
+
 void __fastcall DetourReplayHudUpdate(DWORD param)
 {
     if (GameModeController::Get<ReplayController>()->GetMode() == ReplayTakeoverMode::Disabled)
@@ -101,6 +175,31 @@ void __fastcall DetourHandleInputs(DWORD engine)
     XrdModule::GetEngine().GetErrorCode() = 0;
 }
 
+UiString::UiString()
+: mPtr(nullptr)
+, mOriginal(nullptr)
+{}
+
+UiString::UiString(DWORD inPtr)
+: mPtr((char16_t**)inPtr)
+, mOriginal(*mPtr)
+{}
+
+void UiString::Restore()
+{
+    *mPtr = mOriginal;
+}
+
+void UiString::Clear()
+{
+    *mPtr = u"";
+}
+
+void UiString::Set(char16_t* newString)
+{
+    *mPtr = newString;
+}
+
 ReplayController::ReplayController()
 : mMode(ReplayTakeoverMode::Disabled)
 , mbControlP1(true)
@@ -127,23 +226,29 @@ void ReplayController::InitMode()
     MakeRegionWritable((DWORD)instruction, 1);
     *instruction = 0x52;
 
+    InitUiStrings();
     AttachSaveStateDetours();
 
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
+    GRealAddUiText = XrdModule::GetAddUiText();
     GRealUpdateTime = XrdModule::GetUpdateTime();
     GRealHandleInputs = XrdModule::GetHandleInputs();
     ReplayControllerDetourer::mRealSetHealth = XrdModule::GetSetHealth();
     ReplayControllerDetourer::mRealTickSimpleActor = XrdModule::GetTickSimpleActor();
+    ReplayControllerDetourer::mRealDisplayReplayHudMenu = XrdModule::GetDisplayReplayHudMenu();
     void (ReplayControllerDetourer::* detourSetHealth)(int) = &ReplayControllerDetourer::DetourSetHealth;
     void (ReplayControllerDetourer::* detourTickSimpleActor)(float) = &ReplayControllerDetourer::DetourTickSimpleActor;
+    void (ReplayControllerDetourer::* detourDisplayReplayHudMenu)(void) = &ReplayControllerDetourer::DetourDisplayReplayHudMenu;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
+    DetourAttach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourAttach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourAttach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
     DetourAttach(&(PVOID&)ReplayControllerDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourAttach(&(PVOID&)ReplayControllerDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
+    DetourAttach(&(PVOID&)ReplayControllerDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
     DetourTransactionCommit();
 }
 
@@ -153,19 +258,141 @@ void ReplayController::ShutdownMode()
     BYTE* instruction = XrdModule::GetControllerIndexInstruction();
     *instruction = 0x56;
 
+    RestoreUiStrings();
     DetachSaveStateDetours();
 
     void (ReplayControllerDetourer::* detourSetHealth)(int) = &ReplayControllerDetourer::DetourSetHealth;
     void (ReplayControllerDetourer::* detourTickSimpleActor)(float) = &ReplayControllerDetourer::DetourTickSimpleActor;
+    void (ReplayControllerDetourer::* detourDisplayReplayHudMenu)(void) = &ReplayControllerDetourer::DetourDisplayReplayHudMenu;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)GRealReplayHudUpdate, DetourReplayHudUpdate);
+    DetourDetach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourDetach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourDetach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
     DetourDetach(&(PVOID&)ReplayControllerDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourDetach(&(PVOID&)ReplayControllerDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
+    DetourDetach(&(PVOID&)ReplayControllerDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
     DetourTransactionCommit();
+}
+
+void ReplayController::InitUiStrings()
+{
+    DWORD table = XrdModule::GetUiStringTable();
+
+    mUiStrings.play = UiString(table + 0x54ecc);
+    mUiStrings.toggleHud = UiString(table + 0x54f04);
+    mUiStrings.frameStep = UiString(table + 0x54f20);
+    mUiStrings.inputHistory = UiString(table + 0x5906c);
+    mUiStrings.nextRound = UiString(table + 0x54f58);
+    mUiStrings.pauseMenu = UiString(table + 0x54f74);
+    mUiStrings.toggleControl = UiString(table + 0x54f90);
+    mUiStrings.toggleCamera = UiString(table + 0x54fac);
+    mUiStrings.buttonDisplay = UiString(table + 0x48b20);
+    mUiStrings.buttonDisplayMode1 = UiString(table + 0x48b3c);
+    mUiStrings.buttonDisplayMode2 = UiString(table + 0x48b58);
+    mUiStrings.p1MaxHealth = UiString(table + 0x48e30);
+    mUiStrings.comboDamage = UiString(table + 0x4a480);
+
+    // Overwrite pause menu text immediately, these will be the same regardless of takevoer state.
+    mUiStrings.buttonDisplay.Set(u"Takeover Player");
+    mUiStrings.buttonDisplayMode1.Set(u"Player 1");
+    mUiStrings.buttonDisplayMode2.Set(u"Player 2");
+}
+
+void ReplayController::RestoreUiStrings()
+{
+    mUiStrings.play.Restore();
+    mUiStrings.toggleHud.Restore();
+    mUiStrings.frameStep.Restore();
+    mUiStrings.inputHistory.Restore();
+    mUiStrings.nextRound.Restore();
+    mUiStrings.pauseMenu.Restore();
+    mUiStrings.toggleControl.Restore();
+    mUiStrings.toggleCamera.Restore();
+    mUiStrings.buttonDisplay.Restore();
+    mUiStrings.buttonDisplayMode1.Restore();
+    mUiStrings.buttonDisplayMode2.Restore();
+    mUiStrings.p1MaxHealth.Restore();
+    mUiStrings.comboDamage.Restore();
+}
+
+void ReplayController::UpdateUi()
+{
+    // TODO: refactor
+    switch (mMode)
+    {
+        case ReplayTakeoverMode::Disabled:
+            mUiStrings.play.Restore();
+            mUiStrings.toggleHud.Restore();
+            mUiStrings.frameStep.Restore();
+            mUiStrings.inputHistory.Restore();
+            mUiStrings.nextRound.Restore();
+            mUiStrings.pauseMenu.Restore();
+            mUiStrings.toggleControl.Restore();
+            mUiStrings.toggleCamera.Restore();
+            break;
+        case ReplayTakeoverMode::StandbyPaused:
+            mUiStrings.play.Set(u"Mode: Paused");
+            mUiStrings.toggleHud.Set(u"^mAtkP;: Play");
+            mUiStrings.frameStep.Set(u"^mBtnLR;: Forward/Rewind");
+            mUiStrings.inputHistory.Set(u"^mBtnUD;: Fast Forward/Rewind");
+            mUiStrings.nextRound.Set(u"^mAtkS;/^mAtkH;: Frame Step");
+            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Takeover");
+            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
+            mUiStrings.toggleCamera.Set(u"^mAtkD;: Toggles Control Display");
+            break;
+        case ReplayTakeoverMode::Standby:
+            mUiStrings.play.Set(u"Mode: Replay");
+            mUiStrings.toggleHud.Set(u"^mAtkP;: Pause");
+            mUiStrings.frameStep.Clear();
+            mUiStrings.inputHistory.Clear();
+            mUiStrings.nextRound.Clear();
+            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Takeover");
+            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
+            mUiStrings.toggleCamera.Set(u"^mAtkD;: Toggles Control Display");
+            break;
+        case ReplayTakeoverMode::TakeoverCountdown:
+            mUiStrings.play.Set(u"Mode: Countdown");
+            mUiStrings.toggleHud.Clear();
+            mUiStrings.frameStep.Clear();
+            mUiStrings.inputHistory.Clear();
+            mUiStrings.nextRound.Clear();
+            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Restart Takeover");
+            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
+            mUiStrings.toggleCamera.Clear();
+            break;
+        case ReplayTakeoverMode::TakeoverControl:
+            mUiStrings.play.Set(u"Mode: Takeover");
+            mUiStrings.toggleHud.Clear();
+            mUiStrings.frameStep.Clear();
+            mUiStrings.inputHistory.Clear();
+            mUiStrings.nextRound.Clear();
+            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Restart Takeover");
+            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
+            mUiStrings.toggleCamera.Clear();
+            break;
+        case ReplayTakeoverMode::TakeoverRoundEnded:
+            mUiStrings.play.Set(u"Mode: Round Ended");
+            mUiStrings.toggleHud.Clear();
+            mUiStrings.frameStep.Clear();
+            mUiStrings.inputHistory.Clear();
+            mUiStrings.nextRound.Clear();
+            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Restart Takeover");
+            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
+            mUiStrings.toggleCamera.Clear();
+            break;
+    }
+
+    if (mMode == ReplayTakeoverMode::Disabled)
+    {
+        mUiStrings.comboDamage.Set(u"^mBtnSelect;: Swap to mod controls");
+    }
+    else
+    {
+        mUiStrings.comboDamage.Set(u"^mBtnSelect;: Swap to normal replay controls");
+    }
 }
 
 void ReplayController::PrepareImGuiFrame()
@@ -267,9 +494,9 @@ void ReplayController::HandleDisabledMode()
     if (menuInput & (DWORD)MenuInputMask::Reset)
     {
         ReplayHud hud = XrdModule::GetEngine().GetReplayHud();
+        // TODO: make pause seamless on switching.
         hud.GetPause() = 0;
         hud.GetShouldStepNextFrame() = 0;
-        hud.GetDisplayReplayHud() = 0;
         menuInput = 0;
         mMode = ReplayTakeoverMode::Standby;
     }
@@ -449,6 +676,8 @@ void ReplayController::Tick()
             HandleTakeoverMode();
             break;
     }
+
+    UpdateUi();
 
     if (IsPaused())
     {

@@ -44,6 +44,11 @@ DWORD& ReplayHud::GetUseSpecialCamera()
     return *(DWORD*)(mPtr + 0x1c);
 }
 
+DWORD& ReplayHud::GetCameraUnavailable()
+{
+    return *(DWORD*)(mPtr + 0x20);
+}
+
 DWORD& ReplayHud::GetCameraPosition()
 {
     return *(DWORD*)(mPtr + 0x24);
