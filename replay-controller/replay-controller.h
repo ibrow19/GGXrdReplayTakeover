@@ -14,9 +14,11 @@ enum class ReplayTakeoverMode
 };
 
 // Text used in the Ui. The strings are allocated when the game boots and a table
-// is built associating widget lables with a pointer to text to display. This
+// is built associating labels with a pointer to a string to display. This
 // struct stores info required to change to pointer in that table and later
-// restore it to its original value.
+// restore it to its original value. Pretty sure this is UE3's equivalent of
+// FText, the string pointer gets changed depending on the language so if we
+// change the pointer our UI overriding will happen regardless of language selected.
 class UiString
 {
 public:
@@ -47,6 +49,12 @@ struct ReplayUiStrings
     UiString comboDamage;
 };
 
+struct ReplayPauseMenuSettings
+{
+    DWORD p1MaxHealth = 0;
+    DWORD buttonDisplayMode = 0;
+};
+
 class ReplayController : public GameModeController
 {
 public:
@@ -63,6 +71,9 @@ private:
     void InitUiStrings();
     void RestoreUiStrings();
     void UpdateUi();
+
+    void InitPauseMenuMods();
+    void RestorePauseMenuSettings();
 
     void OverridePlayerControl();
     void ResetPlayerControl();
@@ -83,4 +94,5 @@ private:
     size_t mBookmarkFrame;
     ReplayManager mReplayManager;
     ReplayUiStrings mUiStrings;
+    ReplayPauseMenuSettings mOldPauseSettings;
 };

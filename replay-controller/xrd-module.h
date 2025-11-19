@@ -30,10 +30,17 @@ public:
     static class AswEngine GetEngine();
     static class InputManager GetInputManager();
     static class GameInputCollection GetGameInput();
+    static class PauseMenuButtonTable GetPauseMenuButtonTable();
     static BYTE* GetControllerIndexInstruction();
     static bool IsPauseMenuActive();
     static DWORD GetUiStringTable();
     static float GetReplayTextSpacing();
+
+    // Values modified from the pause menu. These are part of other structs
+    // with various training/UI settings but we only need these specific
+    // settings for the mod.
+    static DWORD& GetTrainingP1MaxHealth();
+    static DWORD& GetButtonDisplayMode();
 
     // This flag is 1 during the match intro (heaven or hell section) and
     // exit (slash + spin around). It is 0 while a battle is in progress where 

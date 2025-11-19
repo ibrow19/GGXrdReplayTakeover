@@ -2,6 +2,7 @@
 #include <asw-engine.h>
 #include <input-manager.h>
 #include <input.h>
+#include <pause-menu.h>
 #include <Psapi.h>
 #include <cassert>
 
@@ -59,6 +60,21 @@ GameInputCollection XrdModule::GetGameInput()
     DWORD ptr2 = *(DWORD*)(ptr1 + 0x28);
     assert(ptr2);
     return GameInputCollection(ptr2);
+}
+
+PauseMenuButtonTable XrdModule::GetPauseMenuButtonTable()
+{
+    return PauseMenuButtonTable(mBase + 0x1464670);
+}
+
+DWORD& XrdModule::GetTrainingP1MaxHealth()
+{
+    return *(DWORD*)(mBase + 0x1ac8ab8 + 0x18);
+}
+
+DWORD& XrdModule::GetButtonDisplayMode()
+{
+    return *(DWORD*)(mBase + 0x1ad2918);
 }
 
 BYTE* XrdModule::GetControllerIndexInstruction()

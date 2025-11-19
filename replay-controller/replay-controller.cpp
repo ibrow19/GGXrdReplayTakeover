@@ -5,6 +5,7 @@
 #include <xrd-module.h>
 #include <asw-engine.h>
 #include <replay-hud.h>
+#include <pause-menu.h>
 #include <entity.h>
 #include <imgui.h>
 #include <detours.h>
@@ -226,6 +227,7 @@ void ReplayController::InitMode()
     MakeRegionWritable((DWORD)instruction, 1);
     *instruction = 0x52;
 
+    InitPauseMenuMods();
     InitUiStrings();
     AttachSaveStateDetours();
 
@@ -258,6 +260,7 @@ void ReplayController::ShutdownMode()
     BYTE* instruction = XrdModule::GetControllerIndexInstruction();
     *instruction = 0x56;
 
+    RestorePauseMenuSettings();
     RestoreUiStrings();
     DetachSaveStateDetours();
 
@@ -393,6 +396,25 @@ void ReplayController::UpdateUi()
     {
         mUiStrings.comboDamage.Set(u"^mBtnSelect;: Swap to normal replay controls");
     }
+}
+
+void ReplayController::InitPauseMenuMods()
+{
+    PauseMenuButtonTable table = XrdModule::GetPauseMenuButtonTable();
+    MakeRegionWritable(table.GetPtr(), (size_t)PauseMenuButtonTable::Size);
+    table.GetFlag(PauseMenuMode::Replay, PauseMenuButton::ButtonDisplay) = 1;
+    table.GetFlag(PauseMenuMode::Replay, PauseMenuButton::P1MaxHealth) = 1;
+    mOldPauseSettings.p1MaxHealth = XrdModule::GetTrainingP1MaxHealth();
+    mOldPauseSettings.buttonDisplayMode = XrdModule::GetButtonDisplayMode();
+}
+
+void ReplayController::RestorePauseMenuSettings()
+{
+    PauseMenuButtonTable table = XrdModule::GetPauseMenuButtonTable();
+    table.GetFlag(PauseMenuMode::Replay, PauseMenuButton::ButtonDisplay) = 0;
+    table.GetFlag(PauseMenuMode::Replay, PauseMenuButton::P1MaxHealth) = 0;
+    XrdModule::GetTrainingP1MaxHealth() = mOldPauseSettings.p1MaxHealth;
+    XrdModule::GetButtonDisplayMode() = mOldPauseSettings.buttonDisplayMode;
 }
 
 void ReplayController::PrepareImGuiFrame()
