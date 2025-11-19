@@ -126,7 +126,7 @@ void DetourAddUiText(DWORD* textParams, DWORD param1, DWORD param2, DWORD param3
             int textElements = 9;
             ReplayController* controller = GameModeController::Get<ReplayController>();
             assert(controller);
-            if (controller->GetMode() == ReplayTakeoverMode::Disabled && !XrdModule::CheckInBattle())
+            if (!XrdModule::CheckInBattle())
             {
                 --textElements;
             }
@@ -202,7 +202,7 @@ void UiString::Set(char16_t* newString)
 }
 
 ReplayController::ReplayController()
-: mMode(ReplayTakeoverMode::Disabled)
+: mMode(ReplayTakeoverMode::Standby)
 , mbControlP1(true)
 , mCountdownTotal(DefaultCountdown)
 , mCountdown(0)
@@ -229,6 +229,7 @@ void ReplayController::InitMode()
 
     InitPauseMenuMods();
     InitUiStrings();
+    UpdateUi();
     AttachSaveStateDetours();
 
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
@@ -298,10 +299,11 @@ void ReplayController::InitUiStrings()
     mUiStrings.p1MaxHealth = UiString(table + 0x48e30);
     mUiStrings.comboDamage = UiString(table + 0x4a480);
 
-    // Overwrite pause menu text immediately, these will be the same regardless of takevoer state.
+    // Overwrite some pause menu text immediately, these will be the same regardless of takevoer state.
     mUiStrings.buttonDisplay.Set(u"Takeover Player");
     mUiStrings.buttonDisplayMode1.Set(u"Player 1");
     mUiStrings.buttonDisplayMode2.Set(u"Player 2");
+    mUiStrings.p1MaxHealth.Set(u"Takeover Countdown Frames");
 }
 
 void ReplayController::RestoreUiStrings()
@@ -323,7 +325,6 @@ void ReplayController::RestoreUiStrings()
 
 void ReplayController::UpdateUi()
 {
-    // TODO: refactor
     switch (mMode)
     {
         case ReplayTakeoverMode::Disabled:
@@ -335,66 +336,52 @@ void ReplayController::UpdateUi()
             mUiStrings.pauseMenu.Restore();
             mUiStrings.toggleControl.Restore();
             mUiStrings.toggleCamera.Restore();
+            mUiStrings.comboDamage.Set(u"^mBtnSelect;: Replay Takeover Controls");
             break;
         case ReplayTakeoverMode::StandbyPaused:
-            mUiStrings.play.Set(u"Mode: Paused");
-            mUiStrings.toggleHud.Set(u"^mAtkP;: Play");
-            mUiStrings.frameStep.Set(u"^mBtnLR;: Forward/Rewind");
-            mUiStrings.inputHistory.Set(u"^mBtnUD;: Fast Forward/Rewind");
-            mUiStrings.nextRound.Set(u"^mAtkS;/^mAtkH;: Frame Step");
-            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Takeover");
-            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
-            mUiStrings.toggleCamera.Set(u"^mAtkD;: Toggles Control Display");
-            break;
         case ReplayTakeoverMode::Standby:
-            mUiStrings.play.Set(u"Mode: Replay");
-            mUiStrings.toggleHud.Set(u"^mAtkP;: Pause");
-            mUiStrings.frameStep.Clear();
-            mUiStrings.inputHistory.Clear();
-            mUiStrings.nextRound.Clear();
-            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Takeover");
-            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
+            if (mMode == ReplayTakeoverMode::Standby)
+            {
+                mUiStrings.play.Set(u"Mode: Replay");
+                mUiStrings.toggleHud.Set(u"^mAtkP;: Pause");
+            }
+            else
+            {
+                mUiStrings.play.Set(u"Mode: Paused");
+                mUiStrings.toggleHud.Set(u"^mAtkP;: Play");
+            }
+            mUiStrings.frameStep.Set(u"^mAtkPlay;: Takeover");
+            mUiStrings.inputHistory.Set(u"^mAtkRec;: Cancel Takeover");
+            mUiStrings.nextRound.Set(u"^mBtnLR;: Forward/Rewind");
+            mUiStrings.pauseMenu.Set(u"^mBtnUD;: Fast Forward/Rewind");
+            mUiStrings.toggleControl.Set(u"^mAtkS;/^mAtkH;: Frame Step");
             mUiStrings.toggleCamera.Set(u"^mAtkD;: Toggles Control Display");
+            mUiStrings.comboDamage.Set(u"^mBtnSelect;: Standard Replay Controls");
             break;
         case ReplayTakeoverMode::TakeoverCountdown:
-            mUiStrings.play.Set(u"Mode: Countdown");
-            mUiStrings.toggleHud.Clear();
-            mUiStrings.frameStep.Clear();
-            mUiStrings.inputHistory.Clear();
-            mUiStrings.nextRound.Clear();
-            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Restart Takeover");
-            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
-            mUiStrings.toggleCamera.Clear();
-            break;
         case ReplayTakeoverMode::TakeoverControl:
-            mUiStrings.play.Set(u"Mode: Takeover");
-            mUiStrings.toggleHud.Clear();
-            mUiStrings.frameStep.Clear();
-            mUiStrings.inputHistory.Clear();
-            mUiStrings.nextRound.Clear();
-            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Restart Takeover");
-            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
-            mUiStrings.toggleCamera.Clear();
-            break;
         case ReplayTakeoverMode::TakeoverRoundEnded:
-            mUiStrings.play.Set(u"Mode: Round Ended");
+            if (mMode == ReplayTakeoverMode::TakeoverCountdown)
+            {
+                mUiStrings.play.Set(u"Mode: Countdown");
+            }
+            else if (mMode == ReplayTakeoverMode::TakeoverControl)
+            {
+                mUiStrings.play.Set(u"Mode: Takeover");
+            }
+            else
+            {
+                mUiStrings.play.Set(u"Mode: Round Ended");
+            }
             mUiStrings.toggleHud.Clear();
-            mUiStrings.frameStep.Clear();
-            mUiStrings.inputHistory.Clear();
+            mUiStrings.frameStep.Set(u"^mAtkPlay;: Restart Takeover");
+            mUiStrings.inputHistory.Set(u"^mAtkRec;: Cancel Takeover");
             mUiStrings.nextRound.Clear();
-            mUiStrings.pauseMenu.Set(u"^mAtkPlay;: Restart Takeover");
-            mUiStrings.toggleControl.Set(u"^mAtkRec;: Cancel Takeover");
+            mUiStrings.pauseMenu.Clear();
+            mUiStrings.toggleControl.Clear();
             mUiStrings.toggleCamera.Clear();
+            mUiStrings.comboDamage.Clear();
             break;
-    }
-
-    if (mMode == ReplayTakeoverMode::Disabled)
-    {
-        mUiStrings.comboDamage.Set(u"^mBtnSelect;: Swap to mod controls");
-    }
-    else
-    {
-        mUiStrings.comboDamage.Set(u"^mBtnSelect;: Swap to normal replay controls");
     }
 }
 
@@ -666,9 +653,10 @@ void ReplayController::Tick()
     {
         GbReplayFrameStep = false;
         mReplayManager.Reset();
-        if (mMode != ReplayTakeoverMode::Disabled)
+        if (mMode != ReplayTakeoverMode::Standby)
         {
-            mMode = ReplayTakeoverMode::Disabled;
+            mMode = ReplayTakeoverMode::Standby;
+            UpdateUi();
             ResetPlayerControl();
         }
         return;
