@@ -82,14 +82,10 @@ private:
     void HandleStandbyMode();
     void HandleTakeoverMode();
 private:
-    static constexpr int MinCountdown = 0;
-    static constexpr int MaxCountdown = 60;
     static constexpr int DefaultCountdown = 15;
     static constexpr size_t PausedFrameJump = 3;
 private:
     ReplayTakeoverMode mMode;
-    bool mbControlP1;
-    int mCountdownTotal;
     int mCountdown;
     size_t mBookmarkFrame;
     ReplayManager mReplayManager;

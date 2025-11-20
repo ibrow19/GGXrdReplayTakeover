@@ -203,8 +203,6 @@ void UiString::Set(char16_t* newString)
 
 ReplayController::ReplayController()
 : mMode(ReplayTakeoverMode::Standby)
-, mbControlP1(true)
-, mCountdownTotal(DefaultCountdown)
 , mCountdown(0)
 , mBookmarkFrame(0)
 {
@@ -391,8 +389,12 @@ void ReplayController::InitPauseMenuMods()
     MakeRegionWritable(table.GetPtr(), (size_t)PauseMenuButtonTable::Size);
     table.GetFlag(PauseMenuMode::Replay, PauseMenuButton::ButtonDisplay) = 1;
     table.GetFlag(PauseMenuMode::Replay, PauseMenuButton::P1MaxHealth) = 1;
-    mOldPauseSettings.p1MaxHealth = XrdModule::GetTrainingP1MaxHealth();
-    mOldPauseSettings.buttonDisplayMode = XrdModule::GetButtonDisplayMode();
+    DWORD& p1MaxHealth = XrdModule::GetTrainingP1MaxHealth();
+    DWORD& buttonDisplay = XrdModule::GetButtonDisplayMode();
+    mOldPauseSettings.p1MaxHealth = p1MaxHealth;
+    mOldPauseSettings.buttonDisplayMode = buttonDisplay;
+    p1MaxHealth = DefaultCountdown;
+    buttonDisplay = 0;
 }
 
 void ReplayController::RestorePauseMenuSettings()
@@ -440,34 +442,13 @@ void ReplayController::PrepareImGuiFrame()
             break;
     }
 
-    int playerNum = mbControlP1 ? 1 : 2;
+    int playerNum = XrdModule::GetButtonDisplayMode() + 1;
     ImGui::Text("Control: Player %d", playerNum);
-
-    ImGui::SliderInt("Countdown Frames", &mCountdownTotal, MinCountdown, MaxCountdown);
 
     if (!mReplayManager.IsEmpty())
     {
         int selectedFrame = mReplayManager.GetCurrentFrame();
         ImGui::SliderInt("Replay Frame", &selectedFrame, 0, mReplayManager.GetFrameCount() - 1);
-    }
-
-    if (ImGui::CollapsingHeader("Controls"))
-    {
-        if (mMode != ReplayTakeoverMode::Disabled)
-        {
-            ImGui::Text("Reset: Disable mod controls");
-            ImGui::Text("P: Pause/unpause");
-            ImGui::Text("K: Change player for takeover");
-            ImGui::Text("Left/Right: rewind/advance paused replay");
-            ImGui::Text("Down/Up: Fast rewind/advance paused replay");
-            ImGui::Text("S/H: Single frame step back/forward");
-            ImGui::Text("Play: Initiate/restart takeover");
-            ImGui::Text("Record: Cancel takeover");
-        }
-        else
-        {
-            ImGui::Text("Reset: Enable mod controls");
-        }
     }
     ImGui::End();
 }
@@ -475,15 +456,15 @@ void ReplayController::PrepareImGuiFrame()
 void ReplayController::OverridePlayerControl()
 {
     InputManager inputManager = XrdModule::GetInputManager();
-    if (mbControlP1)
-    {
-        inputManager.SetP1InputMode(InputMode::Player);
-        inputManager.SetP2InputMode(InputMode::Replay);
-    }
-    else
+    if (XrdModule::GetButtonDisplayMode())
     {
         inputManager.SetP1InputMode(InputMode::Replay);
         inputManager.SetP2InputMode(InputMode::Player);
+    }
+    else
+    {
+        inputManager.SetP1InputMode(InputMode::Player);
+        inputManager.SetP2InputMode(InputMode::Replay);
     }
 }
 
@@ -536,12 +517,6 @@ void ReplayController::HandleStandbyMode()
         mCountdown = 0;
         mMode = ReplayTakeoverMode::TakeoverCountdown;
         return;
-    }
-
-    // Toggle player controlled in takeover
-    if (battlePressed & (DWORD)BattleInputMask::K)
-    {
-        mbControlP1 = !mbControlP1;
     }
 
     // Replay scrubbing while paused.
@@ -601,6 +576,7 @@ void ReplayController::HandleTakeoverMode()
 {
     GameInputCollection input = XrdModule::GetGameInput();
     DWORD& battleInput = input.GetP1BattleInput().GetPressedMask();
+    int countdownTotal = XrdModule::GetTrainingP1MaxHealth();
 
     // Restart takeover
     if (battleInput & (DWORD)BattleInputMask::PlayRecording)
@@ -608,7 +584,8 @@ void ReplayController::HandleTakeoverMode()
         GbOverrideSimpleActorPause = true;
         mReplayManager.LoadFrame(mBookmarkFrame);
         GbOverrideSimpleActorPause = false;
-        if (mCountdownTotal == 0)
+        OverridePlayerControl();
+        if (countdownTotal == 0)
         {
             mMode = ReplayTakeoverMode::TakeoverControl;
         }
@@ -635,7 +612,7 @@ void ReplayController::HandleTakeoverMode()
     if (mMode == ReplayTakeoverMode::TakeoverCountdown)
     {
         ++mCountdown;
-        if (mCountdown >= mCountdownTotal)
+        if (mCountdown >= countdownTotal)
         {
             mMode = ReplayTakeoverMode::TakeoverControl;
         }
