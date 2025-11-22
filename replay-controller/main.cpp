@@ -49,7 +49,9 @@ void AttachSetGameModeDetour()
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
     XrdModule::Init();
+#ifdef USE_IMGUI_OVERLAY
     GameModeController::InitD3DPresent();
+#endif
 
     // Ideally we should do something to avoid race conditions when detouring
     // in this thread but I'm not sure the best way of doing this without a

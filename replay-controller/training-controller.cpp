@@ -2,8 +2,10 @@
 #include <xrd-module.h>
 #include <asw-engine.h>
 #include <input.h>
-#include <imgui.h>
 #include <cstdio>
+#ifdef USE_IMGUI_OVERLAY
+#include <imgui.h>
+#endif
 
 void TrainingController::InitMode()
 {
@@ -63,6 +65,7 @@ void TrainingController::Tick()
     }
 }
 
+#ifdef USE_IMGUI_OVERLAY
 void TrainingController::PrepareImGuiFrame()
 {
     ImGui::Begin("Save States");
@@ -105,3 +108,4 @@ void TrainingController::PrepareImGuiFrame()
     }
     ImGui::End();
 }
+#endif

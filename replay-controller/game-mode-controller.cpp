@@ -2,9 +2,12 @@
 #include <common.h>
 #include <xrd-module.h>
 #include <detours.h>
+#include <cassert>
+#ifdef USE_IMGUI_OVERLAY
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
+#endif
 
 class GameModeControllerDetours
 {
@@ -14,9 +17,10 @@ public:
 };
 
 GameModeController* GameModeController::mInstance = nullptr;
-bool GameModeController::mbImGuiInitialised = false;
 MainGameLogicFunc GameModeControllerDetours::mRealMainGameLogic = nullptr;
 
+#ifdef USE_IMGUI_OVERLAY
+bool GameModeController::mbImGuiInitialised = false;
 D3D9PresentFunc GRealPresent = nullptr;
 ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static WNDPROC GRealWndProc = nullptr;
@@ -31,14 +35,6 @@ static LRESULT CALLBACK ImGuiWndProc(HWND hWnd, UINT message, WPARAM wParam, LPA
     }
 
     return CallWindowProc(GRealWndProc, hWnd, message, wParam, lParam);
-}
-
-void GameModeControllerDetours::DetourMainGameLogic(DWORD param)
-{
-    GameModeController* controller = GameModeController::Get();
-    assert(controller != nullptr);
-    controller->Tick();
-    mRealMainGameLogic((LPVOID)this, param);
 }
 
 HRESULT STDMETHODCALLTYPE DetourPresent(IDirect3DDevice9* device, const RECT* pSourceRect, const RECT* pDestRect, HWND hDestWindowOverride, const RGNDATA* pDirtyRegion)
@@ -119,54 +115,6 @@ void GameModeController::InitD3DPresent()
     dummyD3D->Release();
 }
 
-GameModeController* GameModeController::Get()
-{
-    return mInstance;
-}
-
-void GameModeController::Destroy()
-{
-    if (mInstance != nullptr)
-    {
-        mInstance->Shutdown();
-        delete mInstance;
-        mInstance = nullptr;
-    }
-}
-
-void GameModeController::Init()
-{
-    // TODO: flush render command queue so that render thread detours are attached safely. 
-    assert(GRealPresent);
-    D3D9PresentFunc detourPresent = DetourPresent;
-    GameModeControllerDetours::mRealMainGameLogic = XrdModule::GetMainGameLogic();
-    void (GameModeControllerDetours::* detourMainGameLogic)(DWORD) = &GameModeControllerDetours::DetourMainGameLogic;
-
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
-    DetourAttach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
-    DetourTransactionCommit();
-
-    InitMode();
-}
-
-void GameModeController::Shutdown()
-{
-    // TODO: flush render command queue so that render thread detours are detached safely. 
-    assert(GRealPresent);
-    D3D9PresentFunc detourPresent = DetourPresent;
-    void (GameModeControllerDetours::* detourMainGameLogic)(DWORD) = &GameModeControllerDetours::DetourMainGameLogic;
-
-    DetourTransactionBegin();
-    DetourUpdateThread(GetCurrentThread());
-    DetourDetach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
-    DetourDetach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
-    DetourTransactionCommit();
-
-    ShutdownMode();
-}
-
 void GameModeController::InitImGui(IDirect3DDevice9* device)
 {
     ImGui::CreateContext();
@@ -207,4 +155,69 @@ void GameModeController::RenderUi(IDirect3DDevice9* device)
     ImGui::Render();
     ImGui_ImplDX9_RenderDrawData(ImGui::GetDrawData());
     device->EndScene();
+}
+#endif
+
+void GameModeControllerDetours::DetourMainGameLogic(DWORD param)
+{
+    GameModeController* controller = GameModeController::Get();
+    assert(controller != nullptr);
+    controller->Tick();
+    mRealMainGameLogic((LPVOID)this, param);
+}
+
+GameModeController* GameModeController::Get()
+{
+    return mInstance;
+}
+
+void GameModeController::Destroy()
+{
+    if (mInstance != nullptr)
+    {
+        mInstance->Shutdown();
+        delete mInstance;
+        mInstance = nullptr;
+    }
+}
+
+void GameModeController::Init()
+{
+#ifdef USE_IMGUI_OVERLAY
+    // TODO: flush render command queue so that render thread detours are attached safely. 
+    assert(GRealPresent);
+    D3D9PresentFunc detourPresent = DetourPresent;
+#endif
+    GameModeControllerDetours::mRealMainGameLogic = XrdModule::GetMainGameLogic();
+    void (GameModeControllerDetours::* detourMainGameLogic)(DWORD) = &GameModeControllerDetours::DetourMainGameLogic;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+#ifdef USE_IMGUI_OVERLAY
+    DetourAttach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
+#endif
+    DetourAttach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
+    DetourTransactionCommit();
+
+    InitMode();
+}
+
+void GameModeController::Shutdown()
+{
+#ifdef USE_IMGUI_OVERLAY
+    // TODO: flush render command queue so that render thread detours are detached safely. 
+    assert(GRealPresent);
+    D3D9PresentFunc detourPresent = DetourPresent;
+#endif
+    void (GameModeControllerDetours::* detourMainGameLogic)(DWORD) = &GameModeControllerDetours::DetourMainGameLogic;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+#ifdef USE_IMGUI_OVERLAY
+    DetourDetach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
+#endif
+    DetourDetach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
+    DetourTransactionCommit();
+
+    ShutdownMode();
 }

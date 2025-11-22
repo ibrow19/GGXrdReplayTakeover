@@ -7,8 +7,12 @@
 #include <replay-hud.h>
 #include <pause-menu.h>
 #include <entity.h>
-#include <imgui.h>
 #include <detours.h>
+#include <cassert>
+
+#ifdef USE_IMGUI_OVERLAY
+#include <imgui.h>
+#endif
 
 class ReplayControllerDetourer
 {
@@ -406,6 +410,7 @@ void ReplayController::RestorePauseMenuSettings()
     XrdModule::GetButtonDisplayMode() = mOldPauseSettings.buttonDisplayMode;
 }
 
+#ifdef USE_IMGUI_OVERLAY
 void ReplayController::PrepareImGuiFrame()
 {
     ImGui::Begin("Replay Takeover");
@@ -452,6 +457,7 @@ void ReplayController::PrepareImGuiFrame()
     }
     ImGui::End();
 }
+#endif
 
 void ReplayController::OverridePlayerControl()
 {

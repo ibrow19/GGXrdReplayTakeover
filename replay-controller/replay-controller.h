@@ -66,7 +66,9 @@ private:
     void InitMode() override;
     void ShutdownMode() override;
     void Tick() override;
+#ifdef USE_IMGUI_OVERLAY
     void PrepareImGuiFrame() override;
+#endif
 
     void InitUiStrings();
     void RestoreUiStrings();
