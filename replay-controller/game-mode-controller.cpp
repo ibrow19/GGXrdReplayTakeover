@@ -9,7 +9,7 @@
 #include <imgui_impl_win32.h>
 #endif
 
-class GameModeControllerDetours
+class GameModeControllerDetourer
 {
 public:
     void DetourMainGameLogic(DWORD param);
@@ -17,7 +17,7 @@ public:
 };
 
 GameModeController* GameModeController::mInstance = nullptr;
-MainGameLogicFunc GameModeControllerDetours::mRealMainGameLogic = nullptr;
+MainGameLogicFunc GameModeControllerDetourer::mRealMainGameLogic = nullptr;
 
 #ifdef USE_IMGUI_OVERLAY
 bool GameModeController::mbImGuiInitialised = false;
@@ -158,7 +158,7 @@ void GameModeController::RenderUi(IDirect3DDevice9* device)
 }
 #endif
 
-void GameModeControllerDetours::DetourMainGameLogic(DWORD param)
+void GameModeControllerDetourer::DetourMainGameLogic(DWORD param)
 {
     GameModeController* controller = GameModeController::Get();
     assert(controller != nullptr);
@@ -188,15 +188,15 @@ void GameModeController::Init()
     assert(GRealPresent);
     D3D9PresentFunc detourPresent = DetourPresent;
 #endif
-    GameModeControllerDetours::mRealMainGameLogic = XrdModule::GetMainGameLogic();
-    void (GameModeControllerDetours::* detourMainGameLogic)(DWORD) = &GameModeControllerDetours::DetourMainGameLogic;
+    GameModeControllerDetourer::mRealMainGameLogic = XrdModule::GetMainGameLogic();
+    void (GameModeControllerDetourer::* detourMainGameLogic)(DWORD) = &GameModeControllerDetourer::DetourMainGameLogic;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
 #ifdef USE_IMGUI_OVERLAY
     DetourAttach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
 #endif
-    DetourAttach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
+    DetourAttach(&(PVOID&)GameModeControllerDetourer::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
     DetourTransactionCommit();
 
     InitMode();
@@ -209,14 +209,14 @@ void GameModeController::Shutdown()
     assert(GRealPresent);
     D3D9PresentFunc detourPresent = DetourPresent;
 #endif
-    void (GameModeControllerDetours::* detourMainGameLogic)(DWORD) = &GameModeControllerDetours::DetourMainGameLogic;
+    void (GameModeControllerDetourer::* detourMainGameLogic)(DWORD) = &GameModeControllerDetourer::DetourMainGameLogic;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
 #ifdef USE_IMGUI_OVERLAY
     DetourDetach(&(PVOID&)GRealPresent, (PVOID&)detourPresent);
 #endif
-    DetourDetach(&(PVOID&)GameModeControllerDetours::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
+    DetourDetach(&(PVOID&)GameModeControllerDetourer::mRealMainGameLogic, *(PBYTE*)&detourMainGameLogic);
     DetourTransactionCommit();
 
     ShutdownMode();

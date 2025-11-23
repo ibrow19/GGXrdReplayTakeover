@@ -9,15 +9,15 @@ enum class GameMode : DWORD
     Replay = 17,
 };
 
-class SetGameModeDetours
+class SetGameModeDetourer
 {
 public:
     void DetourSetGameMode(DWORD newMode);
     static SetGameModeFunc mRealSetGameMode; 
 };
-SetGameModeFunc SetGameModeDetours::mRealSetGameMode = nullptr;
+SetGameModeFunc SetGameModeDetourer::mRealSetGameMode = nullptr;
 
-void SetGameModeDetours::DetourSetGameMode(DWORD newMode)
+void SetGameModeDetourer::DetourSetGameMode(DWORD newMode)
 {
     DWORD modeByte = newMode&0xff;
     if (modeByte == (DWORD)GameMode::Replay)
@@ -37,12 +37,12 @@ void SetGameModeDetours::DetourSetGameMode(DWORD newMode)
 
 void AttachSetGameModeDetour()
 {
-    SetGameModeDetours::mRealSetGameMode = XrdModule::GetGameModeSetter();
-    void (SetGameModeDetours::* detourSetGameMode)(DWORD) = &SetGameModeDetours::DetourSetGameMode;
+    SetGameModeDetourer::mRealSetGameMode = XrdModule::GetGameModeSetter();
+    void (SetGameModeDetourer::* detourSetGameMode)(DWORD) = &SetGameModeDetourer::DetourSetGameMode;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
-    DetourAttach(&(PVOID&)SetGameModeDetours::mRealSetGameMode, *(PBYTE*)&detourSetGameMode);
+    DetourAttach(&(PVOID&)SetGameModeDetourer::mRealSetGameMode, *(PBYTE*)&detourSetGameMode);
     DetourTransactionCommit();
 }
 
