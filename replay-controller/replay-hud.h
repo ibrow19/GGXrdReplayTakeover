@@ -1,8 +1,8 @@
 #pragma once
 
-#include <windows.h>
+#include <memory-wrapper.h>
 
-class ReplayHud
+class ReplayHud : public MemoryWrapper
 {
 public:
     ReplayHud(DWORD inPtr);
@@ -17,6 +17,4 @@ public:
     DWORD& GetCameraPosition();
     DWORD& GetCameraTimer();
     DWORD& GetCameraMode();
-private:
-    DWORD mPtr;
 };

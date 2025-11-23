@@ -1,6 +1,6 @@
 #pragma once
 
-#include <windows.h>
+#include <memory-wrapper.h>
 
 // Inputs bound from the "Button Settings(Menu)" menu
 // The training mode Reset button is also part of this group but cannot be rebound
@@ -48,22 +48,18 @@ enum class BattleInputMask : DWORD
 
 // Contains input that has been transformed into a form ready to use in the
 // game based on the chosen menu/battle bindings.
-class GameInput
+class GameInput : public MemoryWrapper
 {
 public:
     GameInput(DWORD inPtr);
-    bool IsValid() const;
     DWORD& GetPressedMask();
     DWORD& GetHeldMask();
-private:
-    DWORD mPtr;
 };
 
-class GameInputCollection
+class GameInputCollection : public MemoryWrapper
 {
 public:
     GameInputCollection(DWORD inPtr);
-    bool IsValid() const;
     GameInput GetP1MenuInput();
     GameInput GetP1BattleInput();
     GameInput GetP2MenuInput();
@@ -71,6 +67,4 @@ public:
 private:
     static constexpr DWORD PlayerOffset = 0x38;
     static constexpr DWORD BattleInputOffset = 0x54;
-private:
-    DWORD mPtr;
 };

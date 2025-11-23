@@ -1,15 +1,10 @@
 #include <entity.h>
 
 Entity::Entity(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
 
-DWORD Entity::GetPtr()
-{
-    return mPtr;
-}
-
-bool Entity::IsPlayer()
+bool Entity::IsPlayer() const
 {
     return *(DWORD*)(mPtr + 0x10) != 0;
 }
@@ -44,7 +39,7 @@ char* Entity::GetAnimationFrameName()
     return (char*)(mPtr + 0xa58);
 }
 
-bool Entity::HasNonPlayerComplexActorOnline()
+bool Entity::HasNonPlayerComplexActorOnline() const
 {
     return *(DWORD*)(mPtr + 0x2878) != 0;
 }
@@ -55,20 +50,10 @@ DWORD& Entity::GetComplexActorRecreationFlag()
 }
 
 TimeStepData::TimeStepData(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
 
-DWORD TimeStepData::GetPtr()
-{
-    return mPtr;
-}
-
-bool TimeStepData::IsValid()
-{
-    return mPtr != 0;
-}
-
-bool TimeStepData::ShouldUseFixedTimeStep()
+bool TimeStepData::ShouldUseFixedTimeStep() const
 {
     return *(BYTE*)(mPtr + 0x3c) == 1;
 }
@@ -79,13 +64,8 @@ float& TimeStepData::GetFixedTimeStep()
 }
 
 SimpleActor::SimpleActor(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
-
-DWORD SimpleActor::GetPtr()
-{
-    return mPtr;
-}
 
 float& SimpleActor::GetTime()
 {

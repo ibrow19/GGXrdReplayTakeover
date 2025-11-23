@@ -1,13 +1,8 @@
 #include <pause-menu.h>
 
 PauseMenuButtonTable::PauseMenuButtonTable(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
-
-DWORD PauseMenuButtonTable::GetPtr() const
-{
-    return mPtr;
-}
 
 BYTE& PauseMenuButtonTable::GetFlag(PauseMenuMode mode, PauseMenuButton button)
 {

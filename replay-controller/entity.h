@@ -1,13 +1,12 @@
 #pragma once
 
-#include <windows.h>
+#include <memory-wrapper.h>
 
-class Entity
+class Entity : public MemoryWrapper
 {
 public:
     Entity(DWORD inPtr);
-    DWORD GetPtr();
-    bool IsPlayer();
+    bool IsPlayer() const;
     char* GetCharacterCode();
 
     // Parameters only used with simple actors (Actors that just play a single
@@ -24,34 +23,25 @@ public:
     DWORD& GetComplexActor();
     char* GetStateName();
     char* GetAnimationFrameName();
-    bool HasNonPlayerComplexActorOnline();
+    bool HasNonPlayerComplexActorOnline() const;
     // Not sure exactly what this is for but is only used to determine how to
     // recreate complex actors on state load as far as I can tell.
     DWORD& GetComplexActorRecreationFlag();
-private:
-    DWORD mPtr;
 };
 
-class TimeStepData
+class TimeStepData : public MemoryWrapper
 {
 public:
     TimeStepData(DWORD inPtr);
-    DWORD GetPtr();
-    bool IsValid();
-    bool ShouldUseFixedTimeStep();
+    bool ShouldUseFixedTimeStep() const;
     float& GetFixedTimeStep();
-private:
-    DWORD mPtr;
 };
 
-class SimpleActor
+class SimpleActor : public MemoryWrapper
 {
 public:
     SimpleActor(DWORD inPtr);
-    DWORD GetPtr();
     float& GetTime();
     float& GetDeltaCoeff();
     TimeStepData GetTimeStepData();
-private:
-    DWORD mPtr;
 };

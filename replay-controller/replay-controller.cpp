@@ -674,11 +674,7 @@ void ReplayController::Tick()
 
     if (IsPaused())
     {
-        DWORD* pause = XrdModule::GetEngine().GetPauseEngineUpdateFlag();
-        if (pause != nullptr)
-        {
-            *pause = 1;
-        }
+        XrdModule::GetEngine().GetGameLogicManager().GetPauseEngineUpdateFlag() = 1;
     }
 }
 

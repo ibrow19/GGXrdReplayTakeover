@@ -1,7 +1,7 @@
 #include <replay-hud.h>
 
 ReplayHud::ReplayHud(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
 
 void ReplayHud::Reset()

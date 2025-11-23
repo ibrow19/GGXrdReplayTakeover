@@ -2,13 +2,8 @@
 #include <cassert>
 
 GameInputCollection::GameInputCollection(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
-
-bool GameInputCollection::IsValid() const
-{
-    return mPtr != 0;
-}
 
 GameInput GameInputCollection::GetP1MenuInput()
 {
@@ -31,13 +26,8 @@ GameInput GameInputCollection::GetP2BattleInput()
 }
 
 GameInput::GameInput(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
-
-bool GameInput::IsValid() const
-{
-    return mPtr != 0;
-}
 
 DWORD& GameInput::GetPressedMask()
 {

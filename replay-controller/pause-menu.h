@@ -1,6 +1,6 @@
 #pragma once
 
-#include <windows.h>
+#include <memory-wrapper.h>
 
 enum class PauseMenuButton : DWORD
 {
@@ -84,14 +84,11 @@ enum class PauseMenuMode : DWORD
 };
 
 // Table of which pause menu buttons are enabled in which game mode.
-class PauseMenuButtonTable
+class PauseMenuButtonTable : public MemoryWrapper
 {
 public:
     static constexpr size_t Size = (DWORD)PauseMenuButton::Count * (DWORD)PauseMenuMode::Count;
 public:
     PauseMenuButtonTable(DWORD inPtr);
-    DWORD GetPtr() const;
     BYTE& GetFlag(PauseMenuMode mode, PauseMenuButton button);
-private:
-    DWORD mPtr;
 };

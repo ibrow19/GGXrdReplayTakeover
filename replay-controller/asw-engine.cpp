@@ -1,20 +1,11 @@
 #include <asw-engine.h>
 #include <entity.h>
 #include <replay-hud.h>
+#include <cassert>
 
 AswEngine::AswEngine(DWORD inPtr)
-: mPtr(inPtr)
+: MemoryWrapper(inPtr)
 {}
-
-bool AswEngine::IsValid() const
-{
-    return mPtr != 0;
-}
-
-DWORD AswEngine::GetPtr() 
-{
-    return mPtr;
-}
 
 DWORD AswEngine::GetOffset4()
 {
@@ -51,26 +42,25 @@ ReplayHud AswEngine::GetReplayHud()
     return ReplayHud(mPtr + 0x1c7400);
 }
 
-DWORD* AswEngine::GetPauseEngineUpdateFlag()
+GameLogicManager AswEngine::GetGameLogicManager()
 {
-    // Not sure exactly what these objects are for other than they
-    // contain a chain of references to the flag we want.
-    DWORD object1 = *(DWORD*)(mPtr + 0x22e630);
-    if (object1 == 0)
-    {
-        return nullptr;
-    }
-
-    DWORD object2 = *(DWORD*)(object1 + 0x37c);
-    if (object2 == 0)
-    {
-        return nullptr;
-    }
-
-    return (DWORD*)(object2 + 0x1c8);
+    DWORD gameLogicPtr = *(DWORD*)(mPtr + 0x22e630);
+    assert(gameLogicPtr);
+    return GameLogicManager(gameLogicPtr);
 }
 
 DWORD& AswEngine::GetErrorCode()
 {
     return *(DWORD*)(mPtr + 0x1c6f4c + 0x4);
+}
+
+GameLogicManager::GameLogicManager(DWORD inPtr)
+: MemoryWrapper(inPtr)
+{}
+
+DWORD& GameLogicManager::GetPauseEngineUpdateFlag()
+{
+    DWORD pauseObject = *(DWORD*)(mPtr + 0x37c);
+    assert(pauseObject);
+    return *(DWORD*)(pauseObject + 0x1c8);
 }
