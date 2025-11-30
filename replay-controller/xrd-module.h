@@ -20,6 +20,8 @@ typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
 typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
 typedef void(__thiscall* TickActorFunc)(LPVOID actor, float delta);
 typedef bool(__cdecl* CheckInBattleFunc)(void);
+typedef void(__cdecl* TickRelevantActorsFunc)(void);
+typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
 
 class XrdModule
 {
@@ -35,6 +37,7 @@ public:
     static bool IsPauseMenuActive();
     static DWORD GetUiStringTable();
     static float GetReplayTextSpacing();
+    static float& GetDefaultTickDelta();
 
     // Values modified from the pause menu. These are part of other structs
     // with various training/UI settings but we only need these specific
@@ -59,6 +62,7 @@ public:
     // in a match in any offline game mode. While online a different function
     // is used.
     static MainGameLogicFunc GetMainGameLogic();
+    static MainGameLogicFunc GetOfflineMainGameLogic();
 
     // Setter for built in string type that use a fixed 32 byte buffer size.
     // The dest string is replaced with the src string then has the remaining 
@@ -104,7 +108,15 @@ public:
     static SetHealthFunc GetSetHealth();
     static UpdateTimeFunc GetUpdateTime();
     static HandleInputsFunc GetHandleInputs();
+    static TickActorFunc GetTickActor();
     static TickActorFunc GetTickSimpleActor();
+
+    // This function is used to tick actors online when resimulating for
+    // rollbacks. A "relevant" actor is one where *(Actor + 0x34) == 0x11166000
+    // The value compared against is stored at Xrd+0x16f1084
+    static TickRelevantActorsFunc GetTickRelevantActors();
+
+    static IsResimulatingFunc GetIsResimulating();
 private:
     static DWORD mBase;
 };

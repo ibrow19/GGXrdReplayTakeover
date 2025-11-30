@@ -211,6 +211,9 @@ ReplayController::ReplayController()
 , mBookmarkFrame(0)
 {
     GbReplayFrameStep = false;
+    GbOverrideSimpleActorPause = false;
+    GbOverrideHudText = false;
+    GbAddingFirstTextRow = false;
 }
 
 void ReplayController::InitMode()
@@ -450,11 +453,6 @@ void ReplayController::PrepareImGuiFrame()
     int playerNum = XrdModule::GetButtonDisplayMode() + 1;
     ImGui::Text("Control: Player %d", playerNum);
 
-    if (!mReplayManager.IsEmpty())
-    {
-        int selectedFrame = mReplayManager.GetCurrentFrame();
-        ImGui::SliderInt("Replay Frame", &selectedFrame, 0, mReplayManager.GetFrameCount() - 1);
-    }
     ImGui::End();
 }
 #endif
@@ -525,9 +523,24 @@ void ReplayController::HandleStandbyMode()
         return;
     }
 
-    // Replay scrubbing while paused.
+    // Toggle pause
+    if (battlePressed & (DWORD)BattleInputMask::P)
+    {
+        if (mMode == ReplayTakeoverMode::Standby)
+        {
+            mMode = ReplayTakeoverMode::StandbyPaused;
+        }
+        else
+        {
+            mMode = ReplayTakeoverMode::Standby;
+        }
+    }
+
+    // Replay scrubbing.
     if (mMode == ReplayTakeoverMode::StandbyPaused)
     {
+        // TODO: find something better than changing these globals every time
+        // we interact with replay manager.
         GbOverrideSimpleActorPause = true;
         if ((battleHeld & (DWORD)BattleInputMask::Left) ||
             (battlePressed & (DWORD)BattleInputMask::S))
@@ -554,27 +567,9 @@ void ReplayController::HandleStandbyMode()
         else if (battleHeld & (DWORD)BattleInputMask::Up)
         {
             size_t newFrame = mReplayManager.GetCurrentFrame() + PausedFrameJump;
-            size_t maxFrame = mReplayManager.GetFrameCount() - 1;
-            if (newFrame > maxFrame)
-            {
-                newFrame = maxFrame;
-            }
             mReplayManager.LoadFrame(newFrame);
         }
         GbOverrideSimpleActorPause = false;
-    }
-
-    // Toggle pause
-    if (battlePressed & (DWORD)BattleInputMask::P)
-    {
-        if (mMode == ReplayTakeoverMode::Standby)
-        {
-            mMode = ReplayTakeoverMode::StandbyPaused;
-        }
-        else
-        {
-            mMode = ReplayTakeoverMode::Standby;
-        }
     }
 }
 
@@ -587,8 +582,11 @@ void ReplayController::HandleTakeoverMode()
     // Restart takeover
     if (battleInput & (DWORD)BattleInputMask::PlayRecording)
     {
+        // Need to reset player control first in case loading the bookmark frame
+        // involves any resimulation.
+        ResetPlayerControl();
         GbOverrideSimpleActorPause = true;
-        mReplayManager.LoadFrame(mBookmarkFrame);
+        mReplayManager.LoadFrame(mBookmarkFrame, /*bForceLoad=*/true);
         GbOverrideSimpleActorPause = false;
         OverridePlayerControl();
         if (countdownTotal == 0)
@@ -606,10 +604,12 @@ void ReplayController::HandleTakeoverMode()
     // Cancel takeover
     if (battleInput & (DWORD)BattleInputMask::StartRecording)
     {
-        GbOverrideSimpleActorPause = true;
-        mReplayManager.LoadFrame(mBookmarkFrame);
-        GbOverrideSimpleActorPause = false;
+        // Make sure player control reset first so it doesn't interfere with
+        // any potential resimulation when loading the bookmark.
         ResetPlayerControl();
+        GbOverrideSimpleActorPause = true;
+        mReplayManager.LoadFrame(mBookmarkFrame, /*bForceLoad=*/true);
+        GbOverrideSimpleActorPause = false;
         mMode = ReplayTakeoverMode::StandbyPaused;
         return;
     }

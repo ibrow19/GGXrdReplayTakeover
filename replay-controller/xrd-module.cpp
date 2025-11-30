@@ -117,6 +117,11 @@ float XrdModule::GetReplayTextSpacing()
     return *(float*)(mBase + 0x10a1148);
 }
 
+float& XrdModule::GetDefaultTickDelta()
+{
+    return *(float*)(mBase + 0x109f00c);
+}
+
 EntityUpdateFunc XrdModule::GetOnlineEntityUpdate()
 {
     return (EntityUpdateFunc)(mBase + 0xb6efd0);
@@ -125,6 +130,11 @@ EntityUpdateFunc XrdModule::GetOnlineEntityUpdate()
 MainGameLogicFunc XrdModule::GetMainGameLogic()
 {
     return (MainGameLogicFunc)(mBase + 0xa61240);
+}
+
+MainGameLogicFunc XrdModule::GetOfflineMainGameLogic()
+{
+    return (MainGameLogicFunc)(mBase + 0xa5df00);
 }
 
 SetStringFunc XrdModule::GetSetString()
@@ -207,7 +217,22 @@ HandleInputsFunc XrdModule::GetHandleInputs()
     return (HandleInputsFunc)(mBase + 0x9e0290);
 }
 
+TickActorFunc XrdModule::GetTickActor()
+{
+    return (TickActorFunc)(mBase + 0x275720);
+}
+
 TickActorFunc XrdModule::GetTickSimpleActor()
 {
     return (TickActorFunc)(mBase + 0x6ee9c0);
+}
+
+TickRelevantActorsFunc XrdModule::GetTickRelevantActors()
+{
+    return (TickRelevantActorsFunc)(mBase + 0xa5d670);
+}
+
+IsResimulatingFunc XrdModule::GetIsResimulating()
+{
+    return (IsResimulatingFunc)(mBase + 0xbfbd20);
 }

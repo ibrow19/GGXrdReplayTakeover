@@ -151,19 +151,6 @@ static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
     },
 };
 
-static void ForEachEntity(void(*func)(DWORD, DWORD, void*), void* extraData = nullptr)
-{
-    AswEngine engine = XrdModule::GetEngine();
-    assert(engine.IsValid());
-
-    DWORD entityCount = engine.GetEntityCount();
-    DWORD* entityList =  engine.GetEntityList();
-    for (DWORD i = 0; i < entityCount; ++i)
-    {
-        func(entityList[i], i, extraData);
-    }
-}
-
 
 static void CallSaveStateFunction(DWORD functionOffset, SaveStateSectionBase base, DWORD stateOffset)
 {
@@ -355,7 +342,6 @@ void LoadState(const SaveData& src)
     trackerPtr = (DWORD)&GTracker;
 
     GbStateDetourActive = true;
-
     for (int i = 0; i < SaveStateFunctionCount; ++i)
     {
         CallSaveStateFunction(

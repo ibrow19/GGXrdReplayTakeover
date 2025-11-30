@@ -1,4 +1,8 @@
 #include <common.h>
+#include <xrd-module.h>
+#include <asw-engine.h>
+#include <entity.h>
+#include <cassert>
 
 void MakeRegionWritable(DWORD base, DWORD size)
 {
@@ -26,5 +30,18 @@ void MakeRegionWritable(DWORD base, DWORD size)
             MessageBox(NULL, (LPCTSTR)message, AppName, MB_OK);
         }
         pageStart += regionSize;
+    }
+}
+
+void ForEachEntity(EntityFunc func, void* extraData)
+{
+    AswEngine engine = XrdModule::GetEngine();
+    assert(engine.IsValid());
+
+    DWORD entityCount = engine.GetEntityCount();
+    DWORD* entityList =  engine.GetEntityList();
+    for (DWORD i = 0; i < entityCount; ++i)
+    {
+        func(entityList[i], i, extraData);
     }
 }
