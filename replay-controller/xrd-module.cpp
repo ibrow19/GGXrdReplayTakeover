@@ -82,6 +82,11 @@ BYTE* XrdModule::GetControllerIndexInstruction()
     return (BYTE*)(mBase + 0x9e05f7);
 }
 
+BYTE* XrdModule::GetSoundEffectJumpInstruction()
+{
+    return (BYTE*)(mBase + 0xb70a80);
+}
+
 bool XrdModule::IsPauseMenuActive()
 {
     IsPauseMenuActiveFunc func = (IsPauseMenuActiveFunc)(mBase + 0xbd8cf0);

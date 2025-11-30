@@ -34,6 +34,7 @@ public:
     static class GameInputCollection GetGameInput();
     static class PauseMenuButtonTable GetPauseMenuButtonTable();
     static BYTE* GetControllerIndexInstruction();
+    static BYTE* GetSoundEffectJumpInstruction();
     static bool IsPauseMenuActive();
     static DWORD GetUiStringTable();
     static float GetReplayTextSpacing();
