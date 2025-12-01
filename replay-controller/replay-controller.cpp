@@ -295,6 +295,14 @@ void ReplayController::HandleStandbyMode()
         return;
     }
 
+    // Toggle control display
+    if (battlePressed & (DWORD)BattleInputMask::D)
+    {
+        DWORD& displayControls = XrdModule::GetEngine().GetReplayHud().GetDisplayReplayHud();
+        displayControls = !displayControls;
+        battlePressed ^= (DWORD)BattleInputMask::D;
+    }
+
     // Toggle pause
     if (battlePressed & (DWORD)BattleInputMask::P)
     {
