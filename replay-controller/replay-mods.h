@@ -11,8 +11,8 @@ namespace ReplayDetourSettings
 // Attach/Detach replay related function detours and handle inialisation of 
 // associated settings. Also handles adjustments to instructions required for
 // replay behaviour modifications.
-void AttachReplayMods();
-void DetachReplayMods();
+void AddReplayMods();
+void RemoveReplayMods();
 
 void DisableSoundEffects();
 void EnableSoundEffects();

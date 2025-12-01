@@ -171,7 +171,7 @@ void __fastcall DetourHandleInputs(DWORD engine)
     XrdModule::GetEngine().GetErrorCode() = 0;
 }
 
-void AttachReplayMods()
+void AddReplayMods()
 {
     // Reset Settings
     ReplayDetourSettings::bReplayFrameStep = false;
@@ -226,7 +226,7 @@ void AttachReplayMods()
     AttachSaveStateDetours();
 }
 
-void DetachReplayMods()
+void RemoveReplayMods()
 {
     // Restore instruction to their original values.
     BYTE* instruction = XrdModule::GetControllerIndexInstruction();

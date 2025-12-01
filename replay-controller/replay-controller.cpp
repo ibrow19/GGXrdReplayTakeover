@@ -45,7 +45,7 @@ ReplayController::ReplayController()
 
 void ReplayController::InitMode()
 {
-    AttachReplayMods();
+    AddReplayMods();
     InitPauseMenuMods();
     InitUiStrings();
     UpdateUi();
@@ -53,7 +53,7 @@ void ReplayController::InitMode()
 
 void ReplayController::ShutdownMode()
 {
-    DetachReplayMods();
+    RemoveReplayMods();
     RestorePauseMenuSettings();
     RestoreUiStrings();
 }
