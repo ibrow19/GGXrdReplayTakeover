@@ -81,9 +81,10 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
     // Simulate forward to desired frame.
     if (mCurrentFrame != index)
     {
-        // Override pausing and disable sound effects while simulating
+        // Override pausing and disable sound effects/input display while simulating
         ReplayDetourSettings::bOverrideSimpleActorPause = true;
         DisableSoundEffects();
+        DisableInputDisplay();
 
         // Clear input before simulating. Restore it after the simulation.
         GameInputCollection input = XrdModule::GetGameInput();
@@ -145,6 +146,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
 
         ReplayDetourSettings::bOverrideSimpleActorPause = false;
         EnableSoundEffects();
+        EnableInputDisplay();
     }
 
     return mCurrentFrame;

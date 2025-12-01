@@ -35,6 +35,7 @@ public:
     static class PauseMenuButtonTable GetPauseMenuButtonTable();
     static BYTE* GetControllerIndexInstruction();
     static BYTE* GetSoundEffectJumpInstruction();
+    static BYTE* GetInputDisplayInstruction();
     static bool IsPauseMenuActive();
     static DWORD GetUiStringTable();
     static float GetReplayTextSpacing();

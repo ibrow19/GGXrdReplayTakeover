@@ -195,10 +195,10 @@ void AttachReplayMods()
     MakeRegionWritable((DWORD)controllerInstruction, 1);
     *controllerInstruction = 0x52;
 
-    // Make instruction for controlling sound effects writable so we can change
-    // it when necessary later.
-    BYTE* soundInstruction = XrdModule::GetSoundEffectJumpInstruction();
-    MakeRegionWritable((DWORD)soundInstruction, 6);
+    // Make instructions for controlling sound effects and input display
+    // writable so we can change them when we need to later.
+    MakeRegionWritable((DWORD)XrdModule::GetSoundEffectJumpInstruction(), 6);
+    MakeRegionWritable((DWORD)XrdModule::GetInputDisplayInstruction(), 1);
 
     // Attach detours
     GRealReplayHudUpdate = XrdModule::GetReplayHudUpdate();
@@ -233,6 +233,7 @@ void DetachReplayMods()
     *instruction = 0x56;
 
     EnableSoundEffects();
+    EnableInputDisplay();
 
     // Detach detours
     void (ReplayDetourer::* detourSetHealth)(int) = &ReplayDetourer::DetourSetHealth;
@@ -281,4 +282,26 @@ void EnableSoundEffects()
     instruction[3] = 0x04;
     instruction[4] = 0x00;
     instruction[5] = 0x00;
+}
+
+// The input display is added to the screen every frame. If we do this while
+// simulating multiple frames then the game will render all of them at once
+// after we finish simulating. So we edit an instruction to jump over the
+// code displaying the input. The condition we're changing is checking the
+// result of a function checking if we're online + resimulating for a rollback;
+// so we could detour that function as an alternate solution. But I'm not
+// confident about how that would effect other parts of the code that call the
+// same function.
+void DisableInputDisplay()
+{
+    // Change to a jmp
+    BYTE* instruction = XrdModule::GetInputDisplayInstruction();
+    *instruction = 0xeb;
+}
+
+void EnableInputDisplay()
+{
+    // Restore original jne instruction
+    BYTE* instruction = XrdModule::GetInputDisplayInstruction();
+    *instruction = 0x75;
 }
