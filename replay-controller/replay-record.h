@@ -18,10 +18,10 @@ struct ReplaySaveData : public SaveData
 // frames so as long as we keep X around 12 the re-simulation should be comparable
 // to a big rollback. We all save the most recent frames in another buffer to avoid 
 // needing to constantly re-simulate when scrubbing around the same area.
-class ReplayManager
+class ReplayRecord
 {
 public:
-    ReplayManager();
+    ReplayRecord();
     void Reset();
 
     size_t GetCurrentFrame() const;
@@ -34,14 +34,16 @@ public:
     // returns currentFrame.
     size_t RecordFrame();
 
-    // Loads the specified frame. If the requested frame is further forward
-    // than our most recently saved frame then we need to simulate up to it.
-    // For loading an older frame, we jump to the nearest saved frame and
-    // simulate forward to it.
-    // returns currentFrame.
-    size_t LoadFrame(size_t index, bool bForceLoad = false);
-    size_t LoadNextFrame();
-    size_t LoadPreviousFrame();
+    // Sets the replay the specified frame in the record. If the requested 
+    // frame is further forward than our most recently saved frame then we 
+    // need to simulate up to it. For loading an older frame, we jump to the 
+    // nearest saved frame and simulate forward to it.
+    // If the record is already at the specified index then it will not change
+    // the game state. bForceLoad can be used to override this behaviour.
+    // returns currentFrame after the action.
+    size_t SetFrame(size_t index, bool bForceLoad = false);
+    size_t SetNextFrame();
+    size_t SetPreviousFrame();
 private:
     // Max frames assuming default of 99 second rounds. Not currently 
     // compatible with infinite length rounds but nobody seriously uses

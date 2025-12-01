@@ -289,7 +289,7 @@ void ReplayController::HandleStandbyMode()
     if (battlePressed & (DWORD)BattleInputMask::PlayRecording)
     {
         OverridePlayerControl();
-        mBookmarkFrame = mReplayManager.GetCurrentFrame();
+        mBookmarkFrame = mRecord.GetCurrentFrame();
         mCountdown = 0;
         mMode = ReplayTakeoverMode::TakeoverCountdown;
         return;
@@ -314,29 +314,29 @@ void ReplayController::HandleStandbyMode()
         if ((battleHeld & (DWORD)BattleInputMask::Left) ||
             (battlePressed & (DWORD)BattleInputMask::S))
         {
-            mReplayManager.LoadPreviousFrame();
+            mRecord.SetPreviousFrame();
         }
         else if ((battleHeld & (DWORD)BattleInputMask::Right) ||
                  (battlePressed & (DWORD)BattleInputMask::H))
         {
-            mReplayManager.LoadNextFrame();
+            mRecord.SetNextFrame();
         }
         else if (battleHeld & (DWORD)BattleInputMask::Down)
         {
-            size_t currentFrame = mReplayManager.GetCurrentFrame();
+            size_t currentFrame = mRecord.GetCurrentFrame();
             if (currentFrame <= PausedFrameJump)
             {
-                mReplayManager.LoadFrame(0);
+                mRecord.SetFrame(0);
             }
             else
             {
-                mReplayManager.LoadFrame(currentFrame - PausedFrameJump);
+                mRecord.SetFrame(currentFrame - PausedFrameJump);
             }
         }
         else if (battleHeld & (DWORD)BattleInputMask::Up)
         {
-            size_t newFrame = mReplayManager.GetCurrentFrame() + PausedFrameJump;
-            mReplayManager.LoadFrame(newFrame);
+            size_t newFrame = mRecord.GetCurrentFrame() + PausedFrameJump;
+            mRecord.SetFrame(newFrame);
         }
     }
 }
@@ -353,7 +353,7 @@ void ReplayController::HandleTakeoverMode()
         // Need to reset player control first in case loading the bookmark frame
         // involves any resimulation.
         ResetPlayerControl();
-        mReplayManager.LoadFrame(mBookmarkFrame, /*bForceLoad=*/true);
+        mRecord.SetFrame(mBookmarkFrame, /*bForceLoad=*/true);
         OverridePlayerControl();
         if (countdownTotal == 0)
         {
@@ -373,7 +373,7 @@ void ReplayController::HandleTakeoverMode()
         // Make sure player control reset first so it doesn't interfere with
         // any potential resimulation when loading the bookmark.
         ResetPlayerControl();
-        mReplayManager.LoadFrame(mBookmarkFrame, /*bForceLoad=*/true);
+        mRecord.SetFrame(mBookmarkFrame, /*bForceLoad=*/true);
         mMode = ReplayTakeoverMode::StandbyPaused;
         return;
     }
@@ -399,7 +399,7 @@ void ReplayController::Tick()
     if (XrdModule::GetPreOrPostBattle())
     {
         ReplayDetourSettings::bReplayFrameStep = false;
-        mReplayManager.Reset();
+        mRecord.Reset();
         if (mMode != ReplayTakeoverMode::Standby)
         {
             mMode = ReplayTakeoverMode::Standby;
@@ -414,7 +414,7 @@ void ReplayController::Tick()
          mMode == ReplayTakeoverMode::Standby ||
          ReplayDetourSettings::bReplayFrameStep)
     {
-        mReplayManager.RecordFrame();
+        mRecord.RecordFrame();
         ReplayDetourSettings::bReplayFrameStep = false;
     }
 

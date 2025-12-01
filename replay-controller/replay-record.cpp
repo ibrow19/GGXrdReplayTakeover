@@ -1,4 +1,4 @@
-#include <replay-manager.h>
+#include <replay-record.h>
 #include <replay-mods.h>
 #include <xrd-module.h>
 #include <asw-engine.h>
@@ -7,18 +7,18 @@
 #include <common.h>
 #include <cassert>
 
-ReplayManager::ReplayManager()
+ReplayRecord::ReplayRecord()
 : mRecordedFrames(0),
   mCurrentFrame(0)
 {}
 
-void ReplayManager::Reset()
+void ReplayRecord::Reset()
 {
     mRecordedFrames = 0;
     mCurrentFrame = 0;
 }
 
-size_t ReplayManager::RecordFrame()
+size_t ReplayRecord::RecordFrame()
 {
     assert(mCurrentFrame <= mRecordedFrames);
     if (mRecordedFrames != 0)
@@ -34,17 +34,16 @@ size_t ReplayManager::RecordFrame()
         {
             ReplaySaveData& saveData = mSpacedBuffer[mCurrentFrame / SaveStateSpacing];
             SaveState(saveData);
-            InputManager inputManager = XrdModule::GetInputManager();
-            saveData.p1ReplayPosition = inputManager.GetP1ReplayPos();
-            saveData.p2ReplayPosition = inputManager.GetP2ReplayPos();
+            InputManager inputRecord = XrdModule::GetInputManager();
+            saveData.p1ReplayPosition = inputRecord.GetP1ReplayPos();
+            saveData.p2ReplayPosition = inputRecord.GetP2ReplayPos();
         }
     }
 
     return mCurrentFrame;
 }
 
-// TODO: need to rename this since we don't always load now.
-size_t ReplayManager::LoadFrame(size_t index, bool bForceLoad)
+size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
 {
     if (index >= MaxRoundFrames)
     {
@@ -72,9 +71,9 @@ size_t ReplayManager::LoadFrame(size_t index, bool bForceLoad)
             ReplayDetourSettings::bOverrideSimpleActorPause = true;
             LoadState(saveData);
             ReplayDetourSettings::bOverrideSimpleActorPause = false;
-            InputManager inputManager = XrdModule::GetInputManager();
-            inputManager.SetP1ReplayPos(saveData.p1ReplayPosition);
-            inputManager.SetP2ReplayPos(saveData.p2ReplayPosition);
+            InputManager inputRecord = XrdModule::GetInputManager();
+            inputRecord.SetP1ReplayPos(saveData.p1ReplayPosition);
+            inputRecord.SetP2ReplayPos(saveData.p2ReplayPosition);
             mCurrentFrame = availableIndex;
         }
     }
@@ -151,21 +150,21 @@ size_t ReplayManager::LoadFrame(size_t index, bool bForceLoad)
     return mCurrentFrame;
 }
 
-size_t ReplayManager::LoadNextFrame()
+size_t ReplayRecord::SetNextFrame()
 {
-    return LoadFrame(mCurrentFrame + 1);
+    return SetFrame(mCurrentFrame + 1);
 }
 
-size_t ReplayManager::LoadPreviousFrame()
+size_t ReplayRecord::SetPreviousFrame()
 {
     if (mCurrentFrame == 0)
     {
         return mCurrentFrame;
     }
-    return LoadFrame(mCurrentFrame - 1);
+    return SetFrame(mCurrentFrame - 1);
 }
 
-size_t ReplayManager::GetCurrentFrame() const
+size_t ReplayRecord::GetCurrentFrame() const
 {
     return mCurrentFrame;
 }

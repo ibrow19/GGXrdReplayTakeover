@@ -1,6 +1,6 @@
 #pragma once
 
-#include <replay-manager.h>
+#include <replay-record.h>
 #include <game-mode-controller.h>
 
 enum class ReplayTakeoverMode
@@ -90,7 +90,7 @@ private:
     ReplayTakeoverMode mMode;
     int mCountdown;
     size_t mBookmarkFrame;
-    ReplayManager mReplayManager;
+    ReplayRecord mRecord;
     ReplayUiStrings mUiStrings;
     ReplayPauseMenuSettings mOldPauseSettings;
 };
