@@ -48,6 +48,14 @@ void AttachSetGameModeDetour()
 
 extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
 {
+    // Prevent re-initialisation if injector run multiple times.
+    static bool bInitialised = false;
+    if (bInitialised)
+    {
+        return 1;
+    }
+    bInitialised = true;
+
     XrdModule::Init();
 #ifdef USE_IMGUI_OVERLAY
     GameModeController::InitD3DPresent();
