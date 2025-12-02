@@ -38,7 +38,8 @@ void UiString::Set(char16_t* newString)
 }
 
 ReplayController::ReplayController()
-: mMode(ReplayTakeoverMode::Standby)
+: mbPauseStandbyOneFrame(false)
+, mMode(ReplayTakeoverMode::Standby)
 , mCountdown(0)
 , mBookmarkFrame(0)
 {}
@@ -316,7 +317,27 @@ void ReplayController::HandleStandbyMode()
         }
     }
 
+    auto fastRewind = [this]
+        {
+            size_t currentFrame = this->mRecord.GetCurrentFrame();
+            if (currentFrame <= PausedFrameJump)
+            {
+                this->mRecord.SetFrame(0);
+            }
+            else
+            {
+                this->mRecord.SetFrame(currentFrame - PausedFrameJump);
+            }
+        };
+
+    auto fastForward = [this]
+        {
+            size_t newFrame = mRecord.GetCurrentFrame() + PausedFrameJump;
+            mRecord.SetFrame(newFrame);
+        };
+
     // Replay scrubbing.
+    // While paused allow any navigation
     if (mMode == ReplayTakeoverMode::StandbyPaused)
     {
         if ((battleHeld & (DWORD)BattleInputMask::Left) ||
@@ -331,20 +352,32 @@ void ReplayController::HandleStandbyMode()
         }
         else if (battleHeld & (DWORD)BattleInputMask::Down)
         {
-            size_t currentFrame = mRecord.GetCurrentFrame();
-            if (currentFrame <= PausedFrameJump)
-            {
-                mRecord.SetFrame(0);
-            }
-            else
-            {
-                mRecord.SetFrame(currentFrame - PausedFrameJump);
-            }
+            fastRewind();
         }
         else if (battleHeld & (DWORD)BattleInputMask::Up)
         {
-            size_t newFrame = mRecord.GetCurrentFrame() + PausedFrameJump;
-            mRecord.SetFrame(newFrame);
+            fastForward();
+        }
+    }
+    // While unpaused only allow rewinding, fast forward, fast rewind
+    // And force the next frame to be paused so that we don't advance
+    // back to the same frame before the next tick.
+    else
+    {
+        if (battleHeld & (DWORD)BattleInputMask::Left)
+        {
+            mRecord.SetPreviousFrame();
+            mbPauseStandbyOneFrame = true;
+        }
+        else if (battleHeld & (DWORD)BattleInputMask::Down)
+        {
+            fastRewind();
+            mbPauseStandbyOneFrame = true;
+        }
+        else if (battleHeld & (DWORD)BattleInputMask::Up)
+        {
+            fastForward();
+            mbPauseStandbyOneFrame = true;
         }
     }
 }
@@ -406,6 +439,7 @@ void ReplayController::Tick()
 
     if (XrdModule::GetPreOrPostBattle())
     {
+        mbPauseStandbyOneFrame = false;
         ReplayDetourSettings::bReplayFrameStep = false;
         mRecord.Reset();
         if (mMode != ReplayTakeoverMode::Standby)
@@ -426,6 +460,13 @@ void ReplayController::Tick()
         ReplayDetourSettings::bReplayFrameStep = false;
     }
 
+    // Clear temporary pause once frame recording has been skipped.
+    if (mMode == ReplayTakeoverMode::StandbyPaused && mbPauseStandbyOneFrame)
+    {
+        mMode = ReplayTakeoverMode::Standby;
+    }
+    mbPauseStandbyOneFrame = false;
+
     switch (mMode)
     {
         case ReplayTakeoverMode::Disabled:
@@ -443,6 +484,11 @@ void ReplayController::Tick()
     }
 
     UpdateUi();
+
+    if (mMode == ReplayTakeoverMode::Standby && mbPauseStandbyOneFrame)
+    {
+        mMode = ReplayTakeoverMode::StandbyPaused;
+    }
 
     if (IsPaused())
     {

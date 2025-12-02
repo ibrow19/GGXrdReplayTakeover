@@ -87,6 +87,7 @@ private:
     static constexpr int DefaultCountdown = 15;
     static constexpr size_t PausedFrameJump = 3;
 private:
+    bool mbPauseStandbyOneFrame;
     ReplayTakeoverMode mMode;
     int mCountdown;
     size_t mBookmarkFrame;
