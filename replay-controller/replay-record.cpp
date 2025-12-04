@@ -108,14 +108,8 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         LPVOID gameManager = (LPVOID)XrdModule::GetEngine().GetGameLogicManager().GetPtr();
         while (mCurrentFrame != index)
         {
-            // TODO: prevent HUD elements being re-rendered on each re-simulation.
-
             tickGame(gameManager, 1);
-
-            // TODO: pretty sure actor ticks are supposed to happen before engine
-            // ticks but it depends if we loaded before this ticking or not.
             tickRelevantActors();
-
             if (XrdModule::GetPreOrPostBattle())
             {
                 break;
