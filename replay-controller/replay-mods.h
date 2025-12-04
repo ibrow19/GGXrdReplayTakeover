@@ -6,6 +6,7 @@ namespace ReplayDetourSettings
     inline bool bOverrideSimpleActorPause = false;
     inline bool bOverrideHudText = false;
     inline bool bAddingFirstTextRow = false;
+    inline bool bDisableBurstMaxSound = false;
 }
 
 // Attach/Detach replay related function detours and handle inialisation of 

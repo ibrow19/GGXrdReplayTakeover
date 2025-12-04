@@ -246,3 +246,8 @@ IsResimulatingFunc XrdModule::GetIsResimulating()
 {
     return (IsResimulatingFunc)(mBase + 0xbfbd20);
 }
+
+PlayBurstMaxSoundFunc XrdModule::GetPlayBurstMaxSound()
+{
+    return (PlayBurstMaxSoundFunc)(mBase + 0xa62f00);
+}

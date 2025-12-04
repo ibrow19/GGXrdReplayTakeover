@@ -27,6 +27,7 @@ static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static AddUiTextFunc GRealAddUiText = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
+static PlayBurstMaxSoundFunc GRealPlayBurstMaxSound = nullptr;
 
 void ReplayDetourer::DetourSetHealth(int newHealth)
 {
@@ -171,6 +172,16 @@ void __fastcall DetourHandleInputs(DWORD engine)
     XrdModule::GetEngine().GetErrorCode() = 0;
 }
 
+// There should be a more generic way to disable system sounds, but this might
+// be the only one that plays mid match? (maybe danger time too)
+void DetourPlayBurstMaxSound()
+{
+    if (!ReplayDetourSettings::bDisableBurstMaxSound)
+    {
+        GRealPlayBurstMaxSound();
+    }
+}
+
 void AddReplayMods()
 {
     // Reset Settings
@@ -178,6 +189,7 @@ void AddReplayMods()
     ReplayDetourSettings::bOverrideSimpleActorPause = false;
     ReplayDetourSettings::bOverrideHudText = false;
     ReplayDetourSettings::bAddingFirstTextRow = false;
+    ReplayDetourSettings::bDisableBurstMaxSound = false;
 
     // Make regions writable for instruction editing.
 
@@ -205,6 +217,7 @@ void AddReplayMods()
     GRealAddUiText = XrdModule::GetAddUiText();
     GRealUpdateTime = XrdModule::GetUpdateTime();
     GRealHandleInputs = XrdModule::GetHandleInputs();
+    GRealPlayBurstMaxSound = XrdModule::GetPlayBurstMaxSound();
     ReplayDetourer::mRealSetHealth = XrdModule::GetSetHealth();
     ReplayDetourer::mRealTickSimpleActor = XrdModule::GetTickSimpleActor();
     ReplayDetourer::mRealDisplayReplayHudMenu = XrdModule::GetDisplayReplayHudMenu();
@@ -218,6 +231,7 @@ void AddReplayMods()
     DetourAttach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourAttach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourAttach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
+    DetourAttach(&(PVOID&)GRealPlayBurstMaxSound, DetourPlayBurstMaxSound);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
@@ -246,6 +260,7 @@ void RemoveReplayMods()
     DetourDetach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourDetach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourDetach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
+    DetourDetach(&(PVOID&)GRealPlayBurstMaxSound, DetourPlayBurstMaxSound);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);

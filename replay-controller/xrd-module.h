@@ -22,6 +22,7 @@ typedef void(__thiscall* TickActorFunc)(LPVOID actor, float delta);
 typedef bool(__cdecl* CheckInBattleFunc)(void);
 typedef void(__cdecl* TickRelevantActorsFunc)(void);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
+typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
 
 class XrdModule
 {
@@ -119,6 +120,7 @@ public:
     static TickRelevantActorsFunc GetTickRelevantActors();
 
     static IsResimulatingFunc GetIsResimulating();
+    static PlayBurstMaxSoundFunc GetPlayBurstMaxSound();
 private:
     static DWORD mBase;
 };

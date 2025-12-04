@@ -432,6 +432,12 @@ void ReplayController::HandleTakeoverMode()
 
 void ReplayController::Tick()
 {
+    // Work around for burst max sounds getting queued up in resimulation.
+    // We disable the burst sounds if the game is paused and make sure they 
+    // are re-enabled each tick. A better solution would be possible with
+    // a better understanding of how system sounds get played.
+    ReplayDetourSettings::bDisableBurstMaxSound = false;
+
     if (XrdModule::IsPauseMenuActive())
     {
         return;
@@ -493,6 +499,7 @@ void ReplayController::Tick()
     if (IsPaused())
     {
         XrdModule::GetEngine().GetGameLogicManager().GetPauseEngineUpdateFlag() = 1;
+        ReplayDetourSettings::bDisableBurstMaxSound = true;
     }
 }
 
