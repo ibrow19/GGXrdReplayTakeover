@@ -55,7 +55,10 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         return mCurrentFrame;
     }
 
-    // Find closest state before simulating forward to it.
+    // For rewinding find closest state before simulating forward to it.
+    // If we are going to a further forward frame then only jump to the
+    // spaced buffer first if we are force loading as we would prefer
+    // to simulate forward where possible.
     if (mRecordedFrames > 0)
     {
         size_t availableSpacedIndex = index / SaveStateSpacing;
@@ -65,7 +68,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         }
 
         size_t availableIndex = availableSpacedIndex * SaveStateSpacing;
-        if (bForceLoad || index < mCurrentFrame || availableIndex > mCurrentFrame)
+        if (bForceLoad || index < mCurrentFrame)
         {
             ReplaySaveData& saveData = mSpacedBuffer[availableSpacedIndex];
             ReplayDetourSettings::bOverrideSimpleActorPause = true;
