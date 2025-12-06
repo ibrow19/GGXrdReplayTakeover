@@ -217,16 +217,17 @@ static void RecreateSimpleActors()
 
 static void DestroyNonPlayerActors()
 {
+    DeleteSimpleActorsFunc deleteSimpleActors = XrdModule::GetDeleteSimpleActors();
+    DWORD manager = XrdModule::GetEngine().GetGameLogicManager().GetPtr();
+    deleteSimpleActors(manager);
+
+    // Manually destroy complex actors. There is probably a function that
+    // does this in training mode reset we could use instead.
     ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
         {
             Entity entity(entityPtr);
             if (!entity.IsPlayer())
             {
-                if (entity.GetSimpleActor())
-                {
-                    DestroyActorFunc destroySimple = XrdModule::GetDestroySimpleActor();
-                    destroySimple(entityPtr);
-                }
                 if (entity.GetComplexActor())
                 {
                     DestroyActorFunc destroyComplex = XrdModule::GetDestroyComplexActor();
