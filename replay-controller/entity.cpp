@@ -81,3 +81,18 @@ TimeStepData SimpleActor::GetTimeStepData()
 {
     return TimeStepData(*(DWORD*)(mPtr + 0x1d8));
 }
+
+BYTE& SimpleActor::GetDestructionFlags()
+{
+    return *(BYTE*)(mPtr + 0x122);
+}
+
+BYTE& SimpleActor::GetVisibilityFlags()
+{
+    return *(BYTE*)(mPtr + 0x89);
+}
+
+DWORD& SimpleActor::GetOwningEntity()
+{
+    return *(DWORD*)(mPtr + 0x2e0);
+}

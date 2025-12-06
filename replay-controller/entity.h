@@ -44,4 +44,7 @@ public:
     float& GetTime();
     float& GetDeltaCoeff();
     TimeStepData GetTimeStepData();
+    BYTE& GetDestructionFlags();
+    BYTE& GetVisibilityFlags();
+    DWORD& GetOwningEntity();
 };
