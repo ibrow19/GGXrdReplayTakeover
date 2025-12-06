@@ -39,7 +39,7 @@ Entity AswEngine::GetP2Entity()
 
 ReplayHud AswEngine::GetReplayHud()
 {
-    return ReplayHud(mPtr + 0x1c7400);
+    return ReplayHud(mPtr + 0x1c73fc);
 }
 
 GameLogicManager AswEngine::GetGameLogicManager()

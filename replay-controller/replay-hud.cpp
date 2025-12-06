@@ -16,50 +16,55 @@ void ReplayHud::Reset()
 
 DWORD& ReplayHud::GetPause()
 {
-    return *(DWORD*)mPtr;
+    return *(DWORD*)(mPtr + 0x4);
 }
 
 DWORD& ReplayHud::GetShouldStepNextFrame()
 {
-    return *(DWORD*)(mPtr + 0x4);
+    return *(DWORD*)(mPtr + 0x8);
 }
 
 DWORD& ReplayHud::GetDisplayGameHud()
 {
-    return *(DWORD*)(mPtr + 0x8);
+    return *(DWORD*)(mPtr + 0xc);
 }
 
 DWORD& ReplayHud::GetDisplayReplayHud()
 {
-    return *(DWORD*)(mPtr + 0xc);
+    return *(DWORD*)(mPtr + 0x10);
 }
 
 DWORD& ReplayHud::GetDisplayInputHistory()
 {
-    return *(DWORD*)(mPtr + 0x10);
+    return *(DWORD*)(mPtr + 0x14);
 }
 
-DWORD& ReplayHud::GetUseSpecialCamera()
+DWORD& ReplayHud::GetGoToNextRound()
 {
     return *(DWORD*)(mPtr + 0x1c);
 }
 
-DWORD& ReplayHud::GetCameraUnavailable()
+DWORD& ReplayHud::GetUseSpecialCamera()
 {
     return *(DWORD*)(mPtr + 0x20);
 }
 
-DWORD& ReplayHud::GetCameraPosition()
+DWORD& ReplayHud::GetCameraUnavailable()
 {
     return *(DWORD*)(mPtr + 0x24);
 }
 
-DWORD& ReplayHud::GetCameraTimer()
+DWORD& ReplayHud::GetCameraPosition()
 {
     return *(DWORD*)(mPtr + 0x28);
 }
 
-DWORD& ReplayHud::GetCameraMode()
+DWORD& ReplayHud::GetCameraTimer()
 {
     return *(DWORD*)(mPtr + 0x2c);
+}
+
+DWORD& ReplayHud::GetCameraMode()
+{
+    return *(DWORD*)(mPtr + 0x30);
 }

@@ -89,19 +89,19 @@ void ReplayDetourer::DetourDisplayReplayHudMenu()
         // so that all lines of text will be displayed.
         ReplayHud hud = XrdModule::GetEngine().GetReplayHud();
         DWORD& shouldPause = hud.GetPause();
-        DWORD& specialCamera = hud.GetUseSpecialCamera();
+        DWORD& nextRound = hud.GetGoToNextRound();
         DWORD& cameraUnavailable = hud.GetCameraUnavailable();
         DWORD realShouldPause = shouldPause;
-        DWORD realSpecialCamera = specialCamera;
+        DWORD realNextRound = nextRound;
         DWORD realCameraUnavailable = cameraUnavailable;
         shouldPause = 1;
-        specialCamera = 0;
+        nextRound = 0;
         cameraUnavailable = 0;
 
         mRealDisplayReplayHudMenu((LPVOID)this);
 
         shouldPause = realShouldPause;
-        specialCamera = realSpecialCamera;
+        nextRound = realNextRound;
         cameraUnavailable = realCameraUnavailable;
     }
     ReplayDetourSettings::bOverrideHudText = false;

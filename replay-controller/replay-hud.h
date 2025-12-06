@@ -12,6 +12,7 @@ public:
     DWORD& GetDisplayGameHud();
     DWORD& GetDisplayReplayHud();
     DWORD& GetDisplayInputHistory();
+    DWORD& GetGoToNextRound();
     DWORD& GetUseSpecialCamera();
     DWORD& GetCameraUnavailable();
     DWORD& GetCameraPosition();
