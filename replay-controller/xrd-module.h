@@ -23,7 +23,7 @@ typedef bool(__cdecl* CheckInBattleFunc)(void);
 typedef void(__cdecl* TickRelevantActorsFunc)(void);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
 typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
-typedef void(__fastcall* DeleteSimpleActorsFunc)(DWORD gameLogicManager);
+typedef void(__fastcall* DestroyAllSimpleActorsFunc)(DWORD gameLogicManager);
 
 class XrdModule
 {
@@ -126,7 +126,7 @@ public:
     // Removes all simple actors being used in a game, including those not
     // directly attached to an entity e.g hitsparks. Possibly also stops 
     // any currently playing sound effects.
-    static DeleteSimpleActorsFunc GetDeleteSimpleActors();
+    static DestroyAllSimpleActorsFunc GetDestroyAllSimpleActors();
 private:
     static DWORD mBase;
 };

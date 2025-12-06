@@ -217,9 +217,9 @@ static void RecreateSimpleActors()
 
 static void DestroyNonPlayerActors()
 {
-    DeleteSimpleActorsFunc deleteSimpleActors = XrdModule::GetDeleteSimpleActors();
+    DestroyAllSimpleActorsFunc destroySimpleActors = XrdModule::GetDestroyAllSimpleActors();
     DWORD manager = XrdModule::GetEngine().GetGameLogicManager().GetPtr();
-    deleteSimpleActors(manager);
+    destroySimpleActors(manager);
 
     // Manually destroy complex actors. There is probably a function that
     // does this in training mode reset we could use instead.

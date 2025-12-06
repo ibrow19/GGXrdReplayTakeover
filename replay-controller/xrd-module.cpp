@@ -252,7 +252,7 @@ PlayBurstMaxSoundFunc XrdModule::GetPlayBurstMaxSound()
     return (PlayBurstMaxSoundFunc)(mBase + 0xa62f00);
 }
 
-DeleteSimpleActorsFunc XrdModule::GetDeleteSimpleActors()
+DestroyAllSimpleActorsFunc XrdModule::GetDestroyAllSimpleActors()
 {
-    return (DeleteSimpleActorsFunc)(mBase + 0x9d7500);
+    return (DestroyAllSimpleActorsFunc)(mBase + 0x9d7500);
 }
