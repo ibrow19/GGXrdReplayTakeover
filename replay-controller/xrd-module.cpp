@@ -256,3 +256,8 @@ DestroyAllSimpleActorsFunc XrdModule::GetDestroyAllSimpleActors()
 {
     return (DestroyAllSimpleActorsFunc)(mBase + 0x9d7500);
 }
+
+ResetGameFunc XrdModule::GetResetGame()
+{
+    return (ResetGameFunc)(mBase + 0x9e7720);
+}

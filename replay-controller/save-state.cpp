@@ -215,26 +215,13 @@ static void RecreateSimpleActors()
         });
 }
 
-static void DestroyNonPlayerActors()
+static void ResetGameState()
 {
+    AswEngine engine = XrdModule::GetEngine();
+    ResetGameFunc resetGame = XrdModule::GetResetGame();
     DestroyAllSimpleActorsFunc destroySimpleActors = XrdModule::GetDestroyAllSimpleActors();
-    DWORD manager = XrdModule::GetEngine().GetGameLogicManager().GetPtr();
-    destroySimpleActors(manager);
-
-    // Manually destroy complex actors. There is probably a function that
-    // does this in training mode reset we could use instead.
-    ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
-        {
-            Entity entity(entityPtr);
-            if (!entity.IsPlayer())
-            {
-                if (entity.GetComplexActor())
-                {
-                    DestroyActorFunc destroyComplex = XrdModule::GetDestroyComplexActor();
-                    destroyComplex(entityPtr);
-                }
-            }
-        });
+    resetGame(engine.GetOffset4(), 1);
+    destroySimpleActors(engine.GetGameLogicManager().GetPtr());
 }
 
 static void UpdateAnimations(const EntitySaveData* entitySaveData)
@@ -330,11 +317,7 @@ void SaveState(SaveData& dest)
 
 void LoadState(const SaveData& src)
 {
-    DestroyNonPlayerActors();
-
-    // Probably don't need this anymore as we manually destroy complex actors
-    // instead, but will still call just in case.
-    CallPreLoad();
+    ResetGameState();
 
     GTracker.loadMemCpyCount = 0;
     GTracker.loadAddress = (DWORD)src.xrdData;

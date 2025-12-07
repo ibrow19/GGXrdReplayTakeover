@@ -24,6 +24,7 @@ typedef void(__cdecl* TickRelevantActorsFunc)(void);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
 typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
 typedef void(__fastcall* DestroyAllSimpleActorsFunc)(DWORD gameLogicManager);
+typedef void(__thiscall* ResetGameFunc)(DWORD engine, DWORD param);
 
 class XrdModule
 {
@@ -127,6 +128,8 @@ public:
     // directly attached to an entity e.g hitsparks. Possibly also stops 
     // any currently playing sound effects.
     static DestroyAllSimpleActorsFunc GetDestroyAllSimpleActors();
+
+    static ResetGameFunc GetResetGame();
 private:
     static DWORD mBase;
 };
