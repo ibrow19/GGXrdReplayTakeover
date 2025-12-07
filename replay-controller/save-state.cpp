@@ -18,8 +18,7 @@ static GetSaveStateTrackerFunc GRealGetSaveStateTracker = nullptr;
 static bool GbStateDetourActive = false;
 static SaveStateTracker GTracker;
 
-// Save state is comprised 
-static constexpr int SaveStateFunctionCount = 17;
+static constexpr int SaveStateFunctionCount = 16;
 static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
 {
     // 0 - main engine chunk
@@ -65,13 +64,31 @@ static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
         0x198b7e4
         
     },
-    // 6 - Unknown
-    {
-        0xc05cf0,
-        0xc060a0,
-        SaveStateSectionBase::Module,
-        0x198b800 
-    },
+    // 6 - Various UI elements copied from Engine->0x22e628->0x458
+    // Objects such as negative penalty pop up and associated sounds are recreated
+    // by the load function. In certain game states it is possible for the recereaion 
+    // of some UI objects to introduce null UObjects which causes a crash on the 
+    // next GC. Probably some assumptions based on using these load functions
+    // for rollback are not true for how we're using them. I have not been able 
+    // to pinpoint which UI element's creation causes the null object even when 
+    // forcing GC every frame.
+    //
+    // If this save data is not present then the UI elements still work
+    // mostly fine as far as I can tell; they just derive their state
+    // from the engine/game state. Although removing it does result it some
+    // artefacts like extra counter hit messages while reversing. But it 
+    // should be safe to exclude this save state section until we are able 
+    // to understand why it cause bad objects to be created that crash GC.
+    // 
+    // Size is approximately 8500 bytes but varies depending on game state.
+    // TODO: reduce overall save state size to account for removal of this
+    // section after its maximum size been investigated.
+    //{
+    //    0xc05cf0,
+    //    0xc060a0,
+    //    SaveStateSectionBase::Module,
+    //    0x198b800 
+    //},
     // 7 - Unknown
     {
         0xc0b0c0,
@@ -299,14 +316,25 @@ void SaveState(SaveData& dest)
     trackerPtr = (DWORD)&GTracker;
 
     GbStateDetourActive = true;
-
+#ifndef NDEBUG
+    DWORD totalSize = 0;
+    DWORD prevStart = (DWORD)dest.xrdData;
+#endif
     for (int i = 0; i < SaveStateFunctionCount; ++i)
     {
         CallSaveStateFunction(
             SaveStateSections[i].saveFunctionOffset, 
             SaveStateSections[i].base, 
             SaveStateSections[i].offset);
+
+#ifndef NDEBUG
+        DWORD sectionSize = GTracker.saveAddress1 - prevStart;
+        totalSize += sectionSize;
+        prevStart = GTracker.saveAddress1;
+        assert(totalSize <= XrdSaveStateSize);
+#endif
     }
+
 
     // If we don't reset the save slot ptr then the game will immediately crash
     // trying to check it when exiting the current game.
@@ -325,12 +353,23 @@ void LoadState(const SaveData& src)
     trackerPtr = (DWORD)&GTracker;
 
     GbStateDetourActive = true;
+#ifndef NDEBUG
+    DWORD totalSize = 0;
+    DWORD prevStart = (DWORD)src.xrdData;
+#endif
     for (int i = 0; i < SaveStateFunctionCount; ++i)
     {
         CallSaveStateFunction(
             SaveStateSections[i].loadFunctionOffset, 
             SaveStateSections[i].base, 
             SaveStateSections[i].offset);
+
+#ifndef NDEBUG
+        DWORD sectionSize = GTracker.loadAddress - prevStart;
+        totalSize += sectionSize;
+        prevStart = GTracker.loadAddress;
+        assert(totalSize <= XrdSaveStateSize);
+#endif
     }
     GbStateDetourActive = false;
     trackerPtr = NULL;
