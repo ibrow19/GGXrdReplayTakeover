@@ -147,7 +147,6 @@ static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
         0xbc91d0,
         SaveStateSectionBase::Engine,
         0x1c73fc
-        
     },
 };
 
@@ -336,8 +335,12 @@ void LoadState(const SaveData& src)
     GbStateDetourActive = false;
     trackerPtr = NULL;
 
-    RecreateSimpleActors();
     CallPostLoad();
+
+    // Only recreate simple actors after post load as if they are present for
+    // that the function will try to use the memory that we have repurposed for 
+    // simple actor animation times
+    RecreateSimpleActors();
     UpdateAnimations(src.entityData);
 }
 
