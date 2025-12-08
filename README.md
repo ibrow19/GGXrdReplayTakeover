@@ -13,6 +13,7 @@ At the moment you're going to have to inject it again each time you launch the g
 Enter a replay, you can confirm the mod is working as the replay control display will be replaced with the replay takeover controls and the pause menu will have extra options:
 
 <img width="287" height="253" alt="Controls" src="https://github.com/user-attachments/assets/03daf915-207e-42a9-9c8e-5aacf3bc9715" />
+
 <img width="521" height="316" alt="PauseMenu" src="https://github.com/user-attachments/assets/154a8b7a-1b31-420d-8ed7-43f258fae9d1" />
 
 ### Controls
