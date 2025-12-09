@@ -20,27 +20,27 @@ Enter a replay, you can confirm the mod is working as the replay control display
 All controls are based on your current bindings in the "Button Settings (Battle)" menu. This includes your bindings for record/play recording for training mode. The only exception is the select button (or your controller's equivalent) which cannot be rebound in any menu as far as I'm aware.
 
 #### Replay Navigation
-P - pauses and unpause the replay.
-Left - Rewinds the replay
-Right - Advances the replay when paused. Does nothing when unpaused as the replay is already advancing at normal speed.
-Up/Down - Fast forwards/fast rewinds the replay 3 frames at a time.
-S/H - Step one frame back or forward. Only availble while the replay is paused.
+- P - pauses and unpause the replay.
+- Left - Rewinds the replay
+- Right - Advances the replay when paused. Does nothing when unpaused as the replay is already advancing at normal speed.
+- Up/Down - Fast forwards/fast rewinds the replay 3 frames at a time.
+- S/H - Step one frame back or forward. Only available while the replay is paused.
 
 #### Replay Takeover Controls
 - Play Recording - Initiates replay takeover on the current frame for the currently selected player. Or, if you are already in takeover, restarts the takeover.
 - Record - Cancels a replay takeover. When takeover is cancelled you are returned to theframe it started with the game paused.
 
 Additional controls for replay takeover are available from the pause menu.
-Takeover Player - The player you will control when you begin takeover. If you are already mid-takeover when changing this setting then it will take effect next time you restart the takeover.
-Takeover Countdown Frames - When you initiate or restart a takeover the game is paused for this many frames before you gain control of the player. Note that you can buffer inputs during this pause.
+- Takeover Player - The player you will control when you begin takeover. If you are already mid-takeover when changing this setting then it will take effect next time you restart the takeover.
+- Takeover Countdown Frames - When you initiate or restart a takeover the game is paused for this many frames before you gain control of the player. Note that you can buffer inputs during this pause.
 
 If either player would die during takeover, or the round would time out, the game will pause on the last frame before the round would end. This is allow you to restart or cancel takeover without being forced to go to the next round. If you have the control display on it will indicate "Round ended" when this happens:
 
 <img width="1280" height="720" alt="RoundEndExample" src="https://github.com/user-attachments/assets/77577c5d-aa4f-4f87-b066-05cb728d50d8" />
 
 #### Toggling Controls
-D - Toggles the control display.
-Select - Swaps to the normal non-mod replay controls or back to the mod controls. The main reason you'll probably want to do this is if you need to jump to the next round. But all other normal replay controls are also available here such as hiding the HUD/input history. Note - none of the mod's navigation or takeover functionality are available while you have swapped to the standard replay controls.
+- D - Toggles the control display.
+- Select - Swaps to the normal non-mod replay controls or back to the mod controls. The main reason you'll probably want to do this is if you need to jump to the next round. But all other normal replay controls are also available here such as hiding the HUD/input history. Note - none of the mod's navigation or takeover functionality are available while you have swapped to the standard replay controls.
 
 ## Using Save States
 There is currently no visual indicator for save states, just play about with the controls below to make sure they work. Note that save states do not persist when exiting and re-entering training mode as lots of save data is very specific to the game's current memory state.
