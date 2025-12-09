@@ -43,6 +43,16 @@ DWORD XrdModule::GetBase()
     return mBase;
 }
 
+DWORD XrdModule::GetGEngine()
+{
+    return *(DWORD*)(mBase + 0x16d72a8);
+}
+
+float& XrdModule::GetGarbageCollectionTimer()
+{
+    return *(float*)(GetGEngine() + 0x4cc);
+}
+
 AswEngine XrdModule::GetEngine()
 {
     return AswEngine(*(DWORD*)(mBase + 0x198b6e4));

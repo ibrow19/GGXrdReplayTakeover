@@ -25,6 +25,7 @@ typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
 typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
 typedef void(__fastcall* DestroyAllSimpleActorsFunc)(DWORD gameLogicManager);
 typedef void(__thiscall* ResetGameFunc)(DWORD engine, DWORD param);
+typedef void(__thiscall* ResetCameraFunc)(DWORD cameraData1, DWORD cameraData2);
 
 class XrdModule
 {
@@ -32,6 +33,8 @@ public:
     static bool Init();
     static bool IsValid();
     static DWORD GetBase();
+    static DWORD GetGEngine();
+    static float& GetGarbageCollectionTimer();
     static class AswEngine GetEngine();
     static class InputManager GetInputManager();
     static class GameInputCollection GetGameInput();

@@ -57,6 +57,10 @@ extern "C" __declspec(dllexport) unsigned int RunInitThread(void*)
     bInitialised = true;
 
     XrdModule::Init();
+    // GC every frame when debugging.
+#ifndef NDEBUG
+    XrdModule::GetGarbageCollectionTimer() = 0.01f;
+#endif
 #ifdef USE_IMGUI_OVERLAY
     GameModeController::InitD3DPresent();
 #endif
