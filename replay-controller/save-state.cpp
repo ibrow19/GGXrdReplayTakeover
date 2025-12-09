@@ -225,6 +225,10 @@ static void RecreateSimpleActors()
                 // they are used in regular gameplay.
                 DWORD type = 0x17;
                 char* name = (char*)entity.GetSimpleActorSaveData();
+                if (!name)
+                {
+                    return;
+                }
                 CreateActorFunc createActor = XrdModule::GetCreateSimpleActor();
                 createActor((LPVOID)entityPtr, name, type);
             }
