@@ -30,7 +30,7 @@ All controls are based on your current bindings in the "Button Settings (Battle)
 - Play Recording - Initiates replay takeover on the current frame for the currently selected player. Or, if you are already in takeover, restarts the takeover.
 - Record - Cancels a replay takeover. When takeover is cancelled you are returned to theframe it started with the game paused.
 
-Additional controls for replay takeover are available from the pause menu.
+Additional controls for replay takeover are available from the pause menu:
 - Takeover Player - The player you will control when you begin takeover. If you are already mid-takeover when changing this setting then it will take effect next time you restart the takeover.
 - Takeover Countdown Frames - When you initiate or restart a takeover the game is paused for this many frames before you gain control of the player. Note that you can buffer inputs during this pause.
 
