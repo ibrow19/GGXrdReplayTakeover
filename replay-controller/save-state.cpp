@@ -10,9 +10,12 @@ class CreateSimpleActorDetourer
 {
 public:
     void DetourCreateSimpleActor(char* name, DWORD type);
+    void DetourCreateBedmanSealActor(char* name);
     static CreateActorFunc mRealCreateSimpleActor; 
+    static CreateBedmanSealActorFunc mRealCreateBedmanSealActor; 
 };
 CreateActorFunc CreateSimpleActorDetourer::mRealCreateSimpleActor = nullptr;
+CreateBedmanSealActorFunc CreateSimpleActorDetourer::mRealCreateBedmanSealActor = nullptr;
 
 static GetSaveStateTrackerFunc GRealGetSaveStateTracker = nullptr;
 static bool GbStateDetourActive = false;
@@ -219,18 +222,24 @@ static void RecreateSimpleActors()
                 // of the old actors, in which case we would accidentally destroy it.
                 simpleActor = 0;
 
-                // Currently working under the assumption that this parameter
-                // should always be 0x17 based on code at xrd + 0xa126a4. Other
-                // parts of the code call it with 0x16 but I don't know why/if
-                // they are used in regular gameplay.
-                DWORD type = 0x17;
                 char* name = (char*)entity.GetSimpleActorSaveData();
+                assert(name);
                 if (!name)
                 {
                     return;
                 }
-                CreateActorFunc createActor = XrdModule::GetCreateSimpleActor();
-                createActor((LPVOID)entityPtr, name, type);
+
+                DWORD type = entity.GetHasNonPlayerComplexActor();
+                if (type == 0)
+                {
+                    CreateBedmanSealActorFunc createActor = XrdModule::GetCreateBedmanSealActor();
+                    createActor((LPVOID)entityPtr, name);
+                }
+                else
+                {
+                    CreateActorFunc createActor = XrdModule::GetCreateSimpleActor();
+                    createActor((LPVOID)entityPtr, name, type);
+                }
             }
         });
 }
@@ -289,20 +298,23 @@ static void PreSaveEntityUpdates(EntitySaveData* entitySaveData)
             EntitySaveData* saveData = (EntitySaveData*)extraData;
             DWORD simpleActor = entity.GetSimpleActor();
             DWORD namePtr = 0;
+            DWORD simpleActorType = 0;
 
             if (simpleActor)
             {
                 namePtr = entity.GetSimpleActorSaveData();
+                simpleActorType = entity.GetHasNonPlayerComplexActor();
                 saveData[index].simpleActorTime = SimpleActor(simpleActor).GetTime();
             }
 
             EntityUpdateFunc update = XrdModule::GetOnlineEntityUpdate();
             update(entityPtr);
 
-            // Restore name in entity as it will have been overwritten by the online entity update.
+            // Restore name/type in entity as they will have been overwritten by the online entity update.
             if (simpleActor)
             {
                 entity.GetSimpleActorSaveData() = namePtr;
+                entity.GetHasNonPlayerComplexActor() = simpleActorType;
             }
         },
         entitySaveData);
@@ -378,7 +390,38 @@ void LoadState(const SaveData& src)
     GbStateDetourActive = false;
     trackerPtr = NULL;
 
+    // Restore non-player complex actor flag to use in post load.
+    DWORD actorTypes[MaxEntities];
+    ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
+        {
+            DWORD* types = (DWORD*)extraData;
+            types[index] = 0;
+            Entity entity(entityPtr);
+            if (entity.GetSimpleActor())
+            {
+                types[index] = entity.GetHasNonPlayerComplexActor();
+            }
+
+            if (!entity.GetComplexActor() || entity.IsPlayer())
+            {
+                entity.GetHasNonPlayerComplexActor() = 0;
+            }
+            else
+            {
+                entity.GetHasNonPlayerComplexActor() = 1;
+            }
+        },
+        actorTypes);
+
     CallPostLoad();
+
+    // Restore Actor Type
+    ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
+        {
+            DWORD* types = (DWORD*)extraData;
+            Entity(entityPtr).GetHasNonPlayerComplexActor() = types[index];
+        },
+        actorTypes);
 
     // Only recreate simple actors after post load as if they are present for
     // that the function will try to use the memory that we have repurposed for 
@@ -394,9 +437,26 @@ void LoadState(const SaveData& src)
 void CreateSimpleActorDetourer::DetourCreateSimpleActor(char* name, DWORD type)
 {
     mRealCreateSimpleActor((LPVOID)this, name, type);
-
+    Entity entity((DWORD)this);
     // Assuming none of the names passed to this function are on the heap.
-    Entity((DWORD)this).GetSimpleActorSaveData() = (DWORD)name;
+    entity.GetSimpleActorSaveData() = (DWORD)name;
+
+
+    // Replace non-player complex actor flag with actor type so we know how 
+    // to recreate this actor. We can programatically restore the flag before 
+    // calling the post load function that needs it.
+    entity.GetHasNonPlayerComplexActor() = type;
+}
+
+void CreateSimpleActorDetourer::DetourCreateBedmanSealActor(char* name)
+{
+    mRealCreateBedmanSealActor((LPVOID)this, name);
+    Entity entity((DWORD)this);
+    entity.GetSimpleActorSaveData() = (DWORD)name;
+
+    // Use value of zero on this flag to indicate this is a bedman seal (or any
+    // other actor that uses this function).
+    entity.GetHasNonPlayerComplexActor() = 0;
 }
 
 static DWORD __fastcall DetourGetSaveStateTracker(DWORD manager)
@@ -414,22 +474,27 @@ void AttachSaveStateDetours()
 {
     GRealGetSaveStateTracker = XrdModule::GetSaveStateTrackerGetter();
     CreateSimpleActorDetourer::mRealCreateSimpleActor = XrdModule::GetCreateSimpleActor();
+    CreateSimpleActorDetourer::mRealCreateBedmanSealActor = XrdModule::GetCreateBedmanSealActor();
     void (CreateSimpleActorDetourer::* detourCreateSimpleActor)(char*, DWORD) = &CreateSimpleActorDetourer::DetourCreateSimpleActor;
+    void (CreateSimpleActorDetourer::* detourCreateBedmanSealActor)(char*) = &CreateSimpleActorDetourer::DetourCreateBedmanSealActor;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
     DetourAttach(&(PVOID&)CreateSimpleActorDetourer::mRealCreateSimpleActor, *(PBYTE*)&detourCreateSimpleActor);
+    DetourAttach(&(PVOID&)CreateSimpleActorDetourer::mRealCreateBedmanSealActor, *(PBYTE*)&detourCreateBedmanSealActor);
     DetourTransactionCommit();
 }
 
 void DetachSaveStateDetours()
 {
     void (CreateSimpleActorDetourer::* detourCreateSimpleActor)(char*, DWORD) = &CreateSimpleActorDetourer::DetourCreateSimpleActor;
+    void (CreateSimpleActorDetourer::* detourCreateBedmanSealActor)(char*) = &CreateSimpleActorDetourer::DetourCreateBedmanSealActor;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&)GRealGetSaveStateTracker, DetourGetSaveStateTracker);
     DetourDetach(&(PVOID&)CreateSimpleActorDetourer::mRealCreateSimpleActor, *(PBYTE*)&detourCreateSimpleActor);
+    DetourDetach(&(PVOID&)CreateSimpleActorDetourer::mRealCreateBedmanSealActor, *(PBYTE*)&detourCreateBedmanSealActor);
     DetourTransactionCommit();
 }

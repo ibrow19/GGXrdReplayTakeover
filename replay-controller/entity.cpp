@@ -39,9 +39,9 @@ char* Entity::GetAnimationFrameName()
     return (char*)(mPtr + 0xa58);
 }
 
-bool Entity::HasNonPlayerComplexActorOnline() const
+DWORD& Entity::GetHasNonPlayerComplexActor()
 {
-    return *(DWORD*)(mPtr + 0x2878) != 0;
+    return *(DWORD*)(mPtr + 0x2878);
 }
 
 DWORD& Entity::GetComplexActorRecreationFlag()

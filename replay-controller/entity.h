@@ -15,7 +15,7 @@ public:
 
     // Data only used for save states, usually only set while playing online.
     // As far as I can tell we don't need this for how we use save states so
-    // can place are own data here.
+    // can place our own data here.
     DWORD& GetSimpleActorSaveData();
 
     // Parameters only used with complex actors (Actors that have animation/state 
@@ -23,7 +23,9 @@ public:
     DWORD& GetComplexActor();
     char* GetStateName();
     char* GetAnimationFrameName();
-    bool HasNonPlayerComplexActorOnline() const;
+    // True when has complex actor and is not a player entity. Easy to
+    // recaclulate so we can use this field for other things if we need to.
+    DWORD& GetHasNonPlayerComplexActor();
     // Not sure exactly what this is for but is only used to determine how to
     // recreate complex actors on state load as far as I can tell.
     DWORD& GetComplexActorRecreationFlag();

@@ -202,6 +202,11 @@ CreateActorFunc XrdModule::GetCreateSimpleActor()
     return (CreateActorFunc)(mBase + 0xa0e020);
 }
 
+CreateBedmanSealActorFunc XrdModule::GetCreateBedmanSealActor()
+{
+    return (CreateBedmanSealActorFunc)(mBase + 0xa0ed60);
+}
+
 DestroyActorFunc XrdModule::GetDestroySimpleActor()
 {
     return (DestroyActorFunc)(mBase + 0xa08c20);

@@ -11,6 +11,7 @@ typedef void(__cdecl* AddUiTextFunc)(DWORD* textParams, DWORD param1, DWORD para
 typedef DWORD(__fastcall* GetSaveStateTrackerFunc)(DWORD manager);
 typedef void(__fastcall* EntityActorManagementFunc)(DWORD engine);
 typedef void(__thiscall* CreateActorFunc)(LPVOID thisArg, char* name, DWORD type);
+typedef void(__thiscall* CreateBedmanSealActorFunc)(LPVOID thisArg, char* name);
 typedef void(__fastcall* DestroyActorFunc)(DWORD entity);
 typedef void(__thiscall* UpdateAnimationFunc)(DWORD entity, char* stateName, DWORD flag);
 typedef void(__thiscall* SetGameModeFunc)(LPVOID thisArg, DWORD newMode);
@@ -106,6 +107,10 @@ public:
     // its associated actor. It is called again on some existing entities when
     // they need to change the animation they are displaying.
     static CreateActorFunc GetCreateSimpleActor();
+
+    // This is similar to the create simple actors func but only(?) used for
+    // bedman seals
+    static CreateBedmanSealActorFunc GetCreateBedmanSealActor();
 
     static DestroyActorFunc GetDestroySimpleActor();
     static DestroyActorFunc GetDestroyComplexActor();
