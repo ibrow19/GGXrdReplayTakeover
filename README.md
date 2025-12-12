@@ -57,6 +57,7 @@ Save states uses contextual controls based on whether the SP/Special Move button
 - Input history will display incorrectly while rewinding. Rewinding works by loading an older state then resimulating up to the desired frame, currently this results in the input history being filled with inputs from this resimulation.
 - Several HUD elements display incorrectly when rewinding. For example, you may see duplicate counter hit messages and gauges like the eddie meter can get stuck on the wrong value. These errors are purely visual and do not affect the game logic. There is save state logic for handling these UI elements, but I currently have it disabled to improve stability as it was causing rare crashes during garbage collection.
 - Loading a save state while Jack-O has placed house can sometimes cause a crash.
+- Rewinding over a Bedman seal's destruction can sometimes cause a crash.
 - Treasure hunted coins thrown by Johnny are invisible in loaded states/when rewinding. They require character specific initialisation that is not currently handled properly while loading states.
 
 ## Attributions
