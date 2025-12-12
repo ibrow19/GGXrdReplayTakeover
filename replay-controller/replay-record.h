@@ -49,10 +49,14 @@ private:
     // compatible with infinite length rounds but nobody seriously uses
     // that anyway. It's not supported online and I'm not sure you can even
     // save replays with infinite time limit.
-    static constexpr size_t MaxRoundFrames = 5940;
-
+    // Supers pause the timer making it possible for 99 second rounds to last
+    // longer than 99 seconds. Conservatively we'll add 20 seconds to the
+    // buffer and make sure we can't load frames past the end of the buffer.
+    // We could dynamically allocate but I'd rather avoid doing so with a 1GB
+    // buffer.
+    static constexpr size_t MaxRoundFrames = 5940 + 1200;
     static constexpr size_t SaveStateSpacing = 15;
-    static constexpr size_t SpacedBufferSize = MaxRoundFrames / SaveStateSpacing;
+    static constexpr size_t SpacedBufferSize = MaxRoundFrames / SaveStateSpacing + ((MaxRoundFrames % SaveStateSpacing) != 0);
 private:
     size_t mRecordedFrames;
     size_t mCurrentFrame;

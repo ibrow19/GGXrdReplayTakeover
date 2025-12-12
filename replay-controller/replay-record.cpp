@@ -21,15 +21,20 @@ void ReplayRecord::Reset()
 size_t ReplayRecord::RecordFrame()
 {
     assert(mCurrentFrame <= mRecordedFrames);
-    if (mRecordedFrames != 0)
+
+    if (mRecordedFrames != 0 && mCurrentFrame < (MaxRoundFrames - 1))
     {
         ++mCurrentFrame;
+    }
+
+    if (mRecordedFrames == MaxRoundFrames)
+    {
+        return mCurrentFrame;
     }
 
     if (mRecordedFrames == mCurrentFrame)
     {
         ++mRecordedFrames;
-        assert(mRecordedFrames < MaxRoundFrames);
         if (mCurrentFrame % SaveStateSpacing == 0)
         {
             ReplaySaveData& saveData = mSpacedBuffer[mCurrentFrame / SaveStateSpacing];
