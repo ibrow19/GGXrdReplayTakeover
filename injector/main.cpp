@@ -121,6 +121,35 @@ int InjectDll(int pid)
 
 int main(int argc, char** argv)
 {
+    auto describeUsage = [](){
+        std::cout 
+            << "Error: Unrecognised arguments" << std::endl
+            << "Usage:" << std::endl
+            << "./GGXrdReplayTakeoverInjector.exe [delay]" << std::endl
+            << "Injects the replay takeover mod after an optional delay specified in seconds (default: no delay)" << std::endl;
+    };
+
+    if (argc > 2)
+    {
+        describeUsage();
+        return EXIT_FAILURE;
+    }
+    
+    int delay = 0;
+    if (argc == 2)
+    {
+        if (!sscanf(argv[1], "%d", &delay) || delay < 0)
+        {
+            describeUsage();
+            return EXIT_FAILURE;
+        }
+        else if (delay > 0)
+        {
+            std::cout << "Delaying for " << delay << " seconds before injecting..." << std::endl;
+            Sleep(delay * 1000);
+        }
+    }
+
     std::cout << "Running Injector" << std::endl;
     const char* processName = "GuiltyGearXrd.exe";
     int pid = FindProcess(processName);
