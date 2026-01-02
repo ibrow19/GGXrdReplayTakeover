@@ -55,7 +55,7 @@ private:
     // We could dynamically allocate but I'd rather avoid doing so with a 1GB
     // buffer.
     static constexpr size_t MaxRoundFrames = 5940 + 1200;
-    static constexpr size_t SaveStateSpacing = 15;
+    static constexpr size_t SaveStateSpacing = 20;
     static constexpr size_t SpacedBufferSize = MaxRoundFrames / SaveStateSpacing + ((MaxRoundFrames % SaveStateSpacing) != 0);
 private:
     size_t mRecordedFrames;
