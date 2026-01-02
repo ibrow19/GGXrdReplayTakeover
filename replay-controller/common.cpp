@@ -28,6 +28,7 @@ void MakeRegionWritable(DWORD base, DWORD size)
                     (LPTSTR)&message,
                     0, NULL);
             MessageBox(NULL, (LPCTSTR)message, AppName, MB_OK);
+            LocalFree(message);
         }
         pageStart += regionSize;
     }
