@@ -210,3 +210,10 @@ SpacedBufferFileMappingView::~SpacedBufferFileMappingView()
         UnmapViewOfFile(data);
     }
 }
+
+ReplayRecord::~ReplayRecord()
+{
+    if (mSpacedBufferFileMapping) {
+        CloseHandle(mSpacedBufferFileMapping);
+    }
+}

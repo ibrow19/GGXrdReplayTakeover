@@ -33,6 +33,7 @@ class ReplayRecord
 {
 public:
     ReplayRecord();
+    ~ReplayRecord();
     void Reset();
 
     size_t GetCurrentFrame() const;
