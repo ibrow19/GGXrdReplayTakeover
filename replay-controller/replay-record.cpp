@@ -6,11 +6,24 @@
 #include <input.h>
 #include <common.h>
 #include <cassert>
+#include <stdexcept>
 
 ReplayRecord::ReplayRecord()
 : mRecordedFrames(0),
   mCurrentFrame(0)
-{}
+{
+	SYSTEM_INFO systemInfo;
+	GetSystemInfo(&systemInfo);
+    mAllocationGranularity = systemInfo.dwAllocationGranularity;
+    mReplaySaveDataSizeRoundedUp = (sizeof ReplaySaveData + mAllocationGranularity - 1) & ~(mAllocationGranularity - 1);
+    mSpacedBufferFileMapping = CreateFileMappingW(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0,
+        mReplaySaveDataSizeRoundedUp * SpacedBufferSize,
+        NULL);
+    if (!mSpacedBufferFileMapping) {
+        ShowErrorBox();
+        throw std::runtime_error("Failed to create a file mapping to hold all of the save states.");
+    }
+}
 
 void ReplayRecord::Reset()
 {
@@ -37,11 +50,11 @@ size_t ReplayRecord::RecordFrame()
         ++mRecordedFrames;
         if (mCurrentFrame % SaveStateSpacing == 0)
         {
-            ReplaySaveData& saveData = mSpacedBuffer[mCurrentFrame / SaveStateSpacing];
-            SaveState(saveData);
+            SpacedBufferFileMappingView saveData = GetSaveData(mCurrentFrame / SaveStateSpacing);
+            SaveState(*saveData.Data());
             InputManager inputRecord = XrdModule::GetInputManager();
-            saveData.p1ReplayPosition = inputRecord.GetP1ReplayPos();
-            saveData.p2ReplayPosition = inputRecord.GetP2ReplayPos();
+            saveData.Data()->p1ReplayPosition = inputRecord.GetP1ReplayPos();
+            saveData.Data()->p2ReplayPosition = inputRecord.GetP2ReplayPos();
         }
     }
 
@@ -75,13 +88,13 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         size_t availableIndex = availableSpacedIndex * SaveStateSpacing;
         if (bForceLoad || index < mCurrentFrame)
         {
-            ReplaySaveData& saveData = mSpacedBuffer[availableSpacedIndex];
+            SpacedBufferFileMappingView saveData = GetSaveData(availableSpacedIndex);
             ReplayDetourSettings::bOverrideSimpleActorPause = true;
-            LoadState(saveData);
+            LoadState(*saveData.Data());
             ReplayDetourSettings::bOverrideSimpleActorPause = false;
             InputManager inputRecord = XrdModule::GetInputManager();
-            inputRecord.SetP1ReplayPos(saveData.p1ReplayPosition);
-            inputRecord.SetP2ReplayPos(saveData.p2ReplayPosition);
+            inputRecord.SetP1ReplayPos(saveData.Data()->p1ReplayPosition);
+            inputRecord.SetP2ReplayPos(saveData.Data()->p2ReplayPosition);
             mCurrentFrame = availableIndex;
         }
     }
@@ -171,4 +184,29 @@ size_t ReplayRecord::SetPreviousFrame()
 size_t ReplayRecord::GetCurrentFrame() const
 {
     return mCurrentFrame;
+}
+
+SpacedBufferFileMappingView ReplayRecord::GetSaveData(int index)
+{
+    unsigned long long addr = index * (unsigned long long)mReplaySaveDataSizeRoundedUp;
+    ReplaySaveData* data = (ReplaySaveData*)MapViewOfFile(mSpacedBufferFileMapping, FILE_MAP_WRITE,
+        (DWORD)(addr >> 32),
+        (DWORD)(addr & 0xFFFFFFFF),
+        sizeof ReplaySaveData);
+    
+    if (!data) {
+        ShowErrorBox();
+        throw std::runtime_error("Failed to MapViewOfFile to access (read or write) a save state.");
+    }
+    return SpacedBufferFileMappingView(data);
+}
+
+SpacedBufferFileMappingView::SpacedBufferFileMappingView(ReplaySaveData* data) : data(data)
+{}
+
+SpacedBufferFileMappingView::~SpacedBufferFileMappingView()
+{
+    if (data) {
+        UnmapViewOfFile(data);
+    }
 }

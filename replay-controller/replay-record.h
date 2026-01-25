@@ -1,12 +1,23 @@
 #pragma once
 
+#include <windows.h>
 #include <save-state.h>
 #include <input-manager.h>
+#include <list>
 
 struct ReplaySaveData : public SaveData
 {
     ReplayPosition p1ReplayPosition;
     ReplayPosition p2ReplayPosition;
+};
+
+class SpacedBufferFileMappingView {
+public:
+    SpacedBufferFileMappingView(ReplaySaveData* data);
+    ~SpacedBufferFileMappingView();
+    inline ReplaySaveData* Data() { return data; }
+private:
+    ReplaySaveData* data;
 };
 
 // Container of save states and input data from throughout a replay.
@@ -60,5 +71,8 @@ private:
 private:
     size_t mRecordedFrames;
     size_t mCurrentFrame;
-    ReplaySaveData mSpacedBuffer[SpacedBufferSize];
+    DWORD mAllocationGranularity;
+    DWORD mReplaySaveDataSizeRoundedUp;
+    HANDLE mSpacedBufferFileMapping;
+    SpacedBufferFileMappingView GetSaveData(int index);
 };

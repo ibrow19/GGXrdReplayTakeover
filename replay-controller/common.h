@@ -8,3 +8,4 @@ inline const char* AppName = "Replay Takeover";
 
 void MakeRegionWritable(DWORD base, DWORD size);
 void ForEachEntity(EntityFunc func, void* extraData = nullptr);
+void ShowErrorBox();

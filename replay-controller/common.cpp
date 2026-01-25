@@ -4,6 +4,21 @@
 #include <entity.h>
 #include <cassert>
 
+void ShowErrorBox()
+{
+    LPVOID message;
+    DWORD error = GetLastError();
+    FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            error,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR)&message,
+            0, NULL);
+    MessageBox(NULL, (LPCTSTR)message, AppName, MB_OK);
+    LocalFree(message);
+}
+
 void MakeRegionWritable(DWORD base, DWORD size)
 {
     constexpr DWORD regionSize = 0x10000;
@@ -18,17 +33,7 @@ void MakeRegionWritable(DWORD base, DWORD size)
         BOOL bSuccess = VirtualProtect((LPVOID)base, regionSize, PAGE_EXECUTE_READWRITE, &oldPerms);
         if (!bSuccess)
         {
-            LPVOID message;
-            DWORD error = GetLastError();
-            FormatMessage(
-                    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL,
-                    error,
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                    (LPTSTR)&message,
-                    0, NULL);
-            MessageBox(NULL, (LPCTSTR)message, AppName, MB_OK);
-            LocalFree(message);
+            ShowErrorBox();
         }
         pageStart += regionSize;
     }
