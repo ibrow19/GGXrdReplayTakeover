@@ -37,7 +37,7 @@ size_t ReplayRecord::RecordFrame()
         ++mRecordedFrames;
         if (mCurrentFrame % SaveStateSpacing == 0)
         {
-            ReplaySaveData& saveData = mSpacedBuffer[mCurrentFrame / SaveStateSpacing];
+            ReplaySaveData& saveData = GetSaveData(mCurrentFrame / SaveStateSpacing);
             SaveState(saveData);
             InputManager inputRecord = XrdModule::GetInputManager();
             saveData.p1ReplayPosition = inputRecord.GetP1ReplayPos();
@@ -75,7 +75,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         size_t availableIndex = availableSpacedIndex * SaveStateSpacing;
         if (bForceLoad || index < mCurrentFrame)
         {
-            ReplaySaveData& saveData = mSpacedBuffer[availableSpacedIndex];
+            ReplaySaveData& saveData = GetSaveData(availableSpacedIndex);
             ReplayDetourSettings::bOverrideSimpleActorPause = true;
             LoadState(saveData);
             ReplayDetourSettings::bOverrideSimpleActorPause = false;
@@ -171,4 +171,19 @@ size_t ReplayRecord::SetPreviousFrame()
 size_t ReplayRecord::GetCurrentFrame() const
 {
     return mCurrentFrame;
+}
+
+ReplaySaveData& ReplayRecord::GetSaveData(int index)
+{
+    if (index >= (int)mSpacedBuffer.size()) {
+        const int oldSize = (int)mSpacedBuffer.size();
+        const int newSize = index + 1;
+        mSpacedBuffer.resize(newSize);
+        std::list<ReplaySaveData>::iterator bufferIterator = mSpacedBuffer.end();
+        for (int i = newSize - 1; i >= oldSize; --i) {
+            --bufferIterator;
+            mSpacedBufferPtrs[i] = &(*bufferIterator);
+        }
+    }
+    return *mSpacedBufferPtrs[index];
 }

@@ -2,6 +2,7 @@
 
 #include <save-state.h>
 #include <input-manager.h>
+#include <list>
 
 struct ReplaySaveData : public SaveData
 {
@@ -60,5 +61,7 @@ private:
 private:
     size_t mRecordedFrames;
     size_t mCurrentFrame;
-    ReplaySaveData mSpacedBuffer[SpacedBufferSize];
+    std::list<ReplaySaveData> mSpacedBuffer;
+    ReplaySaveData* mSpacedBufferPtrs[SpacedBufferSize];
+    ReplaySaveData& GetSaveData(int index);
 };
