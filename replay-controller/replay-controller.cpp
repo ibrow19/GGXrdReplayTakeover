@@ -193,38 +193,46 @@ void ReplayController::PrepareImGuiFrame()
 
     ImGui::Text("Takeover Mode: ");
     ImGui::SameLine();
+
+    auto showMode = [](const char* text, ImU32 colour)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, colour);
+            ImGui::Text(text);
+            ImGui::PopStyleColor();
+        };
+
     switch (mMode)
     {
         case ReplayTakeoverMode::Disabled:
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-            ImGui::Text("DISABLED");
-            ImGui::PopStyleColor();
+            showMode("DISABLED", IM_COL32(255, 0, 0, 255));
             break;
         case ReplayTakeoverMode::StandbyPaused:
         case ReplayTakeoverMode::Standby:
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 0, 255));
-            ImGui::Text("STANDBY");
-            ImGui::PopStyleColor();
+            showMode("STANDBY", IM_COL32(200, 200, 0, 255));
             break;
         case ReplayTakeoverMode::TakeoverCountdown:
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 100, 255));
-            ImGui::Text("COUNTDOWN");
-            ImGui::PopStyleColor();
+            showMode("COUNTDOWN", IM_COL32(0, 255, 100, 255));
             break;
         case ReplayTakeoverMode::TakeoverControl:
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
-            ImGui::Text("TAKEOVER");
-            ImGui::PopStyleColor();
+            showMode("TAKEOVER", IM_COL32(0, 255, 0, 255));
             break;
         case ReplayTakeoverMode::TakeoverRoundEnded:
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 0, 255));
-            ImGui::Text("ROUND ENDED");
-            ImGui::PopStyleColor();
+            showMode("ROUND ENDED", IM_COL32(200, 200, 0, 255));
             break;
     }
 
     int playerNum = XrdModule::GetButtonDisplayMode() + 1;
     ImGui::Text("Control: Player %d", playerNum);
+
+#if PROFILING
+    ImGui::Text("Save avg %f", STATS(SaveState)::avg);
+    ImGui::Text("Save min %f", STATS(SaveState)::min);
+    ImGui::Text("Save max %f", STATS(SaveState)::max);
+    ImGui::NewLine();
+    ImGui::Text("Load avg %f", STATS(LoadState)::avg);
+    ImGui::Text("Load min %f", STATS(LoadState)::min);
+    ImGui::Text("Load max %f", STATS(LoadState)::max);
+#endif
 
     ImGui::End();
 }
