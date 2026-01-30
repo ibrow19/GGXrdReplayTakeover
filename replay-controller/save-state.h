@@ -1,6 +1,8 @@
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <profiling.h>
 
 // Max entity count based on the function at Xrd+0x9d8fa0
 constexpr size_t MaxEntities = 75;
@@ -77,3 +79,6 @@ void AttachSaveStateDetours();
 void DetachSaveStateDetours();
 void SaveState(SaveData& dest);
 void LoadState(const SaveData& src);
+
+DECLARE_PROFILING_CATEGORY(SaveState)
+DECLARE_PROFILING_CATEGORY(LoadState)

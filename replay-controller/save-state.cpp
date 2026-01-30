@@ -6,6 +6,9 @@
 #include <cassert>
 #include <entity.h>
 
+DEFINE_PROFILING_CATEGORY(SaveState)
+DEFINE_PROFILING_CATEGORY(LoadState)
+
 class CreateSimpleActorDetourer
 {
 public:
@@ -322,6 +325,8 @@ static void PreSaveEntityUpdates(EntitySaveData* entitySaveData)
 
 void SaveState(SaveData& dest)
 {
+    SCOPE_COUNTER(SaveState)
+
     PreSaveEntityUpdates(dest.entityData);
 
     GTracker.saveMemCpyCount = 0;
@@ -360,6 +365,8 @@ void SaveState(SaveData& dest)
 
 void LoadState(const SaveData& src)
 {
+    SCOPE_COUNTER(LoadState)
+
     ResetGameState();
 
     GTracker.loadMemCpyCount = 0;
