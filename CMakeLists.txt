@@ -11,6 +11,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
 option(IMGUI_OVERLAY "Use ImGui debug overlay" OFF)
+option(PROFILING "Profiling" OFF)
 
 set(DETOURS_LIB ${PROJECT_SOURCE_DIR}/Detours/lib.X86/detours.lib)
 set(DETOURS_INCLUDES Detours/include/)
@@ -23,6 +24,10 @@ set(REPLAY_CONTROLLER_DIR replay-controller)
 file(GLOB_RECURSE REPLAY_CONTROLLER_SOURCES ${REPLAY_CONTROLLER_DIR}/*.cpp)
 
 add_executable(${PROJECT_NAME}Injector ${INJECTOR_SOURCES})
+
+if (PROFILING)
+    add_definitions(-DPROFILING)
+endif()
 
 if (IMGUI_OVERLAY)
     set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp)
