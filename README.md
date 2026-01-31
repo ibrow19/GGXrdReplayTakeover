@@ -1,13 +1,13 @@
 # Guilty Gear Xrd Replay Takeover and Save States
 This mod adds replay takeover functionality and training mode save states to the Steam release of Guilty Gear Xrd Rev 2. The mod is compatible with patch 2211 (current patch).
-## Running the mod
+## Enabling the mod
 - Grab the latest build from releases and unzip it.
 - Open Guilty Gear Xrd.
 - Run GGXrdReplayTakeoverInjector.exe
 
-The next time you enter a replay/training mode the mod should be active. Using this method you will need to re-inject each time you wish to use the mod, see the next section if you would prefer to automatically inject the mod when you start the game.
+The next time you enter a replay/training mode the mod should be active. Using this method the mod will only be active for the current session and will need to be re-injected when you next wish to use it. See the next section if you would prefer to automatically inject the mod when you start the game.
 
-If you are running the game on Linux via Proton then this direct injection method may not work due to restrictions on which processes can see each other. In this case it is recommended you instead use the automatic injection method.
+If you are running the game on Linux via Proton then this direct injection method may not work due to restrictions on which processes can see each other. In this case it is recommended you instead use the automatic injection method described next.
 
 ## Automatic Injection
 With a few more steps you can automatically enable the mod every time you run the game. This is the current recommended way of injecting with Linux/Proton to ensure the injection happens in a process that can access the Xrd process.
@@ -16,7 +16,7 @@ With a few more steps you can automatically enable the mod every time you run th
 - Next you need to edit the file BootGGXrd.bat in the GUILTY GEAR Xrd -REVELATOR- directory so that it runs the injector when the game starts. You can do so by adding the following line to the end of the file:
 ```GGXrdReplayTakeoverInjector.exe 10```
 
-The 10 argument added to the injector tells it to wait 10 seconds before injecting. Normally an immediate injection is fine but sometimes the game is not fully running by the time the script runs the injector. This is usually the case on weaker hardware such as a steam deck, in which case the delay makes sure everything is ready by the time the injection happens.
+The 10 argument added to the injector tells it to wait 10 seconds before injecting. Often an immediate injection is fine but sometimes the game is not fully up and running by the time the script runs the injector in which case the delay is necessary.
 
 If you would like to verify the injection is successful you can add another line to the batch file with the command ```pause```. This will prevent the console that runs the batch script from closing automatically after the game launches and you can confirm whether the output of the injector was successful or not.
 
