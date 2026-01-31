@@ -7,6 +7,8 @@
 #include <common.h>
 #include <cassert>
 
+DEFINE_PROFILING_CATEGORY(ReplayRecord_SetFrame)
+
 ReplayRecord::ReplayRecord()
 : mRecordedFrames(0),
   mCurrentFrame(0)
@@ -50,6 +52,8 @@ size_t ReplayRecord::RecordFrame()
 
 size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
 {
+    SCOPE_COUNTER(ReplayRecord_SetFrame)
+
     if (index >= MaxRoundFrames)
     {
         index = MaxRoundFrames - 1;

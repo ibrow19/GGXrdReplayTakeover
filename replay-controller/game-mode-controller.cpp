@@ -7,7 +7,10 @@
 #include <imgui.h>
 #include <imgui_impl_dx9.h>
 #include <imgui_impl_win32.h>
+#include <implot.h>
 #endif
+
+DEFINE_PROFILING_CATEGORY(MainLogic)
 
 class GameModeControllerDetourer
 {
@@ -118,6 +121,7 @@ void GameModeController::InitD3DPresent()
 void GameModeController::InitImGui(IDirect3DDevice9* device)
 {
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     
@@ -163,7 +167,10 @@ void GameModeControllerDetourer::DetourMainGameLogic(DWORD param)
     GameModeController* controller = GameModeController::Get();
     assert(controller != nullptr);
     controller->Tick();
-    mRealMainGameLogic((LPVOID)this, param);
+    {
+        SCOPE_COUNTER(MainLogic)
+        mRealMainGameLogic((LPVOID)this, param);
+    }
 }
 
 GameModeController* GameModeController::Get()

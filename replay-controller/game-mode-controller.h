@@ -1,5 +1,7 @@
 #pragma once
 
+#include <profiling.h>
+
 #ifdef USE_IMGUI_OVERLAY
 #include <d3d9.h>
 typedef HRESULT(STDMETHODCALLTYPE* D3D9PresentFunc)(IDirect3DDevice9* device, CONST RECT* pSourceRect, CONST RECT* pDestRect, HWND hDestWindowOverride, CONST RGNDATA* pDirtyRegion);
@@ -67,3 +69,5 @@ Controller* GameModeController::Get()
 {
     return dynamic_cast<Controller*>(mInstance);
 }
+
+DECLARE_PROFILING_CATEGORY(MainLogic)

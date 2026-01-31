@@ -2,6 +2,7 @@
 
 #include <save-state.h>
 #include <input-manager.h>
+#include <profiling.h>
 
 struct ReplaySaveData : public SaveData
 {
@@ -62,3 +63,5 @@ private:
     size_t mCurrentFrame;
     ReplaySaveData mSpacedBuffer[SpacedBufferSize];
 };
+
+DECLARE_PROFILING_CATEGORY(ReplayRecord_SetFrame)

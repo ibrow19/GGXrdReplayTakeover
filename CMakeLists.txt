@@ -30,9 +30,9 @@ if (PROFILING)
 endif()
 
 if (IMGUI_OVERLAY)
-    set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp)
+    set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp implot/implot.cpp implot/implot_items.cpp)
     set(IMGUI_BACKEND_SOURCES imgui/backends/imgui_impl_dx9.cpp imgui/backends/imgui_impl_win32.cpp)
-    set(IMGUI_DIRS imgui imgui/backends/)
+    set(IMGUI_DIRS imgui imgui/backends/ implot)
 
     add_definitions(-DUSE_IMGUI_OVERLAY)
 

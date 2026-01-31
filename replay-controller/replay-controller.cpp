@@ -10,6 +10,7 @@
 
 #ifdef USE_IMGUI_OVERLAY
 #include <imgui.h>
+#include <implot.h>
 #endif
 
 UiString::UiString()
@@ -225,13 +226,10 @@ void ReplayController::PrepareImGuiFrame()
     ImGui::Text("Control: Player %d", playerNum);
 
 #if PROFILING
-    ImGui::Text("Save avg %f", STATS(SaveState)::avg);
-    ImGui::Text("Save min %f", STATS(SaveState)::min);
-    ImGui::Text("Save max %f", STATS(SaveState)::max);
-    ImGui::NewLine();
-    ImGui::Text("Load avg %f", STATS(LoadState)::avg);
-    ImGui::Text("Load min %f", STATS(LoadState)::min);
-    ImGui::Text("Load max %f", STATS(LoadState)::max);
+    STAT_GRAPH(SaveState)
+    STAT_GRAPH(LoadState)
+    STAT_GRAPH(MainLogic)
+    STAT_GRAPH(ReplayRecord_SetFrame)
 #endif
 
     ImGui::End();
