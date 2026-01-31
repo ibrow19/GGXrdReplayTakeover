@@ -1,8 +1,8 @@
 #pragma once
 
-#include <chrono>
-
 #ifdef PROFILING
+
+#include <chrono>
 
 #define STATS(name) name ## ProfilingStats
 
@@ -13,6 +13,10 @@
         static double max; \
         static double avg; \
         static bool bStarted; \
+        static constexpr unsigned int recentCount = 1 << 6; \
+        static double recent[recentCount]; \
+        static unsigned int recentPos; \
+        static unsigned int recentUsed; \
     }; \
     struct name ## ProfilingScopeCounter\
     { \
@@ -28,6 +32,11 @@
             double& max = STATS(name)::max; \
             double& avg = STATS(name)::avg; \
             bool& bStarted = STATS(name)::bStarted; \
+            STATS(name)::recent[STATS(name)::recentPos++ % STATS(name)::recentCount] = time; \
+            if (STATS(name)::recentUsed < STATS(name)::recentCount) \
+            { \
+                ++STATS(name)::recentUsed; \
+            } \
             if (!bStarted) \
             { \
                 min = time; \
@@ -49,8 +58,31 @@
     double STATS(name)::max = 0.; \
     double STATS(name)::avg = 0.; \
     bool STATS(name)::bStarted = false;  \
+    double STATS(name)::recent[STATS(name)::recentCount] = {0.}; \
+    unsigned int STATS(name)::recentPos = 0;  \
+    unsigned int STATS(name)::recentUsed = 0;
 
 #define SCOPE_COUNTER(name) name ## ProfilingScopeCounter __LINE__ ## name ## ProfilingScopeCounter;
+
+#define RECENT_RESULT(name, index) (STATS(name)::recent[(STATS(name)::recentPos + index) % STATS(name)::recentCount])
+
+#ifdef USE_IMGUI_OVERLAY
+#include <implot.h>
+#define STAT_GRAPH(name) \
+    ImPlot::SetNextAxesLimits(0, STATS(name)::recentCount, 0, STATS(name)::max, ImPlotCond_Always); \
+    ImPlot::BeginPlot(#name, "Samples", "Time(ms)", ImVec2(-1, 200), 0, ImPlotAxisFlags_None, ImPlotAxisFlags_None); \
+    ImPlot::SetNextLineStyle(ImVec4(0, 200, 50, 255)); \
+    ImPlot::PlotLineG(#name, \
+        [](int index, void* data) \
+        { \
+            return ImPlotPoint(index, RECENT_RESULT(name, index)); \
+        }, \
+        nullptr, \
+        STATS(name)::recentCount); \
+    ImPlot::EndPlot(); 
+
+
+#endif // USE_IMGUI_OVERLAY
 
 #else // PROFILING
 
