@@ -70,17 +70,18 @@
 #include <implot.h>
 #define STAT_GRAPH(name) \
     ImPlot::SetNextAxesLimits(0, STATS(name)::recentCount, 0, STATS(name)::max, ImPlotCond_Always); \
-    ImPlot::BeginPlot(#name, "Samples", "Time(ms)", ImVec2(-1, 200), 0, ImPlotAxisFlags_None, ImPlotAxisFlags_None); \
-    ImPlot::SetNextLineStyle(ImVec4(0, 200, 50, 255)); \
-    ImPlot::PlotLineG(#name, \
-        [](int index, void* data) \
-        { \
-            return ImPlotPoint(index, RECENT_RESULT(name, index)); \
-        }, \
-        nullptr, \
-        STATS(name)::recentCount); \
-    ImPlot::EndPlot(); 
-
+    if (ImPlot::BeginPlot(#name, 0, "Time(ms)", ImVec2(-1, 200), 0, ImPlotAxisFlags_None, ImPlotAxisFlags_None)) \
+    { \
+        ImPlot::SetNextLineStyle(ImVec4(0, 200, 50, 255)); \
+        ImPlot::PlotLineG(#name, \
+            [](int index, void* data) \
+            { \
+                return ImPlotPoint(index, RECENT_RESULT(name, index)); \
+            }, \
+            nullptr, \
+            STATS(name)::recentCount); \
+        ImPlot::EndPlot(); \
+    } \
 
 #endif // USE_IMGUI_OVERLAY
 
