@@ -19,49 +19,47 @@ void TrainingController::ShutdownMode()
 
 void TrainingController::Tick()
 {
-    AswEngine engine = XrdModule::GetEngine();
-    if (!engine.IsValid() || 
-        XrdModule::GetPreOrPostBattle() ||
+    if (!XrdModule::GetEngine().IsValid() ||
+        XrdModule::GetPreOrPostBattle() || 
         XrdModule::IsPauseMenuActive())
     {
         return;
     }
 
-    // If the engine changes location from reloading training mode then none
-    // of our save states are valid anymore.
-    if (mEnginePtr == 0)
-    {
-        mEnginePtr = engine.GetPtr();
-    }
-    else if (mEnginePtr != engine.GetPtr())
-    {
-        mEnginePtr = engine.GetPtr();
-        for (int i = 0; i < SaveStateCount; ++i)
-        {
-            mSaveStates[i].bValid = false;
-        }
-    }
-
     GameInputCollection input = XrdModule::GetGameInput();
     DWORD& battlePressed = input.GetP1BattleInput().GetPressedMask();
     DWORD& battleHeld = input.GetP1BattleInput().GetHeldMask();
-    if (battleHeld & (DWORD)BattleInputMask::Special)
+    DWORD& menuPressed = input.GetP1MenuInput().GetPressedMask();
+    bool bDirectionHeld = battleHeld & (DWORD)BattleInputMask::AllDirections;
+    bool bResetPressed = menuPressed & (DWORD)MenuInputMask::Reset;
+    if (bResetPressed && bDirectionHeld)
     {
-        TrainingSaveData& saveData = mSaveStates[mSelectedState];
-        if ((battlePressed & (DWORD)BattleInputMask::PlayRecording) &&
-            saveData.bValid)
+        mbResetMode = false;
+    } 
+    else if (mbResetMode && bResetPressed && mbValidSaveData)
+    {
+        LoadState(mSaveData);
+        mbResetMode = true;
+
+        // Consume menu press to prevent reset being used for anything else.
+        menuPressed = 0;
+    }
+    else if (battleHeld & (DWORD)BattleInputMask::Special)
+    {
+        if ((battlePressed & (DWORD)BattleInputMask::PlayRecording) && mbValidSaveData)
         {
-            LoadState(saveData);
+            LoadState(mSaveData);
+            mbResetMode = true;
         }
         else if (battlePressed & (DWORD)BattleInputMask::StartRecording)
         {
-            SaveState(saveData);
-            saveData.bValid = true;
+            SaveState(mSaveData);
+            mbResetMode = false;
+            mbValidSaveData = true;
         }
 
         // Consume all inputs while using contextual controls.
         battlePressed = 0;
-        battleHeld = 0;
     }
 }
 
@@ -69,26 +67,9 @@ void TrainingController::Tick()
 void TrainingController::PrepareImGuiFrame()
 {
     ImGui::Begin("Save States");
-
-    constexpr size_t maxLen = 3;
-    char stringBuf[maxLen];
-    snprintf(stringBuf, maxLen, "%d", mSelectedState+1);
-    if (ImGui::BeginCombo("State", stringBuf))
-    {
-        for (size_t i = 0; i < SaveStateCount; ++i)
-        {
-            snprintf(stringBuf, maxLen, "%d", i+1);
-            if (ImGui::Selectable(stringBuf))
-            {
-                mSelectedState = i;
-            }
-        }
-        ImGui::EndCombo();
-    }
-
     ImGui::Text("Status: ");
     ImGui::SameLine();
-    if (mSaveStates[mSelectedState].bValid)
+    if (mbValidSaveData)
     {
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
         ImGui::Text("Valid Save Data");
