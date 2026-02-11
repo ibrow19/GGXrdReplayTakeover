@@ -10,6 +10,7 @@ enum class MenuInputMask : DWORD
     Right = 0x2,
     Down = 0x4,
     Left = 0x8,
+    AllDirections = Up | Down | Left | Right,
 
     Decide = 0x4000,
     Back = 0x8000,
@@ -26,6 +27,7 @@ enum class BattleInputMask : DWORD
     Down = 0x2,
     Left = 0x4,
     Right = 0x8,
+    AllDirections = Up | Down | Left | Right,
 
     P = 0x10,
     K = 0x20,
