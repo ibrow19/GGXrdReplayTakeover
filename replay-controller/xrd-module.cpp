@@ -3,6 +3,7 @@
 #include <input-manager.h>
 #include <input.h>
 #include <pause-menu.h>
+#include <audio.h>
 #include <Psapi.h>
 #include <cassert>
 
@@ -77,6 +78,19 @@ PauseMenuButtonTable XrdModule::GetPauseMenuButtonTable()
     return PauseMenuButtonTable(mBase + 0x1464670);
 }
 
+SoundData XrdModule::GetSoundData()
+{
+    DWORD engine = XrdModule::GetGEngine();
+    assert(engine);
+    DWORD ptr1 = *(DWORD*)(engine + 0x4d0);
+    assert(ptr1);
+    DWORD ptr2 = *(DWORD*)(ptr1 + 0x1c0);
+    assert(ptr2);
+    DWORD ptr3 = *(DWORD*)(ptr2 + 0x1a8);
+    assert(ptr3);
+    return SoundData(ptr3);
+}
+
 DWORD& XrdModule::GetTrainingP1MaxHealth()
 {
     return *(DWORD*)(mBase + 0x1ac8ab8 + 0x18);
@@ -140,6 +154,13 @@ float XrdModule::GetReplayTextSpacing()
 float& XrdModule::GetDefaultTickDelta()
 {
     return *(float*)(mBase + 0x109f00c);
+}
+
+DWORD& XrdModule::GetRngSeed()
+{
+    DWORD ptr1 = *(DWORD*)(mBase + 0x158fff0);
+    assert(ptr1);
+    return *(DWORD*)(ptr1 + 0x9cc + 0x9c8);
 }
 
 EntityUpdateFunc XrdModule::GetOnlineEntityUpdate()

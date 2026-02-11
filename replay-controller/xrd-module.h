@@ -27,6 +27,7 @@ typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
 typedef void(__fastcall* DestroyAllSimpleActorsFunc)(DWORD gameLogicManager);
 typedef void(__thiscall* ResetGameFunc)(DWORD engine, DWORD param);
 typedef void(__thiscall* ResetCameraFunc)(DWORD cameraData1, DWORD cameraData2);
+typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackData);
 
 class XrdModule
 {
@@ -40,6 +41,7 @@ public:
     static class InputManager GetInputManager();
     static class GameInputCollection GetGameInput();
     static class PauseMenuButtonTable GetPauseMenuButtonTable();
+    static class SoundData GetSoundData();
     static BYTE* GetControllerIndexInstruction();
     static BYTE* GetSoundEffectJumpInstruction();
     static BYTE* GetInputDisplayInstruction();
@@ -47,6 +49,7 @@ public:
     static DWORD GetUiStringTable();
     static float GetReplayTextSpacing();
     static float& GetDefaultTickDelta();
+    static DWORD& GetRngSeed();
 
     // Values modified from the pause menu. These are part of other structs
     // with various training/UI settings but we only need these specific
@@ -129,8 +132,8 @@ public:
     // The value compared against is stored at Xrd+0x16f1084
     static TickRelevantActorsFunc GetTickRelevantActors();
 
-    static IsResimulatingFunc GetIsResimulating();
     static PlayBurstMaxSoundFunc GetPlayBurstMaxSound();
+    //static IsResimulatingFunc GetIsResimulating();
 
     // Removes all simple actors being used in a game, including those not
     // directly attached to an entity e.g hitsparks. Possibly also stops 
@@ -138,6 +141,8 @@ public:
     static DestroyAllSimpleActorsFunc GetDestroyAllSimpleActors();
 
     static ResetGameFunc GetResetGame();
+
+    static IsResimulatingFunc GetIsResimulating();
 private:
     static DWORD mBase;
 };

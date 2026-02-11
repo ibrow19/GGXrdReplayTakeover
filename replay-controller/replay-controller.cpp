@@ -39,7 +39,7 @@ void UiString::Set(char16_t* newString)
 }
 
 ReplayController::ReplayController()
-: mbPauseStandbyOneFrame(false)
+: mbPauseForOneFrame(false)
 , mMode(ReplayTakeoverMode::Standby)
 , mCountdown(0)
 , mBookmarkFrame(0)
@@ -226,18 +226,28 @@ void ReplayController::PrepareImGuiFrame()
     ImGui::Text("Control: Player %d", playerNum);
 
 #if PROFILING
+    STAT_GRAPH(ReplayRecord_MappingView)
     STAT_GRAPH(SaveState)
     STAT_GRAPH(LoadState)
-    STAT_GRAPH(MainLogic)
     STAT_GRAPH(ReplayRecord_SetFrame)
+    STAT_GRAPH(MainLogic)
 #endif
 
     ImGui::End();
 }
 #endif
 
-void ReplayController::OverridePlayerControl()
+void ReplayController::ResetPlayerControl()
 {
+    InputManager inputManager = XrdModule::GetInputManager();
+    inputManager.SetP1InputMode(InputMode::Replay);
+    inputManager.SetP2InputMode(InputMode::Replay);
+}
+
+void ReplayController::InitiateCountdown()
+{
+    // Override player control based on current settings.
+    // (Player control is stored in repurposed button display mode)
     InputManager inputManager = XrdModule::GetInputManager();
     if (XrdModule::GetButtonDisplayMode())
     {
@@ -249,13 +259,12 @@ void ReplayController::OverridePlayerControl()
         inputManager.SetP1InputMode(InputMode::Player);
         inputManager.SetP2InputMode(InputMode::Replay);
     }
-}
 
-void ReplayController::ResetPlayerControl()
-{
-    InputManager inputManager = XrdModule::GetInputManager();
-    inputManager.SetP1InputMode(InputMode::Replay);
-    inputManager.SetP2InputMode(InputMode::Replay);
+    mCountdown = 0;
+
+    // Note: by always going to countdown mode and not straight to takeover mode
+    // when the countdown total is 0 we force at least 1 frame of countdown.
+    mMode = ReplayTakeoverMode::TakeoverCountdown;
 }
 
 void ReplayController::HandleDisabledMode()
@@ -295,10 +304,8 @@ void ReplayController::HandleStandbyMode()
     // Initiate takeover
     if (battlePressed & (DWORD)BattleInputMask::PlayRecording)
     {
-        OverridePlayerControl();
         mBookmarkFrame = mRecord.GetCurrentFrame();
-        mCountdown = 0;
-        mMode = ReplayTakeoverMode::TakeoverCountdown;
+        InitiateCountdown();
         return;
     }
 
@@ -373,17 +380,17 @@ void ReplayController::HandleStandbyMode()
         if (battleHeld & (DWORD)BattleInputMask::Left)
         {
             mRecord.SetPreviousFrame();
-            mbPauseStandbyOneFrame = true;
+            mbPauseForOneFrame = true;
         }
         else if (battleHeld & (DWORD)BattleInputMask::Down)
         {
             fastRewind();
-            mbPauseStandbyOneFrame = true;
+            mbPauseForOneFrame = true;
         }
         else if (battleHeld & (DWORD)BattleInputMask::Up)
         {
             fastForward();
-            mbPauseStandbyOneFrame = true;
+            mbPauseForOneFrame = true;
         }
     }
 }
@@ -392,7 +399,6 @@ void ReplayController::HandleTakeoverMode()
 {
     GameInputCollection input = XrdModule::GetGameInput();
     DWORD& battleInput = input.GetP1BattleInput().GetPressedMask();
-    int countdownTotal = XrdModule::GetTrainingP1MaxHealth();
 
     // Restart takeover
     if (battleInput & (DWORD)BattleInputMask::PlayRecording)
@@ -401,16 +407,7 @@ void ReplayController::HandleTakeoverMode()
         // involves any resimulation.
         ResetPlayerControl();
         mRecord.SetFrame(mBookmarkFrame, /*bForceLoad=*/true);
-        OverridePlayerControl();
-        if (countdownTotal == 0)
-        {
-            mMode = ReplayTakeoverMode::TakeoverControl;
-        }
-        else
-        {
-            mCountdown = 0;
-            mMode = ReplayTakeoverMode::TakeoverCountdown;
-        }
+        InitiateCountdown();
         return;
     }
 
@@ -429,6 +426,8 @@ void ReplayController::HandleTakeoverMode()
     if (mMode == ReplayTakeoverMode::TakeoverCountdown)
     {
         ++mCountdown;
+        // Countdown total is stored in repurposed training mode P1 max health.
+        int countdownTotal = XrdModule::GetTrainingP1MaxHealth();
         if (mCountdown >= countdownTotal)
         {
             mMode = ReplayTakeoverMode::TakeoverControl;
@@ -444,14 +443,18 @@ void ReplayController::Tick()
     // a better understanding of how system sounds get played.
     ReplayDetourSettings::bDisableBurstMaxSound = false;
 
+    // Re-enable sound effects if they got disabled by the mod on a previous frame.
+    EnableSoundEffects();
+
     if (XrdModule::IsPauseMenuActive())
     {
         return;
     }
 
+    // Reset takeover settings when round begins/ends.
     if (XrdModule::GetPreOrPostBattle())
     {
-        mbPauseStandbyOneFrame = false;
+        mbPauseForOneFrame = false;
         ReplayDetourSettings::bReplayFrameStep = false;
         mRecord.Reset();
         if (mMode != ReplayTakeoverMode::Standby)
@@ -463,21 +466,17 @@ void ReplayController::Tick()
         return;
     }
 
+    // Record frame when in a state where the game is advancing.
     ReplayHud hud = XrdModule::GetEngine().GetReplayHud();
     if ((mMode == ReplayTakeoverMode::Disabled && !hud.GetPause()) || 
-         mMode == ReplayTakeoverMode::Standby ||
+         (mMode == ReplayTakeoverMode::Standby && !mbPauseForOneFrame) ||
          ReplayDetourSettings::bReplayFrameStep)
     {
         mRecord.RecordFrame();
         ReplayDetourSettings::bReplayFrameStep = false;
     }
 
-    // Clear temporary pause once frame recording has been skipped.
-    if (mMode == ReplayTakeoverMode::StandbyPaused && mbPauseStandbyOneFrame)
-    {
-        mMode = ReplayTakeoverMode::Standby;
-    }
-    mbPauseStandbyOneFrame = false;
+    mbPauseForOneFrame = false;
 
     switch (mMode)
     {
@@ -497,15 +496,11 @@ void ReplayController::Tick()
 
     UpdateUi();
 
-    if (mMode == ReplayTakeoverMode::Standby && mbPauseStandbyOneFrame)
-    {
-        mMode = ReplayTakeoverMode::StandbyPaused;
-    }
-
     if (IsPaused())
     {
         XrdModule::GetEngine().GetGameLogicManager().GetPauseEngineUpdateFlag() = 1;
         ReplayDetourSettings::bDisableBurstMaxSound = true;
+        DisableSoundEffects();
     }
 }
 
@@ -516,7 +511,8 @@ ReplayTakeoverMode ReplayController::GetMode() const
 
 bool ReplayController::IsPaused() const
 {
-    return mMode == ReplayTakeoverMode::StandbyPaused || 
+    return mbPauseForOneFrame ||
+           mMode == ReplayTakeoverMode::StandbyPaused || 
            mMode == ReplayTakeoverMode::TakeoverCountdown ||
            mMode == ReplayTakeoverMode::TakeoverRoundEnded;
 }

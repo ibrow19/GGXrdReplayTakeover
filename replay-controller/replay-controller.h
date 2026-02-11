@@ -77,8 +77,8 @@ private:
     void InitPauseMenuMods();
     void RestorePauseMenuSettings();
 
-    void OverridePlayerControl();
     void ResetPlayerControl();
+    void InitiateCountdown();
 
     void HandleDisabledMode();
     void HandleStandbyMode();
@@ -87,7 +87,7 @@ private:
     static constexpr int DefaultCountdown = 15;
     static constexpr size_t PausedFrameJump = 3;
 private:
-    bool mbPauseStandbyOneFrame;
+    bool mbPauseForOneFrame;
     ReplayTakeoverMode mMode;
     int mCountdown;
     size_t mBookmarkFrame;

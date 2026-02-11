@@ -7,6 +7,7 @@
 #include <save-state.h>
 #include <common.h>
 #include <detours.h>
+#include <audio.h>
 #include <cassert>
 
 class ReplayDetourer
@@ -28,6 +29,15 @@ static AddUiTextFunc GRealAddUiText = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
 static PlayBurstMaxSoundFunc GRealPlayBurstMaxSound = nullptr;
+
+namespace SoundSettings
+{
+    static float cachedEffectVolume = 0.f;
+    static float cachedVoiceVolume = 0.f;
+    static float cachedSuperVoiceVolume = 0.f;
+    static float cachedSystemVoiceVolume = 0.f;
+    static bool bCached = false;
+}
 
 void ReplayDetourer::DetourSetHealth(int newHealth)
 {
@@ -190,6 +200,7 @@ void AddReplayMods()
     ReplayDetourSettings::bOverrideHudText = false;
     ReplayDetourSettings::bAddingFirstTextRow = false;
     ReplayDetourSettings::bDisableBurstMaxSound = false;
+    SoundSettings::bCached = false;
 
     // Make regions writable for instruction editing.
 
@@ -277,26 +288,31 @@ void RemoveReplayMods()
 // simple and works for what we currently need it to do.
 void DisableSoundEffects()
 {
-    // jmp + a nop for last byte
-    BYTE* instruction = XrdModule::GetSoundEffectJumpInstruction();
-    instruction[0] = 0xe9;
-    instruction[1] = 0x56;
-    instruction[2] = 0x04;
-    instruction[3] = 0x00;
-    instruction[4] = 0x00;
-    instruction[5] = 0x90;
+    SoundData soundData = XrdModule::GetSoundData();
+    SoundSettings::cachedEffectVolume = soundData.GetBattleEffectVolume();
+    SoundSettings::cachedVoiceVolume = soundData.GetBattleVoiceVolume();
+    SoundSettings::cachedSuperVoiceVolume = soundData.GetBattleSuperVoiceVolume();
+    SoundSettings::cachedSystemVoiceVolume = soundData.GetBattleSystemVoiceVolume();
+
+    soundData.GetBattleEffectVolume() = 0.f;
+    soundData.GetBattleVoiceVolume() = 0.f;
+    soundData.GetBattleSuperVoiceVolume() = 0.f;
+    soundData.GetBattleSystemVoiceVolume() = 0.f;
+
+    SoundSettings::bCached = true;
 }
 
 void EnableSoundEffects()
 {
-    // Restore original je instruction
-    BYTE* instruction = XrdModule::GetSoundEffectJumpInstruction();
-    instruction[0] = 0x0f;
-    instruction[1] = 0x84;
-    instruction[2] = 0x55;
-    instruction[3] = 0x04;
-    instruction[4] = 0x00;
-    instruction[5] = 0x00;
+    if (SoundSettings::bCached)
+    {
+        SoundSettings::bCached = false;
+        SoundData soundData = XrdModule::GetSoundData();
+        soundData.GetBattleEffectVolume() = SoundSettings::cachedEffectVolume;
+        soundData.GetBattleVoiceVolume() = SoundSettings::cachedVoiceVolume;
+        soundData.GetBattleSuperVoiceVolume() = SoundSettings::cachedSuperVoiceVolume;
+        soundData.GetBattleSuperVoiceVolume() = SoundSettings::cachedSuperVoiceVolume;
+    }
 }
 
 // The input display is added to the screen every frame. If we do this while
