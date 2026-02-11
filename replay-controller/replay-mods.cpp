@@ -28,7 +28,6 @@ static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static AddUiTextFunc GRealAddUiText = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
-static PlayBurstMaxSoundFunc GRealPlayBurstMaxSound = nullptr;
 
 namespace SoundSettings
 {
@@ -182,16 +181,6 @@ void __fastcall DetourHandleInputs(DWORD engine)
     XrdModule::GetEngine().GetErrorCode() = 0;
 }
 
-// There should be a more generic way to disable system sounds, but this might
-// be the only one that plays mid match? (maybe danger time too)
-void DetourPlayBurstMaxSound()
-{
-    if (!ReplayDetourSettings::bDisableBurstMaxSound)
-    {
-        GRealPlayBurstMaxSound();
-    }
-}
-
 void AddReplayMods()
 {
     // Reset Settings
@@ -199,7 +188,6 @@ void AddReplayMods()
     ReplayDetourSettings::bOverrideSimpleActorPause = false;
     ReplayDetourSettings::bOverrideHudText = false;
     ReplayDetourSettings::bAddingFirstTextRow = false;
-    ReplayDetourSettings::bDisableBurstMaxSound = false;
     SoundSettings::bCached = false;
 
     // Make regions writable for instruction editing.
@@ -218,9 +206,8 @@ void AddReplayMods()
     MakeRegionWritable((DWORD)controllerInstruction, 1);
     *controllerInstruction = 0x52;
 
-    // Make instructions for controlling sound effects and input display
+    // Make instructions for controlling input display
     // writable so we can change them when we need to later.
-    MakeRegionWritable((DWORD)XrdModule::GetSoundEffectJumpInstruction(), 6);
     MakeRegionWritable((DWORD)XrdModule::GetInputDisplayInstruction(), 1);
 
     // Attach detours
@@ -228,7 +215,6 @@ void AddReplayMods()
     GRealAddUiText = XrdModule::GetAddUiText();
     GRealUpdateTime = XrdModule::GetUpdateTime();
     GRealHandleInputs = XrdModule::GetHandleInputs();
-    GRealPlayBurstMaxSound = XrdModule::GetPlayBurstMaxSound();
     ReplayDetourer::mRealSetHealth = XrdModule::GetSetHealth();
     ReplayDetourer::mRealTickSimpleActor = XrdModule::GetTickSimpleActor();
     ReplayDetourer::mRealDisplayReplayHudMenu = XrdModule::GetDisplayReplayHudMenu();
@@ -242,7 +228,6 @@ void AddReplayMods()
     DetourAttach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourAttach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourAttach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
-    DetourAttach(&(PVOID&)GRealPlayBurstMaxSound, DetourPlayBurstMaxSound);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
@@ -271,7 +256,6 @@ void RemoveReplayMods()
     DetourDetach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourDetach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourDetach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
-    DetourDetach(&(PVOID&)GRealPlayBurstMaxSound, DetourPlayBurstMaxSound);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
@@ -280,12 +264,6 @@ void RemoveReplayMods()
     DetachSaveStateDetours();
 }
 
-// In the function responsible for playing sound effects: change a jump-if-equal
-// near the start of the function to an unconditional jump to the end of the
-// function. this will prevent all sound effects from playing. there are almost
-// certainly better ways of doing this; especially since rollback resimulations
-// presumably disable sound effects somehow. regardless, the current solution is
-// simple and works for what we currently need it to do.
 void DisableSoundEffects()
 {
     SoundData soundData = XrdModule::GetSoundData();
