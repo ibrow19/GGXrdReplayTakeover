@@ -133,7 +133,6 @@ public:
     static TickRelevantActorsFunc GetTickRelevantActors();
 
     static PlayBurstMaxSoundFunc GetPlayBurstMaxSound();
-    //static IsResimulatingFunc GetIsResimulating();
 
     // Removes all simple actors being used in a game, including those not
     // directly attached to an entity e.g hitsparks. Possibly also stops 
