@@ -13,7 +13,12 @@ private:
     void PrepareImGuiFrame() override;
 #endif
 private:
+    static constexpr size_t CharCodeLen = 32;
+private:
     SaveData mSaveData;
+    char mP1Char[CharCodeLen];
+    char mP2Char[CharCodeLen];
+    DWORD mEngineAddress = 0;
     bool mbValidSaveData = false;
     bool mbResetMode = false;
 };

@@ -1,6 +1,7 @@
 #include <training-controller.h>
 #include <xrd-module.h>
 #include <asw-engine.h>
+#include <entity.h>
 #include <input.h>
 #include <cstdio>
 #ifdef USE_IMGUI_OVERLAY
@@ -10,6 +11,11 @@
 void TrainingController::InitMode()
 {
     AttachSaveStateDetours();
+    mEngineAddress = 0;
+    mP1Char[0] = 0;
+    mP2Char[0] = 0;
+    mbValidSaveData = false;
+    mbResetMode = false;
 }
 
 void TrainingController::ShutdownMode()
@@ -19,11 +25,28 @@ void TrainingController::ShutdownMode()
 
 void TrainingController::Tick()
 {
-    if (!XrdModule::GetEngine().IsValid() ||
+    AswEngine engine = XrdModule::GetEngine();
+    if (!engine.IsValid() ||
         XrdModule::GetPreOrPostBattle() || 
         XrdModule::IsPauseMenuActive())
     {
         return;
+    }
+
+    // If the engine data moves or one of the characters change then any
+    // existing save state is no longer valid. Ideally we should just reset
+    // everything when training mode initalises but I'm not sure the best place
+    // to hook onto for that so this is a decent work around for now.
+    if (!mEngineAddress ||
+        mEngineAddress != engine.GetPtr() ||
+        strcmp(engine.GetP1Entity().GetCharacterCode(), mP1Char) ||
+        strcmp(engine.GetP2Entity().GetCharacterCode(), mP2Char))
+    {
+        mEngineAddress = engine.GetPtr();
+        memcpy(mP1Char, engine.GetP1Entity().GetCharacterCode(), CharCodeLen);
+        memcpy(mP2Char, engine.GetP2Entity().GetCharacterCode(), CharCodeLen);
+        mbValidSaveData = false;
+        mbResetMode = false;
     }
 
     GameInputCollection input = XrdModule::GetGameInput();
