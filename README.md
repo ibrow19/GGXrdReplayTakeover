@@ -64,6 +64,8 @@ Save states uses contextual controls based on whether the SP/Special Move button
 - Special Move + Record - Save State
 - Special Move + Play - Load State
 
+After loading a state with Special Move + Play the behaviour of the Reset button will change to load that state for convenience instead of resetting to the default training mode position. The normal Reset behaviour can be restored by holding any direction while pressing reset.
+
 ## Known Issues
 - Cinematic supers that alter camera angle will display incorrectly while rewinding or fast forwarding a replay. Camera blending is currently very buggy with how rewinding works but it won't break any game logic.
 - Cinematic supers that feature close ups of character's faces will also not show these cut ins correctly while navigating replays or loading save states. In these supers the game usually displays a special more detailed character model for the duration of the super freeze and the regular character actor gets hidden. This information is not properly perserved by save states atm and the more detailed model does not get displayed. This will make a lot of supers look very wack but won't break any game logic.
