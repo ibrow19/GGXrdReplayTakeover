@@ -49,6 +49,11 @@ GameLogicManager AswEngine::GetGameLogicManager()
     return GameLogicManager(gameLogicPtr);
 }
 
+DWORD AswEngine::GetBattleHudManager()
+{
+    return *(DWORD*)(mPtr + 0x22e628);
+}
+
 DWORD& AswEngine::GetErrorCode()
 {
     return *(DWORD*)(mPtr + 0x1c6f4c + 0x4);
@@ -57,6 +62,11 @@ DWORD& AswEngine::GetErrorCode()
 GameLogicManager::GameLogicManager(DWORD inPtr)
 : MemoryWrapper(inPtr)
 {}
+
+DWORD& GameLogicManager::GetBattleCamera()
+{
+    return *(DWORD*)(mPtr + 0x4b8);
+}
 
 DWORD& GameLogicManager::GetPauseEngineUpdateFlag()
 {

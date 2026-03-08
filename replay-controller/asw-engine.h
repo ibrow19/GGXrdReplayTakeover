@@ -14,6 +14,7 @@ public:
     Entity GetP2Entity();
     class ReplayHud GetReplayHud();
     class GameLogicManager GetGameLogicManager();
+    DWORD GetBattleHudManager();
 
     // Many functions use this slight offset from the engine when
     // accessing it. It's possible this should be what we treat as 
@@ -27,6 +28,7 @@ class GameLogicManager : public MemoryWrapper
 {
 public:
     GameLogicManager(DWORD inPtr);
+    DWORD& GetBattleCamera();
 
     // This flag specifically stops the Asw engine from updating but does
     // not stop animations from updating. It also gets reset every frame 

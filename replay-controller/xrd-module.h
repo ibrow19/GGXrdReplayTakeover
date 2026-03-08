@@ -3,6 +3,8 @@
 #include <windows.h>
 
 typedef void(__thiscall* MainGameLogicFunc)(LPVOID thisArg, DWORD param);
+typedef void(__fastcall* UpdateCameraFunc)(DWORD param);
+typedef void(__fastcall* UpdateBattleHudFunc)(DWORD param);
 typedef void(__thiscall* SetStringFunc)(char* dest, char* src);
 typedef void(__fastcall* EntityUpdateFunc)(DWORD entity);
 typedef void(__fastcall* ReplayHudUpdateFunc)(DWORD param);
@@ -26,8 +28,9 @@ typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
 typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
 typedef void(__fastcall* DestroyAllSimpleActorsFunc)(DWORD gameLogicManager);
 typedef void(__thiscall* ResetGameFunc)(DWORD engine, DWORD param);
-typedef void(__thiscall* ResetCameraFunc)(DWORD cameraData1, DWORD cameraData2);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackData);
+typedef void(__fastcall* ResetBattleCameraFunc)(DWORD battleCamera);
+typedef DWORD(__thiscall* FindFunctionCheckedFunc)(DWORD uObject, DWORD fName, DWORD global, DWORD param4);
 
 class XrdModule
 {
@@ -50,6 +53,8 @@ public:
     static float GetReplayTextSpacing();
     static float& GetDefaultTickDelta();
     static DWORD& GetRngSeed();
+    static DWORD GetTickFunctionFName();
+    static DWORD GetTickFunctionGlobal();
 
     // Values modified from the pause menu. These are part of other structs
     // with various training/UI settings but we only need these specific
@@ -75,6 +80,9 @@ public:
     // is used.
     static MainGameLogicFunc GetMainGameLogic();
     static MainGameLogicFunc GetOfflineMainGameLogic();
+
+    static UpdateCameraFunc GetUpdateCamera();
+    static UpdateBattleHudFunc GetUpdateBattleHud();
 
     // Setter for built in string type that use a fixed 32 byte buffer size.
     // The dest string is replaced with the src string then has the remaining 
@@ -139,9 +147,10 @@ public:
     // any currently playing sound effects.
     static DestroyAllSimpleActorsFunc GetDestroyAllSimpleActors();
 
-    static ResetGameFunc GetResetGame();
-
     static IsResimulatingFunc GetIsResimulating();
+    static ResetGameFunc GetResetGame();
+    static ResetBattleCameraFunc GetResetBattleCamera();
+    static FindFunctionCheckedFunc GetFindFunctionChecked();
 private:
     static DWORD mBase;
 };

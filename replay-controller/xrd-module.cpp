@@ -163,6 +163,16 @@ DWORD& XrdModule::GetRngSeed()
     return *(DWORD*)(ptr1 + 0x9cc + 0x9c8);
 }
 
+DWORD XrdModule::GetTickFunctionFName()
+{
+    return *(DWORD*)(mBase + 0x16d8390);
+}
+
+DWORD XrdModule::GetTickFunctionGlobal()
+{
+    return *(DWORD*)(mBase + 0x16d8394);
+}
+
 EntityUpdateFunc XrdModule::GetOnlineEntityUpdate()
 {
     return (EntityUpdateFunc)(mBase + 0xb6efd0);
@@ -176,6 +186,16 @@ MainGameLogicFunc XrdModule::GetMainGameLogic()
 MainGameLogicFunc XrdModule::GetOfflineMainGameLogic()
 {
     return (MainGameLogicFunc)(mBase + 0xa5df00);
+}
+
+UpdateCameraFunc XrdModule::GetUpdateCamera()
+{
+    return (UpdateCameraFunc)(mBase + 0x9d97e0);
+}
+
+UpdateBattleHudFunc XrdModule::GetUpdateBattleHud()
+{
+    return (UpdateBattleHudFunc)(mBase + 0xa69060);
 }
 
 SetStringFunc XrdModule::GetSetString()
@@ -296,4 +316,14 @@ DestroyAllSimpleActorsFunc XrdModule::GetDestroyAllSimpleActors()
 ResetGameFunc XrdModule::GetResetGame()
 {
     return (ResetGameFunc)(mBase + 0x9e7720);
+}
+
+ResetBattleCameraFunc XrdModule::GetResetBattleCamera()
+{
+    return (ResetBattleCameraFunc)(mBase + 0xae4360);
+}
+
+FindFunctionCheckedFunc XrdModule::GetFindFunctionChecked()
+{
+    return (FindFunctionCheckedFunc)(mBase + 0x91ce0);
 }
