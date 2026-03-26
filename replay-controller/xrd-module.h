@@ -28,6 +28,7 @@ typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
 typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
 typedef void(__fastcall* DestroyAllSimpleActorsFunc)(DWORD gameLogicManager);
 typedef void(__thiscall* ResetGameFunc)(DWORD engine, DWORD param);
+typedef void(__fastcall* ResetGameUnrealScriptFunc)(DWORD gameLogicManager);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackData);
 typedef void(__fastcall* ResetBattleCameraFunc)(DWORD battleCamera);
 typedef DWORD(__thiscall* FindFunctionCheckedFunc)(DWORD uObject, DWORD fName, DWORD global, DWORD param4);
@@ -55,6 +56,8 @@ public:
     static DWORD& GetRngSeed();
     static DWORD GetTickFunctionFName();
     static DWORD GetTickFunctionGlobal();
+    static DWORD GetGWorld();
+    static DWORD GetWorldInfo();
 
     // Values modified from the pause menu. These are part of other structs
     // with various training/UI settings but we only need these specific
@@ -149,6 +152,7 @@ public:
 
     static IsResimulatingFunc GetIsResimulating();
     static ResetGameFunc GetResetGame();
+    static ResetGameUnrealScriptFunc GetResetGameUnrealScript();
     static ResetBattleCameraFunc GetResetBattleCamera();
     static FindFunctionCheckedFunc GetFindFunctionChecked();
 private:

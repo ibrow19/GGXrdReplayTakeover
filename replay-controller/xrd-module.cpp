@@ -173,6 +173,24 @@ DWORD XrdModule::GetTickFunctionGlobal()
     return *(DWORD*)(mBase + 0x16d8394);
 }
 
+DWORD XrdModule::GetGWorld()
+{
+    return *(DWORD*)(mBase + 0x16daf70);
+}
+
+DWORD XrdModule::GetWorldInfo()
+{
+    DWORD world = GetGWorld();
+    assert(world);
+    DWORD persistentLevel = *(DWORD*)(world + 0x50);
+    assert(persistentLevel);
+    DWORD actors = *(DWORD*)(persistentLevel + 0x3c);
+    assert(actors);
+    DWORD worldInfo = *(DWORD*)(actors);
+    assert(worldInfo);
+    return worldInfo;
+}
+
 EntityUpdateFunc XrdModule::GetOnlineEntityUpdate()
 {
     return (EntityUpdateFunc)(mBase + 0xb6efd0);
@@ -316,6 +334,11 @@ DestroyAllSimpleActorsFunc XrdModule::GetDestroyAllSimpleActors()
 ResetGameFunc XrdModule::GetResetGame()
 {
     return (ResetGameFunc)(mBase + 0x9e7720);
+}
+
+ResetGameUnrealScriptFunc XrdModule::GetResetGameUnrealScript()
+{
+    return (ResetGameUnrealScriptFunc)(mBase + 0x9d7500);
 }
 
 ResetBattleCameraFunc XrdModule::GetResetBattleCamera()
