@@ -29,6 +29,7 @@ class GameLogicManager : public MemoryWrapper
 public:
     GameLogicManager(DWORD inPtr);
     DWORD& GetBattleCamera();
+    DWORD& GetViewObject();
 
     // This flag specifically stops the Asw engine from updating but does
     // not stop animations from updating. It also gets reset every frame 

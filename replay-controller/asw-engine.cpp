@@ -68,6 +68,11 @@ DWORD& GameLogicManager::GetBattleCamera()
     return *(DWORD*)(mPtr + 0x4b8);
 }
 
+DWORD& GameLogicManager::GetViewObject()
+{
+    return *(DWORD*)(mPtr + 0x3b8);
+}
+
 DWORD& GameLogicManager::GetPauseEngineUpdateFlag()
 {
     DWORD pauseObject = *(DWORD*)(mPtr + 0x37c);
