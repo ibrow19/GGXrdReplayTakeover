@@ -812,7 +812,7 @@
     </CheatEntry>
     <CheatEntry>
       <ID>423</ID>
-      <Description>"+16daf70 (Related to online actor list?)"</Description>
+      <Description>"+16daf70 (GWorld)"</Description>
       <ShowAsHex>1</ShowAsHex>
       <Color>80000008</Color>
       <VariableType>4 Bytes</VariableType>
@@ -833,7 +833,7 @@
           </Offsets>
         </CheatEntry>
         <CheatEntry>
-          <ID>426</ID>
+          <ID>603</ID>
           <Description>"+48"</Description>
           <ShowAsHex>1</ShowAsHex>
           <Color>80000008</Color>
@@ -842,7 +842,7 @@
         </CheatEntry>
         <CheatEntry>
           <ID>425</ID>
-          <Description>"+50"</Description>
+          <Description>"+50 (PersistentLevel)"</Description>
           <ShowAsHex>1</ShowAsHex>
           <Color>80000008</Color>
           <VariableType>4 Bytes</VariableType>
@@ -850,6 +850,29 @@
           <Offsets>
             <Offset>0</Offset>
           </Offsets>
+          <CheatEntries>
+            <CheatEntry>
+              <ID>426</ID>
+              <Description>"+3c (Actors)"</Description>
+              <ShowAsHex>1</ShowAsHex>
+              <Color>80000008</Color>
+              <VariableType>4 Bytes</VariableType>
+              <Address>+3c</Address>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>602</ID>
+                  <Description>"0 (WorldInfo)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+0</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+              </CheatEntries>
+            </CheatEntry>
+          </CheatEntries>
         </CheatEntry>
       </CheatEntries>
     </CheatEntry>
@@ -1407,6 +1430,19 @@
               <Color>80000008</Color>
               <VariableType>4 Bytes</VariableType>
               <Address>+3b8</Address>
+              <Offsets>
+                <Offset>0</Offset>
+              </Offsets>
+              <CheatEntries>
+                <CheatEntry>
+                  <ID>599</ID>
+                  <Description>"+68"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+68</Address>
+                </CheatEntry>
+              </CheatEntries>
             </CheatEntry>
             <CheatEntry>
               <ID>507</ID>
@@ -1432,6 +1468,14 @@
                   <CheatEntries>
                     <CheatEntry>
                       <ID>564</ID>
+                      <Description>"+1a4(tick)"</Description>
+                      <ShowAsHex>1</ShowAsHex>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+1a4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>587</ID>
                       <Description>"+3a8"</Description>
                       <ShowAsHex>1</ShowAsHex>
                       <Color>80000008</Color>
@@ -1449,7 +1493,37 @@
                   </CheatEntries>
                 </CheatEntry>
                 <CheatEntry>
+                  <ID>595</ID>
+                  <Description>"+94"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>Byte</VariableType>
+                  <Address>+94</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>594</ID>
+                  <Description>"+9c (Owning Controller)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+9c</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>588</ID>
+                  <Description>"+3ec"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+3ec</Address>
+                </CheatEntry>
+                <CheatEntry>
                   <ID>565</ID>
+                  <Description>"+524 (NeedCameraUpdate)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+524</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>584</ID>
                   <Description>"+1cc"</Description>
                   <ShowAsHex>1</ShowAsHex>
                   <Color>80000008</Color>
@@ -1457,11 +1531,99 @@
                   <Address>+1cc</Address>
                 </CheatEntry>
                 <CheatEntry>
-                  <ID>568</ID>
-                  <Description>"+3c0"</Description>
+                  <ID>585</ID>
+                  <Description>"+3c0 (Base Transform)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
                   <Color>80000008</Color>
                   <VariableType>4 Bytes</VariableType>
                   <Address>+3c0</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>593</ID>
+                  <Description>"+38c (Transform related?)"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+38c</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>600</ID>
+                  <Description>"+398 (Transform+3?)"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+398</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>591</ID>
+                  <Description>"+134 (transform)"</Description>
+                  <Color>80000008</Color>
+                  <VariableType>Float</VariableType>
+                  <Address>+134</Address>
+                </CheatEntry>
+                <CheatEntry>
+                  <ID>580</ID>
+                  <Description>"+4a4"</Description>
+                  <ShowAsHex>1</ShowAsHex>
+                  <Color>80000008</Color>
+                  <VariableType>4 Bytes</VariableType>
+                  <Address>+4a4</Address>
+                  <Offsets>
+                    <Offset>0</Offset>
+                  </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>581</ID>
+                      <Description>"+54"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+54</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>597</ID>
+                      <Description>"+58"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+58</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>598</ID>
+                      <Description>"+5c"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+5c</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>596</ID>
+                      <Description>"+94"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>Byte</VariableType>
+                      <Address>+94</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>592</ID>
+                      <Description>"+134 (transform)"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+134</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>589</ID>
+                      <Description>"+1d4"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>Float</VariableType>
+                      <Address>+1d4</Address>
+                    </CheatEntry>
+                    <CheatEntry>
+                      <ID>582</ID>
+                      <Description>"+1d8"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+1d8</Address>
+                    </CheatEntry>
+                  </CheatEntries>
                 </CheatEntry>
                 <CheatEntry>
                   <ID>575</ID>
@@ -1472,6 +1634,63 @@
                   <Offsets>
                     <Offset>0</Offset>
                   </Offsets>
+                  <CheatEntries>
+                    <CheatEntry>
+                      <ID>577</ID>
+                      <Description>"0"</Description>
+                      <Color>80000008</Color>
+                      <VariableType>4 Bytes</VariableType>
+                      <Address>+0</Address>
+                      <Offsets>
+                        <Offset>0</Offset>
+                      </Offsets>
+                      <CheatEntries>
+                        <CheatEntry>
+                          <ID>568</ID>
+                          <Description>"+48(State mask)"</Description>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>+48</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>579</ID>
+                          <Description>"+3c"</Description>
+                          <ShowAsHex>1</ShowAsHex>
+                          <Color>80000008</Color>
+                          <VariableType>4 Bytes</VariableType>
+                          <Address>+3c</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>583</ID>
+                          <Description>"+44 (Timer)"</Description>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>+44</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>586</ID>
+                          <Description>"+5c"</Description>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>+5c</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>601</ID>
+                          <Description>"+68"</Description>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>+68</Address>
+                        </CheatEntry>
+                        <CheatEntry>
+                          <ID>578</ID>
+                          <Description>"+134 (transform)"</Description>
+                          <Color>80000008</Color>
+                          <VariableType>Float</VariableType>
+                          <Address>+134</Address>
+                        </CheatEntry>
+                      </CheatEntries>
+                    </CheatEntry>
+                  </CheatEntries>
                 </CheatEntry>
                 <CheatEntry>
                   <ID>576</ID>
@@ -5833,6 +6052,57 @@
         <Byte>10</Byte>
         <Byte>45</Byte>
         <Byte>0C</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of movss [esi+44],xmm0</Description>
+      <Address>00C38DB3</Address>
+      <ModuleName>GuiltyGearXrd.exe</ModuleName>
+      <ModuleNameOffset>2C8DB3</ModuleNameOffset>
+      <Before>
+        <Byte>44</Byte>
+        <Byte>89</Byte>
+        <Byte>5C</Byte>
+        <Byte>24</Byte>
+        <Byte>0C</Byte>
+      </Before>
+      <Actual>
+        <Byte>F3</Byte>
+        <Byte>0F</Byte>
+        <Byte>11</Byte>
+        <Byte>46</Byte>
+        <Byte>44</Byte>
+      </Actual>
+      <After>
+        <Byte>A8</Byte>
+        <Byte>08</Byte>
+        <Byte>74</Byte>
+        <Byte>0E</Byte>
+        <Byte>F3</Byte>
+      </After>
+    </CodeEntry>
+    <CodeEntry>
+      <Description>Change of jmp eax</Description>
+      <Address>00679C37</Address>
+      <ModuleName>GuiltyGearXrd.exe</ModuleName>
+      <ModuleNameOffset>2E9C37</ModuleNameOffset>
+      <Before>
+        <Byte>80</Byte>
+        <Byte>9C</Byte>
+        <Byte>03</Byte>
+        <Byte>00</Byte>
+        <Byte>00</Byte>
+      </Before>
+      <Actual>
+        <Byte>FF</Byte>
+        <Byte>E0</Byte>
+      </Actual>
+      <After>
+        <Byte>C2</Byte>
+        <Byte>04</Byte>
+        <Byte>00</Byte>
+        <Byte>CC</Byte>
+        <Byte>CC</Byte>
       </After>
     </CodeEntry>
   </CheatCodes>
