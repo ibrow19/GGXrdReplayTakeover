@@ -117,11 +117,36 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         // actors like hitspark or RC vfx.
         TickRelevantActorsFunc tickRelevantActors = XrdModule::GetTickRelevantActors();
         MainGameLogicFunc tickGame = XrdModule::GetOfflineMainGameLogic();
-        LPVOID gameManager = (LPVOID)XrdModule::GetEngine().GetGameLogicManager().GetPtr();
+        GameLogicManager manager = XrdModule::GetEngine().GetGameLogicManager();
+        LPVOID managerPtr = (LPVOID)manager.GetPtr();
+        DWORD battleCamera = manager.GetBattleCamera();
+
+        // Camera update function is unreal script so we need to look up the
+        // function and execute it with special functions.
+        FindFunctionCheckedFunc findFunction = XrdModule::GetFindFunctionChecked();
+        DWORD updateCameraUnrealScript = findFunction(battleCamera, XrdModule::GetTickFunctionFName(), XrdModule::GetTickFunctionGlobal(), 0);
+        
+        typedef void(__thiscall* UnrealScriptFunc)(DWORD thisArg, DWORD func, float* delta, DWORD boolParam);
+        DWORD cameraVTable = *(DWORD*)battleCamera;
+        UnrealScriptFunc executeUnrealScript = *(UnrealScriptFunc*)(cameraVTable + 0x108);
+
+        // If this actor is not ticked then cinematic camera blends in
+        // special camera update will accumulate incorrectly during resimulation.
+        // (Not sure yet exactly what this actor is for)
+        typedef void(__thiscall* TickAActorFunc)(DWORD thisArg, float delta, DWORD tickType);
+        DWORD viewActor = manager.GetViewActor();
+        DWORD viewActorVTable = *(DWORD*)(viewActor);
+        TickAActorFunc tickViewActor = *(TickAActorFunc*)(viewActorVTable + 0x1a4);
+
         while (mCurrentFrame != index)
         {
-            tickGame(gameManager, 1);
+            tickGame(managerPtr, 1);
             tickRelevantActors();
+
+            float cameraDelta = 0.02f;
+            tickViewActor(viewActor, cameraDelta, 2 /* TickType_All */);
+            executeUnrealScript(battleCamera, updateCameraUnrealScript, &cameraDelta, 0);
+
             if (XrdModule::GetPreOrPostBattle())
             {
                 break;
