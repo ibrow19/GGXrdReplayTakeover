@@ -68,7 +68,7 @@ DWORD& GameLogicManager::GetBattleCamera()
     return *(DWORD*)(mPtr + 0x4b8);
 }
 
-DWORD& GameLogicManager::GetViewObject()
+DWORD& GameLogicManager::GetViewActor()
 {
     return *(DWORD*)(mPtr + 0x3b8);
 }
