@@ -26,11 +26,11 @@ typedef bool(__cdecl* CheckInBattleFunc)(void);
 typedef void(__cdecl* TickRelevantActorsFunc)(void);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
 typedef void(__cdecl* PlayBurstMaxSoundFunc)(void);
-typedef void(__fastcall* DestroyAllSimpleActorsFunc)(DWORD gameLogicManager);
 typedef void(__thiscall* ResetGameFunc)(DWORD engine, DWORD param);
 typedef void(__fastcall* ResetGameUnrealScriptFunc)(DWORD gameLogicManager);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackData);
 typedef void(__fastcall* ResetBattleCameraFunc)(DWORD battleCamera);
+typedef void(__thiscall* RemoveCameraAnimFunc)(DWORD battleCamera, DWORD blend);
 typedef DWORD(__thiscall* FindFunctionCheckedFunc)(DWORD uObject, DWORD fName, DWORD global, DWORD param4);
 
 class XrdModule
@@ -144,16 +144,20 @@ public:
     static TickRelevantActorsFunc GetTickRelevantActors();
 
     static PlayBurstMaxSoundFunc GetPlayBurstMaxSound();
-
-    // Removes all simple actors being used in a game, including those not
-    // directly attached to an entity e.g hitsparks. Possibly also stops 
-    // any currently playing sound effects.
-    static DestroyAllSimpleActorsFunc GetDestroyAllSimpleActors();
-
     static IsResimulatingFunc GetIsResimulating();
+
+    // When training mode is reset two function are called, one normal function
+    // and one unreal script function. Both are required to fully reset the
+    // game state. There is some camera state related to camera animation that
+    // is marked for destruction but will only be cleaned up fully next time
+    // the camera ticks. So manual management is required to fully clean up
+    // without ticking.
     static ResetGameFunc GetResetGame();
     static ResetGameUnrealScriptFunc GetResetGameUnrealScript();
     static ResetBattleCameraFunc GetResetBattleCamera();
+    static RemoveCameraAnimFunc GetRemoveCameraAnim();
+
+    // Finds UnrealScript functions.
     static FindFunctionCheckedFunc GetFindFunctionChecked();
 private:
     static DWORD mBase;

@@ -250,10 +250,36 @@ static void RecreateSimpleActors()
 static void ResetGameState()
 {
     AswEngine engine = XrdModule::GetEngine();
+    GameLogicManager manager = engine.GetGameLogicManager();
+
+    // Reset game state
     ResetGameFunc resetGame = XrdModule::GetResetGame();
-    DestroyAllSimpleActorsFunc destroySimpleActors = XrdModule::GetDestroyAllSimpleActors();
+    ResetGameUnrealScriptFunc resetGameUe = XrdModule::GetResetGameUnrealScript();
     resetGame(engine.GetOffset4(), 1);
-    destroySimpleActors(engine.GetGameLogicManager().GetPtr());
+    resetGameUe(manager.GetPtr());
+
+    // Clean up camera aim state. The game's reset functions don't fully
+    // clean up the list of active camera animations and another actor
+    // at BattleCamera+0x510 that needs to be destroyed. Normally these
+    // will be cleaned up next tick but if we are immediately loading
+    // another state that has active camera anims then we need to manually
+    // destroy these anims to prevent them being re-used by the loaded state.
+    DWORD battleCamera = manager.GetBattleCamera();
+    RemoveCameraAnimFunc removeAnim = XrdModule::GetRemoveCameraAnim();
+
+    // TODO: this will leak atm as actor is not properly destroyed.
+    DWORD& cameraTransformThing = *(DWORD*)(battleCamera + 0x510);
+    cameraTransformThing = 0;
+
+    // Iterate active anims and remove them. There is probably a reset array 
+    // function somewhere we can use but we will remove them one at a time the 
+    // same as the in game camera logic for consistency.
+    DWORD animCount = *(DWORD*)(battleCamera + 0x490);
+    for (DWORD i = 0; i < animCount; ++i)
+    {
+        DWORD nextAnim = **(DWORD**)(battleCamera + 0x48c);
+        removeAnim(battleCamera, nextAnim);
+    }
 }
 
 static void UpdateAnimations(const EntitySaveData* entitySaveData)

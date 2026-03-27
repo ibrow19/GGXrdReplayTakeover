@@ -326,11 +326,6 @@ PlayBurstMaxSoundFunc XrdModule::GetPlayBurstMaxSound()
     return (PlayBurstMaxSoundFunc)(mBase + 0xa62f00);
 }
 
-DestroyAllSimpleActorsFunc XrdModule::GetDestroyAllSimpleActors()
-{
-    return (DestroyAllSimpleActorsFunc)(mBase + 0x9d7500);
-}
-
 ResetGameFunc XrdModule::GetResetGame()
 {
     return (ResetGameFunc)(mBase + 0x9e7720);
@@ -344,6 +339,11 @@ ResetGameUnrealScriptFunc XrdModule::GetResetGameUnrealScript()
 ResetBattleCameraFunc XrdModule::GetResetBattleCamera()
 {
     return (ResetBattleCameraFunc)(mBase + 0xae4360);
+}
+
+RemoveCameraAnimFunc XrdModule::GetRemoveCameraAnim()
+{
+    return (RemoveCameraAnimFunc)(mBase + 0x2cc740);
 }
 
 FindFunctionCheckedFunc XrdModule::GetFindFunctionChecked()
