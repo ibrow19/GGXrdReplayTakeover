@@ -39,6 +39,11 @@ char* Entity::GetAnimationFrameName()
     return (char*)(mPtr + 0xa58);
 }
 
+DWORD& Entity::GetIsNotInCutscene()
+{
+    return *(DWORD*)(mPtr + 0x281c);
+}
+
 DWORD& Entity::GetHasNonPlayerComplexActor()
 {
     return *(DWORD*)(mPtr + 0x2878);

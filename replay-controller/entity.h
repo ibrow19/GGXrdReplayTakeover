@@ -23,6 +23,7 @@ public:
     DWORD& GetComplexActor();
     char* GetStateName();
     char* GetAnimationFrameName();
+    DWORD& GetIsNotInCutscene();
     // True when has complex actor and is not a player entity. Easy to
     // recaclulate so we can use this field for other things if we need to.
     DWORD& GetHasNonPlayerComplexActor();

@@ -159,7 +159,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
             {
                 Entity entity(entityPtr);
-                if (entity.GetComplexActor())
+                if (entity.GetComplexActor() && entity.GetIsNotInCutscene())
                 {
                     UpdateAnimationFunc updateAnim = XrdModule::GetUpdateComplexActorAnimation();
                     updateAnim(entityPtr, entity.GetAnimationFrameName(), 1);

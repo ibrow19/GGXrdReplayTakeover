@@ -287,7 +287,7 @@ static void UpdateAnimations(const EntitySaveData* entitySaveData)
     ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
         {
             Entity entity(entityPtr);
-            if (entity.GetComplexActor())
+            if (entity.GetComplexActor() && entity.GetIsNotInCutscene())
             {
                 UpdateAnimationFunc updateAnim = XrdModule::GetUpdateComplexActorAnimation();
                 updateAnim(entityPtr, entity.GetAnimationFrameName(), 1);
