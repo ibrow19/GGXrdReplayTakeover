@@ -17,11 +17,11 @@ public:
     void DetourTickSimpleActor(float delta);
     void DetourDisplayReplayHudMenu();
     static SetHealthFunc mRealSetHealth; 
-    static TickActorFunc mRealTickSimpleActor; 
+    static InternalTickActorFunc mRealTickSimpleActor; 
     static DisplayReplayHudMenuFunc mRealDisplayReplayHudMenu; 
 };
 SetHealthFunc ReplayDetourer::mRealSetHealth = nullptr;
-TickActorFunc ReplayDetourer::mRealTickSimpleActor = nullptr;
+InternalTickActorFunc ReplayDetourer::mRealTickSimpleActor = nullptr;
 DisplayReplayHudMenuFunc ReplayDetourer::mRealDisplayReplayHudMenu = nullptr;
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
@@ -216,7 +216,7 @@ void AddReplayMods()
     GRealUpdateTime = XrdModule::GetUpdateTime();
     GRealHandleInputs = XrdModule::GetHandleInputs();
     ReplayDetourer::mRealSetHealth = XrdModule::GetSetHealth();
-    ReplayDetourer::mRealTickSimpleActor = XrdModule::GetTickSimpleActor();
+    ReplayDetourer::mRealTickSimpleActor = XrdModule::GetInternalTickSimpleActor();
     ReplayDetourer::mRealDisplayReplayHudMenu = XrdModule::GetDisplayReplayHudMenu();
     void (ReplayDetourer::* detourSetHealth)(int) = &ReplayDetourer::DetourSetHealth;
     void (ReplayDetourer::* detourTickSimpleActor)(float) = &ReplayDetourer::DetourTickSimpleActor;

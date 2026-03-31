@@ -21,7 +21,8 @@ typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
 typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
 typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
-typedef void(__thiscall* TickActorFunc)(LPVOID actor, float delta);
+typedef void(__thiscall* InternalTickActorFunc)(LPVOID actor, float delta);
+typedef void(__cdecl* TickActorComponentsFunc)(DWORD actor, float delta, DWORD tickType, DWORD deferredList);
 typedef bool(__cdecl* CheckInBattleFunc)(void);
 typedef void(__cdecl* TickRelevantActorsFunc)(void);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
@@ -135,8 +136,14 @@ public:
     static SetHealthFunc GetSetHealth();
     static UpdateTimeFunc GetUpdateTime();
     static HandleInputsFunc GetHandleInputs();
-    static TickActorFunc GetTickActor();
-    static TickActorFunc GetTickSimpleActor();
+
+    // Internal tick functions called by  AActor::Tick member function.
+    // Could be TickSimulated, TickSpecial or TickAuthorative (haven't checked which)
+    static InternalTickActorFunc GetInternalTickActor();
+    static InternalTickActorFunc GetInternalTickSimpleActor();
+
+    // Called after an actor successfully ticks to tick each of its components.
+    static TickActorComponentsFunc GetTickActorComponents();
 
     // This function is used to tick actors online when resimulating for
     // rollbacks. A "relevant" actor is one where *(Actor + 0x34) == 0x11166000

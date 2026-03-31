@@ -301,14 +301,19 @@ HandleInputsFunc XrdModule::GetHandleInputs()
     return (HandleInputsFunc)(mBase + 0x9e0290);
 }
 
-TickActorFunc XrdModule::GetTickActor()
+InternalTickActorFunc XrdModule::GetInternalTickActor()
 {
-    return (TickActorFunc)(mBase + 0x275720);
+    return (InternalTickActorFunc)(mBase + 0x275720);
 }
 
-TickActorFunc XrdModule::GetTickSimpleActor()
+InternalTickActorFunc XrdModule::GetInternalTickSimpleActor()
 {
-    return (TickActorFunc)(mBase + 0x6ee9c0);
+    return (InternalTickActorFunc)(mBase + 0x6ee9c0);
+}
+
+TickActorComponentsFunc XrdModule::GetTickActorComponents()
+{
+    return (TickActorComponentsFunc)(mBase + 0x3bfa60);
 }
 
 TickRelevantActorsFunc XrdModule::GetTickRelevantActors()

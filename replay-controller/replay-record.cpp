@@ -113,8 +113,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         battlePressed = 0;
         battleHeld = 0;
 
-        // Relevant actors include entity's simple actors but also unrelated
-        // actors like hitspark or RC vfx.
+        // Relevant actors include entity's simple actors but also unrelated actors like hitspark or RC vfx.
         TickRelevantActorsFunc tickRelevantActors = XrdModule::GetTickRelevantActors();
         MainGameLogicFunc tickGame = XrdModule::GetOfflineMainGameLogic();
         GameLogicManager manager = XrdModule::GetEngine().GetGameLogicManager();
@@ -125,27 +124,50 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         // function and execute it with special functions.
         FindFunctionCheckedFunc findFunction = XrdModule::GetFindFunctionChecked();
         DWORD updateCameraUnrealScript = findFunction(battleCamera, XrdModule::GetTickFunctionFName(), XrdModule::GetTickFunctionGlobal(), 0);
-        
         typedef void(__thiscall* UnrealScriptFunc)(DWORD thisArg, DWORD func, float* delta, DWORD boolParam);
-        DWORD cameraVTable = *(DWORD*)battleCamera;
-        UnrealScriptFunc executeUnrealScript = *(UnrealScriptFunc*)(cameraVTable + 0x108);
+        constexpr DWORD executeVTableOffset = 0x108;
+        UnrealScriptFunc executeUnrealScript = (UnrealScriptFunc)GetVirtualFunction(battleCamera, executeVTableOffset);
+
+        // Tick constants as struct instead of constexpr so they can be passed to ForEachEntity
+        // Not sure why delta is 0.02 instead of 0.0166 but that seems to be what is used by the game
+        // Also, executeUnrealScript requires a pointer to the delta instead of a value
+        struct TickConstants
+        {
+            DWORD vTableOffset = 0x1a4;
+            DWORD tickTypeAll = 2;
+            float delta = 0.02f;
+        }; 
+        TickConstants constants;
 
         // If this actor is not ticked then cinematic camera blends in
         // special camera update will accumulate incorrectly during resimulation.
         // (Not sure yet exactly what this actor is for)
-        typedef void(__thiscall* TickAActorFunc)(DWORD thisArg, float delta, DWORD tickType);
-        DWORD viewActor = manager.GetViewActor();
-        DWORD viewActorVTable = *(DWORD*)(viewActor);
-        TickAActorFunc tickViewActor = *(TickAActorFunc*)(viewActorVTable + 0x1a4);
+        typedef void(__thiscall* TickActorFunc)(DWORD thisArg, float delta, DWORD tickType);
+        DWORD viewActor = manager.GetViewActor(); 
+        TickActorFunc tickViewActor = (TickActorFunc)GetVirtualFunction(viewActor, constants.vTableOffset);
 
         while (mCurrentFrame != index)
         {
             tickGame(managerPtr, 1);
             tickRelevantActors();
 
-            float cameraDelta = 0.02f;
-            tickViewActor(viewActor, cameraDelta, 2 /* TickType_All */);
-            executeUnrealScript(battleCamera, updateCameraUnrealScript, &cameraDelta, 0);
+            // Tick complex actors so that they update their animations.
+            ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
+                {
+                    Entity entity(entityPtr);
+                    DWORD complexActor = entity.GetComplexActor();
+                    TickConstants& constants = *(TickConstants*)extraData;
+                    if (complexActor)
+                    {
+                        TickActorFunc tickComplexActor = (TickActorFunc)GetVirtualFunction(complexActor, constants.vTableOffset);
+                        tickComplexActor(complexActor, constants.delta, constants.tickTypeAll);
+                        TickActorComponentsFunc tickComponents = XrdModule::GetTickActorComponents();
+                        tickComponents(complexActor, constants.delta, constants.tickTypeAll, /*DeferredList=*/ 0);
+                    }
+                }, &constants);
+    
+            tickViewActor(viewActor, constants.delta, constants.tickTypeAll);
+            executeUnrealScript(battleCamera, updateCameraUnrealScript, &constants.delta, 0);
 
             if (XrdModule::GetPreOrPostBattle())
             {
@@ -153,18 +175,6 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
             }
             RecordFrame();
         }
-
-        // Update players and other complex actors to the correct animation
-        // state after we've finished advancing the game state.
-        ForEachEntity([](DWORD entityPtr, DWORD index, void* extraData)
-            {
-                Entity entity(entityPtr);
-                if (entity.GetComplexActor() && entity.GetIsNotInCutscene())
-                {
-                    UpdateAnimationFunc updateAnim = XrdModule::GetUpdateComplexActorAnimation();
-                    updateAnim(entityPtr, entity.GetAnimationFrameName(), 1);
-                }
-            });
 
         // Restore original input.
         // If we don't restore the inputs then there are weird side effects 

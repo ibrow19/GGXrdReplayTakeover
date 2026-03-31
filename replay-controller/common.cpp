@@ -46,3 +46,10 @@ void ForEachEntity(EntityFunc func, void* extraData)
         func(entityList[i], i, extraData);
     }
 }
+
+void* GetVirtualFunction(DWORD ptr, DWORD vTableOffset)
+{
+    assert(ptr);
+    DWORD vTable = *(DWORD*)ptr;
+    return *(void**)(vTable + vTableOffset);
+}

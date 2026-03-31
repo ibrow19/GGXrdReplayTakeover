@@ -297,7 +297,7 @@ static void UpdateAnimations(const EntitySaveData* entitySaveData)
             if (simpleActor)
             {
                 EntitySaveData* saveData = (EntitySaveData*)extraData;
-                TickActorFunc tickActor = XrdModule::GetTickSimpleActor();
+                InternalTickActorFunc tickActor = XrdModule::GetInternalTickSimpleActor();
                 float delta = saveData[index].simpleActorTime;
                 TimeStepData timeStepData = SimpleActor(simpleActor).GetTimeStepData();
                 if (timeStepData.IsValid() && timeStepData.ShouldUseFixedTimeStep())
@@ -473,7 +473,6 @@ void CreateSimpleActorDetourer::DetourCreateSimpleActor(char* name, DWORD type)
     Entity entity((DWORD)this);
     // Assuming none of the names passed to this function are on the heap.
     entity.GetSimpleActorSaveData() = (DWORD)name;
-
 
     // Replace non-player complex actor flag with actor type so we know how 
     // to recreate this actor. We can programatically restore the flag before 
