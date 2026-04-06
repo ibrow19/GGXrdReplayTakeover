@@ -122,7 +122,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         // tick event function and execute it with process event
         FindFunctionCheckedFunc findFunction = XrdModule::GetFindFunctionChecked();
         DWORD updateCameraUnrealScript = findFunction(battleCamera, XrdModule::GetTickFunctionFName(), XrdModule::GetTickFunctionGlobal(), 0);
-        ProcessEventFunc cameraProcessEvent = (ProcessEventFunc)GetVirtualFunction(battleCamera, XrdVTables::UObjectProcessEvent);
+        ProcessEventFunc processEvent = (ProcessEventFunc)GetVirtualFunction(battleCamera, XrdVTables::UObjectProcessEvent);
 
         // Tick constants as struct instead of constexpr so they can be passed to ForEachEntity
         // Not sure why delta is 0.02 instead of 0.0166 but that seems to be what is used by the game
@@ -161,7 +161,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
                 }, &constants);
     
             tickViewActor(viewActor, constants.delta, constants.tickTypeAll);
-            cameraProcessEvent(battleCamera, updateCameraUnrealScript, &constants.delta, 0);
+            processEvent(battleCamera, updateCameraUnrealScript, &constants.delta, 0);
 
             if (XrdModule::GetPreOrPostBattle())
             {
@@ -181,11 +181,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
 
         ReplayDetourSettings::bOverrideSimpleActorPause = false;
         EnableInputDisplay();
-
-        // Stop any sound that played while resimulating.
-        ProcessEventFunc managerProcessEvent = (ProcessEventFunc)GetVirtualFunction(manager.GetPtr(), XrdVTables::UObjectProcessEvent);
-        DWORD stopSound = findFunction(manager.GetPtr(), XrdFNames::StopSound, 0, 0);
-        managerProcessEvent(manager.GetPtr(), stopSound, nullptr, nullptr);
+        manager.StopSound();
     }
     return mCurrentFrame;
 }

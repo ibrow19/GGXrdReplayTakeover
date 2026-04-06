@@ -38,4 +38,6 @@ public:
     // other pause flags which pause the game more completely but this one 
     // is better suited for what we want to do with replay scrubbing.
     DWORD& GetPauseEngineUpdateFlag();
+
+    void StopSound();
 };

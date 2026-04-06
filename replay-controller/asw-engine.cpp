@@ -1,6 +1,8 @@
 #include <asw-engine.h>
 #include <entity.h>
 #include <replay-hud.h>
+#include <xrd-module.h>
+#include <common.h>
 #include <cassert>
 
 AswEngine::AswEngine(DWORD inPtr)
@@ -78,4 +80,12 @@ DWORD& GameLogicManager::GetPauseEngineUpdateFlag()
     DWORD pauseObject = *(DWORD*)(mPtr + 0x37c);
     assert(pauseObject);
     return *(DWORD*)(pauseObject + 0x1c8);
+}
+
+void GameLogicManager::StopSound()
+{
+    FindFunctionCheckedFunc findFunction = XrdModule::GetFindFunctionChecked();
+    ProcessEventFunc processEvent = (ProcessEventFunc)GetVirtualFunction(mPtr, XrdVTables::UObjectProcessEvent);
+    DWORD stopSound = findFunction(mPtr, XrdFNames::StopSound, 0, 0);
+    processEvent(mPtr, stopSound, nullptr, nullptr);
 }
