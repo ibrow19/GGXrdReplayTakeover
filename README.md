@@ -67,8 +67,6 @@ Save states uses contextual controls based on whether the SP/Special Move button
 After loading a state with Special Move + Play the behaviour of the Reset button will change to load that state for convenience instead of resetting to the default training mode position. The normal Reset behaviour can be restored by holding any direction while pressing reset.
 
 ## Known Issues
-- Cinematic supers that alter camera angle will display incorrectly while rewinding or fast forwarding a replay. Camera blending is currently very buggy with how rewinding works but it won't break any game logic.
-- Cinematic supers that feature close ups of character's faces will also not show these cut ins correctly while navigating replays or loading save states. In these supers the game usually displays a special more detailed character model for the duration of the super freeze and the regular character actor gets hidden. This information is not properly perserved by save states atm and the more detailed model does not get displayed. This will make a lot of supers look very wack but won't break any game logic.
 - Input history will display incorrectly while rewinding. Rewinding works by loading an older state then resimulating up to the desired frame, currently this results in the input history being filled with inputs from this resimulation.
 - Several HUD elements display incorrectly when rewinding. For example, you may see duplicate counter hit messages and gauges like the eddie meter can get stuck on the wrong value. These errors are purely visual and do not affect the game logic. There is save state logic for handling these UI elements, but I currently have it disabled to improve stability as it was causing rare crashes during garbage collection.
 - Loading a save state while Jack-O has placed house can sometimes cause a crash.
@@ -76,4 +74,4 @@ After loading a state with Special Move + Play the behaviour of the Reset button
 - Treasure hunted coins thrown by Johnny are invisible in loaded states/when rewinding. They require character specific initialisation that is not currently handled properly while loading states.
 
 ## Attributions
-Many thanks to all the Xrd mods and related documentation created by Pangaea (@super-continent), @kkots and WorseThanYou. Their work was an amazing resource for learning how to mod Xrd which enabled me to create this.
+Many thanks to all the Xrd mods and related documentation created by Pangaea (@super-continent), @WistfulHopes, @kkots and WorseThanYou. Their work was an amazing resource for learning how to mod Xrd which enabled me to create this.
