@@ -93,9 +93,8 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
     // Simulate forward to desired frame.
     if (mCurrentFrame != index)
     {
-        // Override pausing and disable sound effects/input display while simulating
+        // Override pausing and disable input display while simulating
         ReplayDetourSettings::bOverrideSimpleActorPause = true;
-        DisableSoundEffects();
         DisableInputDisplay();
 
         // Clear input before simulating. Restore it after the simulation.
@@ -117,23 +116,19 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         TickRelevantActorsFunc tickRelevantActors = XrdModule::GetTickRelevantActors();
         MainGameLogicFunc tickGame = XrdModule::GetOfflineMainGameLogic();
         GameLogicManager manager = XrdModule::GetEngine().GetGameLogicManager();
-        LPVOID managerPtr = (LPVOID)manager.GetPtr();
         DWORD battleCamera = manager.GetBattleCamera();
 
         // Camera update function is unreal script so we need to look up the
-        // function and execute it with special functions.
+        // tick event function and execute it with process event
         FindFunctionCheckedFunc findFunction = XrdModule::GetFindFunctionChecked();
         DWORD updateCameraUnrealScript = findFunction(battleCamera, XrdModule::GetTickFunctionFName(), XrdModule::GetTickFunctionGlobal(), 0);
-        typedef void(__thiscall* UnrealScriptFunc)(DWORD thisArg, DWORD func, float* delta, DWORD boolParam);
-        constexpr DWORD executeVTableOffset = 0x108;
-        UnrealScriptFunc executeUnrealScript = (UnrealScriptFunc)GetVirtualFunction(battleCamera, executeVTableOffset);
+        ProcessEventFunc cameraProcessEvent = (ProcessEventFunc)GetVirtualFunction(battleCamera, XrdVTables::UObjectProcessEvent);
 
         // Tick constants as struct instead of constexpr so they can be passed to ForEachEntity
         // Not sure why delta is 0.02 instead of 0.0166 but that seems to be what is used by the game
         // Also, executeUnrealScript requires a pointer to the delta instead of a value
         struct TickConstants
         {
-            DWORD vTableOffset = 0x1a4;
             DWORD tickTypeAll = 2;
             float delta = 0.02f;
         }; 
@@ -142,13 +137,12 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         // If this actor is not ticked then cinematic camera blends in
         // special camera update will accumulate incorrectly during resimulation.
         // (Not sure yet exactly what this actor is for)
-        typedef void(__thiscall* TickActorFunc)(DWORD thisArg, float delta, DWORD tickType);
         DWORD viewActor = manager.GetViewActor(); 
-        TickActorFunc tickViewActor = (TickActorFunc)GetVirtualFunction(viewActor, constants.vTableOffset);
+        TickActorFunc tickViewActor = (TickActorFunc)GetVirtualFunction(viewActor, XrdVTables::AActorTick);
 
         while (mCurrentFrame != index)
         {
-            tickGame(managerPtr, 1);
+            tickGame((LPVOID)manager.GetPtr(), 1);
             tickRelevantActors();
 
             // Tick complex actors so that they update their animations.
@@ -159,7 +153,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
                     TickConstants& constants = *(TickConstants*)extraData;
                     if (complexActor)
                     {
-                        TickActorFunc tickComplexActor = (TickActorFunc)GetVirtualFunction(complexActor, constants.vTableOffset);
+                        TickActorFunc tickComplexActor = (TickActorFunc)GetVirtualFunction(complexActor, XrdVTables::AActorTick);
                         tickComplexActor(complexActor, constants.delta, constants.tickTypeAll);
                         TickActorComponentsFunc tickComponents = XrdModule::GetTickActorComponents();
                         tickComponents(complexActor, constants.delta, constants.tickTypeAll, /*DeferredList=*/ 0);
@@ -167,7 +161,7 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
                 }, &constants);
     
             tickViewActor(viewActor, constants.delta, constants.tickTypeAll);
-            executeUnrealScript(battleCamera, updateCameraUnrealScript, &constants.delta, 0);
+            cameraProcessEvent(battleCamera, updateCameraUnrealScript, &constants.delta, 0);
 
             if (XrdModule::GetPreOrPostBattle())
             {
@@ -186,10 +180,13 @@ size_t ReplayRecord::SetFrame(size_t index, bool bForceLoad)
         battleHeld = oldBattleHeld;
 
         ReplayDetourSettings::bOverrideSimpleActorPause = false;
-        EnableSoundEffects();
         EnableInputDisplay();
-    }
 
+        // Stop any sound that played while resimulating.
+        ProcessEventFunc managerProcessEvent = (ProcessEventFunc)GetVirtualFunction(manager.GetPtr(), XrdVTables::UObjectProcessEvent);
+        DWORD stopSound = findFunction(manager.GetPtr(), XrdFNames::StopSound, 0, 0);
+        managerProcessEvent(manager.GetPtr(), stopSound, nullptr, nullptr);
+    }
     return mCurrentFrame;
 }
 

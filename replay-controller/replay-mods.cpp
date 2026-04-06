@@ -29,15 +29,6 @@ static AddUiTextFunc GRealAddUiText = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
 
-namespace SoundSettings
-{
-    static float cachedEffectVolume = 0.f;
-    static float cachedVoiceVolume = 0.f;
-    static float cachedSuperVoiceVolume = 0.f;
-    static float cachedSystemVoiceVolume = 0.f;
-    static bool bCached = false;
-}
-
 void ReplayDetourer::DetourSetHealth(int newHealth)
 {
     ReplayController* controller = GameModeController::Get<ReplayController>();
@@ -188,7 +179,6 @@ void AddReplayMods()
     ReplayDetourSettings::bOverrideSimpleActorPause = false;
     ReplayDetourSettings::bOverrideHudText = false;
     ReplayDetourSettings::bAddingFirstTextRow = false;
-    SoundSettings::bCached = false;
 
     // Make regions writable for instruction editing.
 
@@ -242,7 +232,6 @@ void RemoveReplayMods()
     BYTE* instruction = XrdModule::GetControllerIndexInstruction();
     *instruction = 0x56;
 
-    EnableSoundEffects();
     EnableInputDisplay();
 
     // Detach detours
@@ -262,35 +251,6 @@ void RemoveReplayMods()
     DetourTransactionCommit();
 
     DetachSaveStateDetours();
-}
-
-void DisableSoundEffects()
-{
-    SoundData soundData = XrdModule::GetSoundData();
-    SoundSettings::cachedEffectVolume = soundData.GetBattleEffectVolume();
-    SoundSettings::cachedVoiceVolume = soundData.GetBattleVoiceVolume();
-    SoundSettings::cachedSuperVoiceVolume = soundData.GetBattleSuperVoiceVolume();
-    SoundSettings::cachedSystemVoiceVolume = soundData.GetBattleSystemVoiceVolume();
-
-    soundData.GetBattleEffectVolume() = 0.f;
-    soundData.GetBattleVoiceVolume() = 0.f;
-    soundData.GetBattleSuperVoiceVolume() = 0.f;
-    soundData.GetBattleSystemVoiceVolume() = 0.f;
-
-    SoundSettings::bCached = true;
-}
-
-void EnableSoundEffects()
-{
-    if (SoundSettings::bCached)
-    {
-        SoundSettings::bCached = false;
-        SoundData soundData = XrdModule::GetSoundData();
-        soundData.GetBattleEffectVolume() = SoundSettings::cachedEffectVolume;
-        soundData.GetBattleVoiceVolume() = SoundSettings::cachedVoiceVolume;
-        soundData.GetBattleSuperVoiceVolume() = SoundSettings::cachedSuperVoiceVolume;
-        soundData.GetBattleSuperVoiceVolume() = SoundSettings::cachedSuperVoiceVolume;
-    }
 }
 
 // The input display is added to the screen every frame. If we do this while

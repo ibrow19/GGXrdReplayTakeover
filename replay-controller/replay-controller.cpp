@@ -437,9 +437,6 @@ void ReplayController::HandleTakeoverMode()
 
 void ReplayController::Tick()
 {
-    // Re-enable sound effects if they got disabled by the mod on a previous frame.
-    EnableSoundEffects();
-
     if (XrdModule::IsPauseMenuActive())
     {
         return;
@@ -493,7 +490,6 @@ void ReplayController::Tick()
     if (IsPaused())
     {
         XrdModule::GetEngine().GetGameLogicManager().GetPauseEngineUpdateFlag() = 1;
-        DisableSoundEffects();
     }
 }
 

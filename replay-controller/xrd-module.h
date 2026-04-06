@@ -21,8 +21,10 @@ typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
 typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
 typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
+typedef void(__thiscall* TickActorFunc)(DWORD thisArg, float delta, DWORD tickType);
 typedef void(__thiscall* InternalTickActorFunc)(LPVOID actor, float delta);
 typedef void(__cdecl* TickActorComponentsFunc)(DWORD actor, float delta, DWORD tickType, DWORD deferredList);
+typedef void(__thiscall* ProcessEventFunc)(DWORD uObject, DWORD function, void* params, void* unusedResult);
 typedef bool(__cdecl* CheckInBattleFunc)(void);
 typedef void(__cdecl* TickRelevantActorsFunc)(void);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackManager);
@@ -168,4 +170,16 @@ public:
     static FindFunctionCheckedFunc GetFindFunctionChecked();
 private:
     static DWORD mBase;
+};
+
+// Offsets of various functions in vtables of various different objects.
+struct XrdVTables
+{
+    static constexpr DWORD UObjectProcessEvent = 0x108;
+    static constexpr DWORD AActorTick = 0x1a4;
+};
+
+struct XrdFNames
+{
+    static constexpr DWORD StopSound = 0x349a;
 };

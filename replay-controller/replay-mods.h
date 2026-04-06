@@ -14,8 +14,5 @@ namespace ReplayDetourSettings
 void AddReplayMods();
 void RemoveReplayMods();
 
-void DisableSoundEffects();
-void EnableSoundEffects();
-
 void DisableInputDisplay();
 void EnableInputDisplay();
