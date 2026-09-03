@@ -1,9 +1,9 @@
 [submodule "imgui"]
-	path = imgui
+	path = vendor/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "Detours"]
-	path = Detours
+	path = vendor/Detours
 	url = https://github.com/microsoft/Detours.git
 [submodule "implot"]
-	path = implot
+	path = vendor/implot
 	url = https://github.com/epezent/implot.git
