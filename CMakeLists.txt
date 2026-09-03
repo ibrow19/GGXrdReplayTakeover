@@ -13,8 +13,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 option(IMGUI_OVERLAY "Use ImGui debug overlay" OFF)
 option(PROFILING "Profiling" OFF)
 
-set(DETOURS_LIB ${PROJECT_SOURCE_DIR}/Detours/lib.X86/detours.lib)
-set(DETOURS_INCLUDES Detours/include/)
+set(VENDOR_DIR ${PROJECT_SOURCE_DIR}/vendor)
+set(DETOURS_LIB ${VENDOR_DIR}/Detours/lib.X86/detours.lib)
+set(DETOURS_INCLUDES ${VENDOR_DIR}/Detours/include/)
 
 set(INJECTOR_DIR injector)
 file(GLOB_RECURSE INJECTOR_SOURCES ${INJECTOR_DIR}/*.cpp)
@@ -30,9 +31,17 @@ if (PROFILING)
 endif()
 
 if (IMGUI_OVERLAY)
-    set(IMGUI_SOURCES imgui/imgui.cpp imgui/imgui_draw.cpp imgui/imgui_tables.cpp imgui/imgui_widgets.cpp implot/implot.cpp implot/implot_items.cpp)
-    set(IMGUI_BACKEND_SOURCES imgui/backends/imgui_impl_dx9.cpp imgui/backends/imgui_impl_win32.cpp)
-    set(IMGUI_DIRS imgui imgui/backends/ implot)
+    set(IMGUI_DIR ${VENDOR_DIR}/imgui)
+    set(IMPLOT_DIR ${VENDOR_DIR}/implot)
+    set(IMGUI_SOURCES 
+        ${IMGUI_DIR}/imgui.cpp 
+        ${IMGUI_DIR}/imgui_draw.cpp 
+        ${IMGUI_DIR}/imgui_tables.cpp 
+        ${IMGUI_DIR}/imgui_widgets.cpp 
+        ${IMPLOT_DIR}/implot.cpp 
+        ${IMPLOT_DIR}/implot_items.cpp) 
+    set(IMGUI_BACKEND_SOURCES ${IMGUI_DIR}/backends/imgui_impl_dx9.cpp ${IMGUI_DIR}/backends/imgui_impl_win32.cpp)
+    set(IMGUI_INCLUDE_DIRS ${IMGUI_DIR} ${IMGUI_DIR}/backends/ ${IMPLOT_DIR})
 
     add_definitions(-DUSE_IMGUI_OVERLAY)
 
