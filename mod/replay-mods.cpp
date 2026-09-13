@@ -150,9 +150,8 @@ void ReplayDetourer::DetourUpdateInputBuffer(DWORD inputMask)
     {
         return;
     }
-    mRealUpdateInputBuffer(dwordThis, inputMask);
+    mRealUpdateInputBuffer(this, inputMask);
 }
-
 
 void DetourAddUiText(DWORD* textParams, DWORD param1, DWORD param2, DWORD param3, DWORD param4, DWORD param5)
 {

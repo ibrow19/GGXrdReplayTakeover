@@ -22,7 +22,7 @@ typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
 typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
 typedef bool(__thiscall* ShouldPreventInputUpdateFunc)(LPVOID thisParam, DWORD player, DWORD* outInputMask);
-typedef void(__thiscall* UpdateInputBufferFunc)(DWORD inputBuffer, DWORD inputMask);
+typedef void(__thiscall* UpdateInputBufferFunc)(LPVOID inputBuffer, DWORD inputMask);
 typedef void(__thiscall* TickActorFunc)(DWORD thisParam, float delta, DWORD tickType);
 typedef void(__thiscall* InternalTickActorFunc)(LPVOID actor, float delta);
 typedef void(__cdecl* TickActorComponentsFunc)(DWORD actor, float delta, DWORD tickType, DWORD deferredList);
