@@ -244,20 +244,27 @@ void ReplayController::ResetPlayerControl()
     inputManager.SetP2InputMode(InputMode::Replay);
 }
 
+// Player control is stored in repurposed button display mode
+static DWORD GetTakeoverPlayerID()
+{
+    return XrdModule::GetButtonDisplayMode();
+}
+
+// Note: Bookmark must be set before initating countdown.
 void ReplayController::InitiateCountdown()
 {
     // Override player control based on current settings.
-    // (Player control is stored in repurposed button display mode)
     InputManager inputManager = XrdModule::GetInputManager();
-    if (XrdModule::GetButtonDisplayMode())
-    {
-        inputManager.SetP1InputMode(InputMode::Replay);
-        inputManager.SetP2InputMode(InputMode::Player);
-    }
-    else
+    DWORD takeoverID = GetTakeoverPlayerID();
+    if (takeoverID == 0)
     {
         inputManager.SetP1InputMode(InputMode::Player);
         inputManager.SetP2InputMode(InputMode::Replay);
+    }
+    else
+    {
+        inputManager.SetP1InputMode(InputMode::Replay);
+        inputManager.SetP2InputMode(InputMode::Player);
     }
 
     mCountdown = 0;
@@ -265,6 +272,14 @@ void ReplayController::InitiateCountdown()
     // Note: by always going to countdown mode and not straight to takeover mode
     // when the countdown total is 0 we force at least 1 frame of countdown.
     mMode = ReplayTakeoverMode::TakeoverCountdown;
+
+    // At round start we allow buffering inputs so we need to disable the
+    // inputs of the non-controlled player while counting down.
+    if (mBookmarkFrame == 0)
+    {
+        DWORD nonTakeoverID = (takeoverID + 1) % 2;
+        ReplayDetourSettings::disableInput = (DisableInputMode)nonTakeoverID;
+    }
 }
 
 void ReplayController::HandleDisabledMode()
@@ -428,9 +443,20 @@ void ReplayController::HandleTakeoverMode()
         ++mCountdown;
         // Countdown total is stored in repurposed training mode P1 max health.
         int countdownTotal = XrdModule::GetTrainingP1MaxHealth();
+        bool bRoundStart = mBookmarkFrame == 0;
         if (mCountdown >= countdownTotal)
         {
             mMode = ReplayTakeoverMode::TakeoverControl;
+            if (bRoundStart)
+            {
+                ReplayDetourSettings::disableInput = DisableInputMode::None;
+            }
+        }
+        else if (bRoundStart)
+        {
+            // Record inputs for round start input buffer
+            HandleInputsFunc handleInputs = XrdModule::GetHandleInputs();
+            handleInputs(XrdModule::GetEngine().GetOffset4());
         }
     }
 }

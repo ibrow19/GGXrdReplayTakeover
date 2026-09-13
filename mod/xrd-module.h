@@ -1,8 +1,8 @@
 #pragma once
 
-#include <windows.h>
+#include <common.h>
 
-typedef void(__thiscall* MainGameLogicFunc)(LPVOID thisArg, DWORD param);
+typedef void(__thiscall* MainGameLogicFunc)(LPVOID thisParam, DWORD param);
 typedef void(__fastcall* UpdateCameraFunc)(DWORD param);
 typedef void(__fastcall* UpdateBattleHudFunc)(DWORD param);
 typedef void(__thiscall* SetStringFunc)(char* dest, char* src);
@@ -12,16 +12,18 @@ typedef void(__thiscall* DisplayReplayHudMenuFunc)(LPVOID replayHud);
 typedef void(__cdecl* AddUiTextFunc)(DWORD* textParams, DWORD param1, DWORD param2, DWORD param3, DWORD param4, DWORD param5);
 typedef DWORD(__fastcall* GetSaveStateTrackerFunc)(DWORD manager);
 typedef void(__fastcall* EntityActorManagementFunc)(DWORD engine);
-typedef void(__thiscall* CreateActorFunc)(LPVOID thisArg, char* name, DWORD type);
-typedef void(__thiscall* CreateBedmanSealActorFunc)(LPVOID thisArg, char* name);
+typedef void(__thiscall* CreateActorFunc)(LPVOID thisParam, char* name, DWORD type);
+typedef void(__thiscall* CreateBedmanSealActorFunc)(LPVOID thisParam, char* name);
 typedef void(__fastcall* DestroyActorFunc)(DWORD entity);
 typedef void(__thiscall* UpdateAnimationFunc)(DWORD entity, char* stateName, DWORD flag);
-typedef void(__thiscall* SetGameModeFunc)(LPVOID thisArg, DWORD newMode);
+typedef void(__thiscall* SetGameModeFunc)(LPVOID thisParam, DWORD newMode);
 typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
 typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
 typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
-typedef void(__thiscall* TickActorFunc)(DWORD thisArg, float delta, DWORD tickType);
+typedef bool(__thiscall* ShouldPreventInputUpdateFunc)(LPVOID thisParam, DWORD player, DWORD* outInputMask);
+typedef void(__thiscall* UpdateInputBufferFunc)(DWORD inputBuffer, DWORD inputMask);
+typedef void(__thiscall* TickActorFunc)(DWORD thisParam, float delta, DWORD tickType);
 typedef void(__thiscall* InternalTickActorFunc)(LPVOID actor, float delta);
 typedef void(__cdecl* TickActorComponentsFunc)(DWORD actor, float delta, DWORD tickType, DWORD deferredList);
 typedef void(__thiscall* ProcessEventFunc)(DWORD uObject, DWORD function, void* params, void* unusedResult);
@@ -138,6 +140,13 @@ public:
     static SetHealthFunc GetSetHealth();
     static UpdateTimeFunc GetUpdateTime();
     static HandleInputsFunc GetHandleInputs();
+    static ShouldPreventInputUpdateFunc GetShouldPreventInputUpdate();
+    static DWORD GetInputUpdateObject();
+
+    // Adds an input to a player's input buffer. If the input has not changed
+    // since the last time it received input then it will just update a frame
+    // counter for the time since the last change in input
+    static UpdateInputBufferFunc GetUpdateInputBuffer();
 
     // Internal tick functions called by  AActor::Tick member function.
     // Could be TickSimulated, TickSpecial or TickAuthorative (haven't checked which)

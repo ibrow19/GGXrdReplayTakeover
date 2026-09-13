@@ -10,19 +10,32 @@
 #include <audio.h>
 #include <cassert>
 
+// Parameters that need to persist accross detoured function calls
+namespace ReplayHudDetourFlags
+{
+    static bool bOverrideHudText = false;
+    static bool bAddingFirstTextRow = false;
+};
+
 class ReplayDetourer
 {
 public:
     void DetourSetHealth(int newHealth);
     void DetourTickSimpleActor(float delta);
     void DetourDisplayReplayHudMenu();
+    bool DetourShouldPreventInputUpdate(DWORD player, DWORD* outInputMask);
+    void DetourUpdateInputBuffer(DWORD inputMask);
     static SetHealthFunc mRealSetHealth; 
     static InternalTickActorFunc mRealTickSimpleActor; 
     static DisplayReplayHudMenuFunc mRealDisplayReplayHudMenu; 
+    static ShouldPreventInputUpdateFunc mRealShouldPreventInputUpdate; 
+    static UpdateInputBufferFunc mRealUpdateInputBuffer; 
 };
 SetHealthFunc ReplayDetourer::mRealSetHealth = nullptr;
 InternalTickActorFunc ReplayDetourer::mRealTickSimpleActor = nullptr;
 DisplayReplayHudMenuFunc ReplayDetourer::mRealDisplayReplayHudMenu = nullptr;
+ShouldPreventInputUpdateFunc ReplayDetourer::mRealShouldPreventInputUpdate = nullptr;
+UpdateInputBufferFunc ReplayDetourer::mRealUpdateInputBuffer = nullptr;
 
 static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static AddUiTextFunc GRealAddUiText = nullptr;
@@ -74,8 +87,8 @@ void ReplayDetourer::DetourTickSimpleActor(float delta)
 
 void ReplayDetourer::DetourDisplayReplayHudMenu()
 {
-    ReplayDetourSettings::bOverrideHudText = true;
-    ReplayDetourSettings::bAddingFirstTextRow = true;
+    ReplayHudDetourFlags::bOverrideHudText = true;
+    ReplayHudDetourFlags::bAddingFirstTextRow = true;
 
     ReplayController* controller = GameModeController::Get<ReplayController>();
     assert(controller);
@@ -104,39 +117,70 @@ void ReplayDetourer::DetourDisplayReplayHudMenu()
         nextRound = realNextRound;
         cameraUnavailable = realCameraUnavailable;
     }
-    ReplayDetourSettings::bOverrideHudText = false;
+    ReplayHudDetourFlags::bOverrideHudText = false;
 }
+
+bool ReplayDetourer::DetourShouldPreventInputUpdate(DWORD player, DWORD* outInputMask)
+{
+    // We could avoid calling the real function altogether when the player is
+    // disabled but I'm not 100% sure it doesn't modify state somewhere.
+    bool bResult = mRealShouldPreventInputUpdate((LPVOID)this, player, outInputMask);
+    if (ReplayDetourSettings::disableInput == DisableInputMode::None || bResult)
+    {
+        return bResult;
+    }
+
+    DWORD disabledPlayer = (DWORD)ReplayDetourSettings::disableInput;
+    if (disabledPlayer == player)
+    {
+        *outInputMask = 0;
+        return true;
+    }
+    return bResult;
+}
+
+void ReplayDetourer::DetourUpdateInputBuffer(DWORD inputMask)
+{
+    AswEngine engine = XrdModule::GetEngine();
+    DWORD P1InputBuffer = engine.GetP1InputBuffer();
+    DWORD P2InputBuffer = engine.GetP2InputBuffer();
+    DWORD dwordThis = (DWORD)this;
+    if ((ReplayDetourSettings::disableInput == DisableInputMode::DisableP1 && dwordThis == P1InputBuffer)
+     || (ReplayDetourSettings::disableInput == DisableInputMode::DisableP2 && dwordThis == P2InputBuffer))
+    {
+        return;
+    }
+    mRealUpdateInputBuffer(dwordThis, inputMask);
+}
+
 
 void DetourAddUiText(DWORD* textParams, DWORD param1, DWORD param2, DWORD param3, DWORD param4, DWORD param5)
 {
     GRealAddUiText(textParams, param1, param2, param3, param4, param5);
-    if (ReplayDetourSettings::bOverrideHudText)
+    if (ReplayHudDetourFlags::bOverrideHudText && ReplayHudDetourFlags::bAddingFirstTextRow)
     {
-        if (ReplayDetourSettings::bAddingFirstTextRow)
+        float* spacing = &(float)textParams[3];
+        float prevSpacing = *spacing;
+        
+        // Play/pause isn't shown before round begins/after it ends so we
+        // need less spacing in those cases.
+        int textElements = 9;
+        ReplayController* controller = GameModeController::Get<ReplayController>();
+        assert(controller);
+        if (!XrdModule::CheckInBattle())
         {
-            float* spacing = &(float)textParams[3];
-            float prevSpacing = *spacing;
-
-            // Play/pause isn't shown before round begins/after it ends so we
-            // need less spacing in those cases.
-            int textElements = 9;
-            ReplayController* controller = GameModeController::Get<ReplayController>();
-            assert(controller);
-            if (!XrdModule::CheckInBattle())
-            {
-                --textElements;
-            }
-            *spacing += XrdModule::GetReplayTextSpacing() * textElements;
-
-            // This entry in the text parameters is a label for identifying
-            // the text to display. It is not the actual text that gets displayed.
-            char** textLabel = &(char*)textParams[10];
-            *textLabel = "TrainingEtc_ComboDamage";
-
-            GRealAddUiText(textParams, param1, param2, param3, param4, param5);
-            *spacing = prevSpacing;
-            ReplayDetourSettings::bAddingFirstTextRow = false;
+            --textElements;
         }
+        *spacing += XrdModule::GetReplayTextSpacing() * textElements;
+        
+        // This entry in the text parameters is a label for identifying
+        // the text to display. It is not the actual text that gets displayed.
+        char** textLabel = &(char*)textParams[10];
+        *textLabel = "TrainingEtc_ComboDamage";
+        
+        GRealAddUiText(textParams, param1, param2, param3, param4, param5);
+        *spacing = prevSpacing;
+        ReplayHudDetourFlags::bAddingFirstTextRow = false;
     }
 }
 
@@ -177,8 +221,10 @@ void AddReplayMods()
     // Reset Settings
     ReplayDetourSettings::bReplayFrameStep = false;
     ReplayDetourSettings::bOverrideSimpleActorPause = false;
-    ReplayDetourSettings::bOverrideHudText = false;
-    ReplayDetourSettings::bAddingFirstTextRow = false;
+    ReplayDetourSettings::disableInput = DisableInputMode::None;
+
+    ReplayHudDetourFlags::bOverrideHudText = false;
+    ReplayHudDetourFlags::bAddingFirstTextRow = false;
 
     // Make regions writable for instruction editing.
 
@@ -192,6 +238,8 @@ void AddReplayMods()
     // is always 0 here in replays. However, EDX can be 1 in other modes such
     // as training so we need to make sure we change the instruction back once
     // we're done so that we don't break the other game modes.
+    // Also note that we can't just change it to "Push 0" since that opcode is
+    // more bytes than a register push instruction.
     BYTE* controllerInstruction = XrdModule::GetControllerIndexInstruction();
     MakeRegionWritable((DWORD)controllerInstruction, 1);
     *controllerInstruction = 0x52;
@@ -208,9 +256,13 @@ void AddReplayMods()
     ReplayDetourer::mRealSetHealth = XrdModule::GetSetHealth();
     ReplayDetourer::mRealTickSimpleActor = XrdModule::GetInternalTickSimpleActor();
     ReplayDetourer::mRealDisplayReplayHudMenu = XrdModule::GetDisplayReplayHudMenu();
+    ReplayDetourer::mRealShouldPreventInputUpdate = XrdModule::GetShouldPreventInputUpdate();
+    ReplayDetourer::mRealUpdateInputBuffer = XrdModule::GetUpdateInputBuffer();
     void (ReplayDetourer::* detourSetHealth)(int) = &ReplayDetourer::DetourSetHealth;
     void (ReplayDetourer::* detourTickSimpleActor)(float) = &ReplayDetourer::DetourTickSimpleActor;
     void (ReplayDetourer::* detourDisplayReplayHudMenu)(void) = &ReplayDetourer::DetourDisplayReplayHudMenu;
+    bool (ReplayDetourer::* detourShouldPreventInputUpdate)(DWORD, DWORD*) = &ReplayDetourer::DetourShouldPreventInputUpdate;
+    void (ReplayDetourer::* detourUpdateInputBuffer)(DWORD) = &ReplayDetourer::DetourUpdateInputBuffer;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
@@ -221,6 +273,8 @@ void AddReplayMods()
     DetourAttach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
+    DetourAttach(&(PVOID&)ReplayDetourer::mRealShouldPreventInputUpdate, *(PBYTE*)&detourShouldPreventInputUpdate);
+    DetourAttach(&(PVOID&)ReplayDetourer::mRealUpdateInputBuffer, *(PBYTE*)&detourUpdateInputBuffer);
     DetourTransactionCommit();
 
     AttachSaveStateDetours();
@@ -228,7 +282,7 @@ void AddReplayMods()
 
 void RemoveReplayMods()
 {
-    // Restore instruction to their original values.
+    // Restore instructions to their original values.
     BYTE* instruction = XrdModule::GetControllerIndexInstruction();
     *instruction = 0x56;
 
@@ -238,6 +292,8 @@ void RemoveReplayMods()
     void (ReplayDetourer::* detourSetHealth)(int) = &ReplayDetourer::DetourSetHealth;
     void (ReplayDetourer::* detourTickSimpleActor)(float) = &ReplayDetourer::DetourTickSimpleActor;
     void (ReplayDetourer::* detourDisplayReplayHudMenu)(void) = &ReplayDetourer::DetourDisplayReplayHudMenu;
+    bool (ReplayDetourer::* detourShouldPreventInputUpdate)(DWORD, DWORD*) = &ReplayDetourer::DetourShouldPreventInputUpdate;
+    void (ReplayDetourer::* detourUpdateInputBuffer)(DWORD) = &ReplayDetourer::DetourUpdateInputBuffer;
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
@@ -248,6 +304,8 @@ void RemoveReplayMods()
     DetourDetach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
+    DetourDetach(&(PVOID&)ReplayDetourer::mRealShouldPreventInputUpdate, *(PBYTE*)&detourShouldPreventInputUpdate);
+    DetourDetach(&(PVOID&)ReplayDetourer::mRealUpdateInputBuffer, *(PBYTE*)&detourUpdateInputBuffer);
     DetourTransactionCommit();
 
     DetachSaveStateDetours();
@@ -259,7 +317,7 @@ void RemoveReplayMods()
 // code displaying the input. The condition we're changing is checking the
 // result of a function checking if we're online + resimulating for a rollback;
 // so we could detour that function as an alternate solution. But I'm not
-// confident about how that would effect other parts of the code that call the
+// confident about how that would affect other parts of the code that call the
 // same function.
 void DisableInputDisplay()
 {

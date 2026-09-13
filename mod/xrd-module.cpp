@@ -13,13 +13,13 @@ bool XrdModule::Init()
 {
     const char* exeName = "GuiltyGearXrd.exe";
     HMODULE module = GetModuleHandleA(exeName);
-    if (module == nullptr)
+    if (!module)
     {
         return false;
     }
 
     HANDLE process = GetCurrentProcess();
-    if (process == nullptr)
+    if (!process)
     {
         return false;
     }
@@ -299,6 +299,21 @@ UpdateTimeFunc XrdModule::GetUpdateTime()
 HandleInputsFunc XrdModule::GetHandleInputs()
 {
     return (HandleInputsFunc)(mBase + 0x9e0290);
+}
+
+ShouldPreventInputUpdateFunc XrdModule::GetShouldPreventInputUpdate()
+{
+    return (ShouldPreventInputUpdateFunc)(mBase + 0xbee3d0);
+}
+
+DWORD XrdModule::GetInputUpdateObject()
+{
+    return mBase + 0x1c01fd0;
+}
+
+UpdateInputBufferFunc XrdModule::GetUpdateInputBuffer()
+{
+    return (UpdateInputBufferFunc)(mBase + 0xb952e0);
 }
 
 InternalTickActorFunc XrdModule::GetInternalTickActor()

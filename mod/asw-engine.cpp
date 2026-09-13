@@ -56,6 +56,16 @@ DWORD AswEngine::GetBattleHudManager()
     return *(DWORD*)(mPtr + 0x22e628);
 }
 
+DWORD AswEngine::GetP1InputBuffer()
+{
+    return mPtr + 0x1c6d38;
+}
+
+DWORD AswEngine::GetP2InputBuffer()
+{
+    return GetP1InputBuffer() + 0x7e;
+}
+
 DWORD& AswEngine::GetErrorCode()
 {
     return *(DWORD*)(mPtr + 0x1c6f4c + 0x4);

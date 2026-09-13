@@ -15,6 +15,8 @@ public:
     class ReplayHud GetReplayHud();
     class GameLogicManager GetGameLogicManager();
     DWORD GetBattleHudManager();
+    DWORD GetP1InputBuffer();
+    DWORD GetP2InputBuffer();
 
     // Many functions use this slight offset from the engine when
     // accessing it. It's possible this should be what we treat as 
