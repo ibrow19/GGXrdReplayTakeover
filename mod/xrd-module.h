@@ -36,6 +36,7 @@ typedef void(__fastcall* ResetGameUnrealScriptFunc)(DWORD gameLogicManager);
 typedef bool(__fastcall* IsResimulatingFunc)(DWORD rollbackData);
 typedef void(__fastcall* ResetBattleCameraFunc)(DWORD battleCamera);
 typedef void(__thiscall* RemoveCameraAnimFunc)(DWORD battleCamera, DWORD blend);
+typedef void(__thiscall* SetReplayCameraPositionFunc)(DWORD battleCamera, DWORD position, DWORD mode);
 typedef DWORD(__thiscall* FindFunctionCheckedFunc)(DWORD uObject, DWORD fName, DWORD global, DWORD param4);
 
 class XrdModule
@@ -186,6 +187,7 @@ struct XrdVTables
 {
     static constexpr DWORD UObjectProcessEvent = 0x108;
     static constexpr DWORD AActorTick = 0x1a4;
+    static constexpr DWORD CameraSetReplayPosition = 0x3b0;
 };
 
 struct XrdFNames
