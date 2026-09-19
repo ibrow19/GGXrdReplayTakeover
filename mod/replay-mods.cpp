@@ -8,6 +8,7 @@
 #include <common.h>
 #include <detours.h>
 #include <audio.h>
+#include <input.h>
 #include <cassert>
 
 // Parameters that need to persist accross detoured function calls
@@ -41,6 +42,7 @@ static ReplayHudUpdateFunc GRealReplayHudUpdate = nullptr;
 static AddUiTextFunc GRealAddUiText = nullptr;
 static UpdateTimeFunc GRealUpdateTime = nullptr;
 static HandleInputsFunc GRealHandleInputs = nullptr;
+static UpdateInputsOnEntityFunc GRealUpdateInputsOnEntity = nullptr;
 
 void ReplayDetourer::DetourSetHealth(int newHealth)
 {
@@ -215,6 +217,25 @@ void __fastcall DetourHandleInputs(DWORD engine)
     XrdModule::GetEngine().GetErrorCode() = 0;
 }
 
+// When handling input this function is called to pass input details to player
+// entities if we allow this to happen for players that are disabled it can
+// affect/interrupt things like charge buffered at round start.
+void __fastcall DetourUpdateInputsOnEntity(DWORD entity)
+{
+    if (ReplayDetourSettings::disableInput != DisableInputMode::None)
+    {
+        AswEngine engine = XrdModule::GetEngine();
+        DWORD p1Entity = engine.GetP1Entity().GetPtr();
+        DWORD p2Entity = engine.GetP2Entity().GetPtr();
+        if ((p1Entity == entity && ReplayDetourSettings::disableInput == DisableInputMode::DisableP1)
+        ||  (p2Entity == entity && ReplayDetourSettings::disableInput == DisableInputMode::DisableP2))
+        {
+            return;
+        }
+    }
+    GRealUpdateInputsOnEntity(entity);
+}
+
 void AddReplayMods()
 {
     // Reset Settings
@@ -252,6 +273,7 @@ void AddReplayMods()
     GRealAddUiText = XrdModule::GetAddUiText();
     GRealUpdateTime = XrdModule::GetUpdateTime();
     GRealHandleInputs = XrdModule::GetHandleInputs();
+    GRealUpdateInputsOnEntity = XrdModule::GetUpdateInputsOnEntity();
     ReplayDetourer::mRealSetHealth = XrdModule::GetSetHealth();
     ReplayDetourer::mRealTickSimpleActor = XrdModule::GetInternalTickSimpleActor();
     ReplayDetourer::mRealDisplayReplayHudMenu = XrdModule::GetDisplayReplayHudMenu();
@@ -269,6 +291,7 @@ void AddReplayMods()
     DetourAttach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourAttach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourAttach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
+    DetourAttach(&(PVOID&)GRealUpdateInputsOnEntity, DetourUpdateInputsOnEntity);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourAttach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
@@ -300,6 +323,7 @@ void RemoveReplayMods()
     DetourDetach(&(PVOID&)GRealAddUiText, DetourAddUiText);
     DetourDetach(&(PVOID&)GRealUpdateTime, DetourUpdateTime);
     DetourDetach(&(PVOID&)GRealHandleInputs, DetourHandleInputs);
+    DetourDetach(&(PVOID&)GRealUpdateInputsOnEntity, DetourUpdateInputsOnEntity);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealSetHealth, *(PBYTE*)&detourSetHealth);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealTickSimpleActor, *(PBYTE*)&detourTickSimpleActor);
     DetourDetach(&(PVOID&)ReplayDetourer::mRealDisplayReplayHudMenu, *(PBYTE*)&detourDisplayReplayHudMenu);
