@@ -169,7 +169,7 @@ void GameModeControllerDetourer::DetourMainGameLogic(DWORD param)
     controller->Tick();
     {
         SCOPE_COUNTER(MainLogic)
-        mRealMainGameLogic((LPVOID)this, param);
+        mRealMainGameLogic(this, param);
     }
 }
 
