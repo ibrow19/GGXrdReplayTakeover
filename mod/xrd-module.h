@@ -21,6 +21,7 @@ typedef bool(__cdecl* IsPauseMenuActiveFunc)(void);
 typedef void(__thiscall* SetHealthFunc)(LPVOID entity, int newHealth);
 typedef void(__fastcall* UpdateTimeFunc)(DWORD timeData);
 typedef void(__fastcall* HandleInputsFunc)(DWORD engine);
+typedef void(__fastcall* UpdateInputsOnEntityFunc)(DWORD entity);
 typedef bool(__thiscall* ShouldPreventInputUpdateFunc)(LPVOID thisParam, DWORD player, DWORD* outInputMask);
 typedef void(__thiscall* UpdateInputBufferFunc)(LPVOID inputBuffer, DWORD inputMask);
 typedef void(__thiscall* TickActorFunc)(DWORD thisParam, float delta, DWORD tickType);
@@ -142,6 +143,7 @@ public:
     static UpdateTimeFunc GetUpdateTime();
     static HandleInputsFunc GetHandleInputs();
     static ShouldPreventInputUpdateFunc GetShouldPreventInputUpdate();
+    static UpdateInputsOnEntityFunc GetUpdateInputsOnEntity();
     static DWORD GetInputUpdateObject();
 
     // Adds an input to a player's input buffer. If the input has not changed

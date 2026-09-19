@@ -306,6 +306,11 @@ ShouldPreventInputUpdateFunc XrdModule::GetShouldPreventInputUpdate()
     return (ShouldPreventInputUpdateFunc)(mBase + 0xbee3d0);
 }
 
+UpdateInputsOnEntityFunc XrdModule::GetUpdateInputsOnEntity()
+{
+    return (UpdateInputsOnEntityFunc)(mBase + 0x9f58d0);
+}
+
 DWORD XrdModule::GetInputUpdateObject()
 {
     return mBase + 0x1c01fd0;
