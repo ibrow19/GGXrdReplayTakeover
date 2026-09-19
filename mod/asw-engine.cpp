@@ -66,6 +66,11 @@ DWORD AswEngine::GetP2InputBuffer()
     return GetP1InputBuffer() + 0x7e;
 }
 
+BYTE& AswEngine::GetNotRoundStartFlag()
+{
+    return *(BYTE*)(mPtr + 0xc);
+}
+
 DWORD& AswEngine::GetErrorCode()
 {
     return *(DWORD*)(mPtr + 0x1c6f4c + 0x4);

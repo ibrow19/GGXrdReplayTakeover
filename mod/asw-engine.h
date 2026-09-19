@@ -17,13 +17,12 @@ public:
     DWORD GetBattleHudManager();
     DWORD GetP1InputBuffer();
     DWORD GetP2InputBuffer();
+    BYTE& GetNotRoundStartFlag();
 
     // Many functions use this slight offset from the engine when
     // accessing it. It's possible this should be what we treat as 
     // the actual base address of the engine.
     DWORD GetOffset4();
-
-    DWORD* GetPauseEngineUpdateFlag();
 };
 
 class GameLogicManager : public MemoryWrapper
