@@ -262,7 +262,14 @@ void AddReplayMods()
     // more bytes than a register push instruction.
     BYTE* controllerInstruction = XrdModule::GetControllerIndexInstruction();
     MakeRegionWritable((DWORD)controllerInstruction, 1);
-    *controllerInstruction = 0x52;
+    *controllerInstruction = 0x52; // Push EDX
+
+    // Change condition in replay HUD update that changes camera angle to
+    // a jump so that camera never changes from the standard mode. The
+    // alternate camera angles interfere with replay recording so we disable them.
+    BYTE* cameraSwapInstruction = XrdModule::GetReplayCameraSwapInstruction();
+    MakeRegionWritable((DWORD)cameraSwapInstruction, 1);
+    *cameraSwapInstruction = 0xeb; // JMP
 
     // Make instructions for controlling input display
     // writable so we can change them when we need to later.
@@ -305,8 +312,10 @@ void AddReplayMods()
 void RemoveReplayMods()
 {
     // Restore instructions to their original values.
-    BYTE* instruction = XrdModule::GetControllerIndexInstruction();
-    *instruction = 0x56;
+    BYTE* controllerInstruction = XrdModule::GetControllerIndexInstruction();
+    *controllerInstruction = 0x56; // Push ESI
+    BYTE* cameraInstruction = XrdModule::GetReplayCameraSwapInstruction();
+    *cameraInstruction = 0x75; // JNE
 
     EnableInputDisplay();
 

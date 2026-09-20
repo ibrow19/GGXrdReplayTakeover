@@ -56,6 +56,7 @@ public:
     static BYTE* GetControllerIndexInstruction();
     static BYTE* GetSoundEffectJumpInstruction();
     static BYTE* GetInputDisplayInstruction();
+    static BYTE* GetReplayCameraSwapInstruction();
     static bool IsPauseMenuActive();
     static DWORD GetUiStringTable();
     static float GetReplayTextSpacing();

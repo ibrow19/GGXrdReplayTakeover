@@ -116,6 +116,11 @@ BYTE* XrdModule::GetInputDisplayInstruction()
     return (BYTE*)(mBase + 0x9e6b28);
 }
 
+BYTE* XrdModule::GetReplayCameraSwapInstruction()
+{
+    return (BYTE*)(mBase + 0xbc31ea);
+}
+
 bool XrdModule::IsPauseMenuActive()
 {
     IsPauseMenuActiveFunc func = (IsPauseMenuActiveFunc)(mBase + 0xbd8cf0);
