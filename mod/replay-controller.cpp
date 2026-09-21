@@ -114,7 +114,7 @@ void ReplayController::UpdateUi()
             mUiStrings.nextRound.Restore();
             mUiStrings.pauseMenu.Restore();
             mUiStrings.toggleControl.Restore();
-            mUiStrings.toggleCamera.Restore();
+            mUiStrings.toggleCamera.Clear();
             mUiStrings.comboDamage.Set(u"^mBtnSelect;: Replay Takeover Controls");
             break;
         case ReplayTakeoverMode::StandbyPaused:
