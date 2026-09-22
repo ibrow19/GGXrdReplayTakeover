@@ -69,9 +69,26 @@ After loading a state with Special Move + Play the behaviour of the Reset button
 ## Known Issues
 - Input history will display incorrectly while rewinding. Rewinding works by loading an older state then resimulating up to the desired frame, currently this results in the input history being filled with inputs from this resimulation.
 - Several HUD elements display incorrectly when rewinding. For example, you may see duplicate counter hit messages and gauges like the eddie meter can get stuck on the wrong value. These errors are purely visual and do not affect the game logic. There is save state logic for handling these UI elements, but I currently have it disabled to improve stability as it was causing rare crashes during garbage collection.
-- Loading a save state while Jack-O has placed house can sometimes cause a crash.
-- Rewinding over a Bedman seal's destruction can sometimes cause a crash.
+- In some cases rewinding over a Bedman seal's destruction can cause a crash.
 - Treasure hunted coins thrown by Johnny are invisible in loaded states/when rewinding. They require character specific initialisation that is not currently handled properly while loading states.
+
+##  Compiling/Development
+If you would like to compile the project yourself you will need the following requirements:
+- Visual Studio 17 2022, MSVC >= version 19.43.34810 (Other versions are probably fine too, this is just what I know works)
+- CMake >= version 3.16
+
+To set up the project, first clone it along with the required submodules:
+```
+git clone --recurse-submodules https://github.com/ibrow19/GGXrdReplayTakeover.git
+```
+You will need to compile the detours library that the mod uses for hooking onto function calls. The easiest way to do this is to open the Visual Studio Command Prompt, navigate to the `GGXrdReplayTakeover/vendor/Detours/src` directory, and run `nmake`. If necessary you can find more details about building Detours here: https://github.com/microsoft/Detours/wiki/FAQ
+
+Next, the repo contains some batch files to help generate project files and build the mod with its default configuration. Use `init_cmake.bat` from the `GGXrdReplayTakeover` directory to generate the project files. Notably this configures the project to be built for Win32, this is necessary to make the mod work with Xrd since it is a Win32 game.
+
+After that you can run `build.bat` to compile the mod and the injector with CMake. By default this builds a Debug configuration of the project, you can change the `--config` argument in `build.bat` to Release if you need to build a release version. The project build files we generated earlier also produce a VS solution file so you can use Visual Studio to compile the project instead of using CMake via the batch file if you prefer.
+
+### Injector differences between Release and Debug builds
+There is a minor difference between how the injector behaves when compiling for release vs debug. When compiled for release the injector searches its current directory for the DLL to inject. When compiling for debug it instead search the path `build/Debug`. This is so that the injector can be more conveniently run from the project's root directory during development.
 
 ## Attributions
 Many thanks to all the Xrd mods and related documentation created by Pangaea (@super-continent), @WistfulHopes, @kkots and WorseThanYou. Their work was an amazing resource for learning how to mod Xrd which enabled me to create this.
