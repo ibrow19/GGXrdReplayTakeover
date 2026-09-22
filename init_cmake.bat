@@ -1,2 +1,2 @@
-cmake -S . -B .\build\ --fresh
+cmake -S . -B .\build\ --fresh -DCMAKE_GENERATOR_PLATFORM=Win32
 :: -DIMGUI_OVERLAY=ON -DPROFILING=ON 

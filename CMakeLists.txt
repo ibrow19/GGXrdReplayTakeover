@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 set(PROJECT_NAME GGXrdReplayTakeover)
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_GENERATOR_PLATFORM Win32)
 
 project(${PROJECT_NAME} C CXX)
 
