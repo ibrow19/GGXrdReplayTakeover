@@ -181,6 +181,8 @@ public:
 
     // Finds UnrealScript functions.
     static FindFunctionCheckedFunc GetFindFunctionChecked();
+
+    static DWORD GetSetBackgroundPauseGlobal();
 private:
     static DWORD mBase;
 };
@@ -196,4 +198,5 @@ struct XrdVTables
 struct XrdFNames
 {
     static constexpr DWORD StopSound = 0x349a;
+    static constexpr DWORD SetBackgroundPause = 0x3456;
 };

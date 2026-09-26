@@ -518,6 +518,7 @@ void ReplayController::Tick()
         GameLogicManager manager = XrdModule::GetEngine().GetGameLogicManager();
         manager.GetPauseEngineUpdateFlag() = 1;
         manager.StopSound();
+        manager.SetBackgroundPause(true);
     }
 }
 

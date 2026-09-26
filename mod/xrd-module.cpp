@@ -380,3 +380,8 @@ FindFunctionCheckedFunc XrdModule::GetFindFunctionChecked()
 {
     return (FindFunctionCheckedFunc)(mBase + 0x91ce0);
 }
+
+DWORD XrdModule::GetSetBackgroundPauseGlobal()
+{
+    return *(DWORD*)(mBase + 0x1a3fba8);
+}

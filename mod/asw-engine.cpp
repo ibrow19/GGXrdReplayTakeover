@@ -97,10 +97,23 @@ DWORD& GameLogicManager::GetPauseEngineUpdateFlag()
     return *(DWORD*)(pauseObject + 0x1c8);
 }
 
+ProcessEventFunc GameLogicManager::GetProcessEvent()
+{
+    return (ProcessEventFunc)GetVirtualFunction(mPtr, XrdVTables::UObjectProcessEvent);
+}
+
 void GameLogicManager::StopSound()
 {
     FindFunctionCheckedFunc findFunction = XrdModule::GetFindFunctionChecked();
-    ProcessEventFunc processEvent = (ProcessEventFunc)GetVirtualFunction(mPtr, XrdVTables::UObjectProcessEvent);
     DWORD stopSound = findFunction(mPtr, XrdFNames::StopSound, 0, 0);
+    ProcessEventFunc processEvent = GetProcessEvent();
     processEvent(mPtr, stopSound, nullptr, nullptr);
+}
+
+void GameLogicManager::SetBackgroundPause(bool bPause)
+{
+    FindFunctionCheckedFunc findFunction = XrdModule::GetFindFunctionChecked();
+    DWORD setBGPause = findFunction(mPtr, XrdFNames::SetBackgroundPause, XrdModule::GetSetBackgroundPauseGlobal(), 0);
+    ProcessEventFunc processEvent = GetProcessEvent();
+    processEvent(mPtr, setBGPause, &bPause, nullptr);
 }

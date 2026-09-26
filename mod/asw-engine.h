@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory-wrapper.h>
+#include <xrd-module.h>
 
 class AswEngine : public MemoryWrapper
 {
@@ -41,4 +42,7 @@ public:
     DWORD& GetPauseEngineUpdateFlag();
 
     void StopSound();
+    void SetBackgroundPause(bool bPause);
+private:
+    ProcessEventFunc GetProcessEvent();
 };
