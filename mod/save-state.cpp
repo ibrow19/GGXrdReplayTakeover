@@ -24,8 +24,7 @@ static GetSaveStateTrackerFunc GRealGetSaveStateTracker = nullptr;
 static bool GbStateDetourActive = false;
 static SaveStateTracker GTracker;
 
-static constexpr int SaveStateFunctionCount = 16;
-static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
+static const SaveStateSection SaveStateSections[] =
 {
     // 0 - main engine chunk
     { 
@@ -70,7 +69,7 @@ static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
         0x198b7e4
         
     },
-    // 6 - Various UI elements copied from Engine->0x22e628->0x458
+    // 6 - Various UI elements copied from BattleHUD at Engine->0x22e628->0x458
     // Objects such as negative penalty pop up and associated sounds are recreated
     // by the load function. In certain game states it is possible for the recereaion 
     // of some UI objects to introduce null UObjects which causes a crash on the 
@@ -172,6 +171,7 @@ static const SaveStateSection SaveStateSections[SaveStateFunctionCount] =
         0x1c73fc
     },
 };
+static constexpr int SaveStateFunctionCount = sizeof(SaveStateSections)/sizeof(SaveStateSection);
 
 
 static void CallSaveStateFunction(DWORD functionOffset, SaveStateSectionBase base, DWORD stateOffset)
