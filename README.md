@@ -1,5 +1,7 @@
 # Guilty Gear Xrd Replay Takeover and Save States
 This mod adds replay takeover functionality and training mode save states to the Steam release of Guilty Gear Xrd Rev 2. The mod is compatible with patch 2211 (current patch).
+
+[Video example of installing and using the mod.](https://www.youtube.com/watch?v=608TUym0eec)
 ## Enabling the mod
 - Grab the latest build from releases and unzip it.
 - Open Guilty Gear Xrd.
