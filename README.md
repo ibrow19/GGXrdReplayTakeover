@@ -14,7 +14,7 @@ If you are running the game on Linux via Proton then this direct injection metho
 ## Automatic Injection
 With a few more steps you can automatically enable the mod every time you run the game. This is the current recommended way of injecting with Linux/Proton to ensure the injection happens in a process that can access the Xrd process.
 
-- Move the extracted GGXrdReplayTakeover.dll and GGXrdReplayTakeoverInjector.exe to Guilty Gear Xrd's binaries directory. The easiest way to find this is via the game's Steam Properties > Installed Files > Browse. From there you want to place the binaries in GUILTY GEAR Xrd -REVELATOR-/Binaries/Win32
+- Move the extracted GGXrdReplayTakeover.dll and GGXrdReplayTakeoverInjector.exe to Guilty Gear Xrd's binaries directory. The easiest way to find this is via the Steam Library: right click on Xrd > Manage > Browse local files. From there you want to place the binaries in GUILTY GEAR Xrd -REVELATOR-/Binaries/Win32
 - Next you need to edit the file BootGGXrd.bat in the GUILTY GEAR Xrd -REVELATOR- directory so that it runs the injector when the game starts. You can do so by adding the following line to the end of the file:
 ```GGXrdReplayTakeoverInjector.exe 10```
 
