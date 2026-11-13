@@ -12,6 +12,8 @@ The next time you enter a replay/training mode the mod should be active. Using t
 If you are running the game on Linux via Proton then this direct injection method may not work due to restrictions on which processes can see each other. In this case it is recommended you instead use the automatic injection method described next.
 
 ## Automatic Injection
+[Video guide to set up automatic injection.](https://youtu.be/H7IoiPojdes)
+
 With a few more steps you can automatically enable the mod every time you run the game. This is the current recommended way of injecting with Linux/Proton to ensure the injection happens in a process that can access the Xrd process.
 
 - Move the extracted GGXrdReplayTakeover.dll and GGXrdReplayTakeoverInjector.exe to Guilty Gear Xrd's binaries directory. The easiest way to find this is via the Steam Library: right click on Xrd > Manage > Browse local files. From there you want to place the binaries in GUILTY GEAR Xrd -REVELATOR-/Binaries/Win32
